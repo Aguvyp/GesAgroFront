@@ -46,14 +46,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     super.initState();
     _tipoController = TextEditingController(text: widget.trabajo?.tipo ?? '');
     _cultivoController = TextEditingController(text: widget.trabajo?.cultivo ?? '');
-    _descripcionController = TextEditingController(text: widget.trabajo?.descripcion ?? '');
+    _descripcionController = TextEditingController(text: widget.trabajo?.observaciones ?? '');
     _fechaInicioController = TextEditingController(text: widget.trabajo?.fechaInicio?.toString() ?? '');
     _fechaFinController = TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
     _fechaInicio = widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
     
     // Cargar datos necesarios para los selectores
-    _loadDataForSelectors();
+    Future.microtask(() => _loadDataForSelectors());
   }
 
   @override
@@ -266,33 +266,45 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        if (_maquinas.isEmpty)
+                        if (_isLoadingData)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (_maquinas.isEmpty)
                           const Text(
                             'No hay máquinas disponibles',
                             style: TextStyle(color: Colors.grey),
                           )
                         else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _maquinas.map((maquina) {
-                              final isSelected = _maquinasSeleccionadas.contains(maquina);
-                              return FilterChip(
-                                label: Text(maquina.nombre),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      _maquinasSeleccionadas.add(maquina);
-                                    } else {
-                                      _maquinasSeleccionadas.remove(maquina);
-                                    }
-                                  });
-                                },
-                                selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                checkmarkColor: Theme.of(context).primaryColor,
-                              );
-                            }).toList(),
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 120),
+                            child: SingleChildScrollView(
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _maquinas.map((maquina) {
+                                  final isSelected = _maquinasSeleccionadas.contains(maquina);
+                                  return FilterChip(
+                                    label: Text(maquina.nombre),
+                                    selected: isSelected,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _maquinasSeleccionadas.add(maquina);
+                                        } else {
+                                          _maquinasSeleccionadas.remove(maquina);
+                                        }
+                                      });
+                                    },
+                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                                    checkmarkColor: Theme.of(context).primaryColor,
+                                  );
+                                }).toList(),
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -326,33 +338,45 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        if (_personal.isEmpty)
+                        if (_isLoadingData)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (_personal.isEmpty)
                           const Text(
                             'No hay operarios disponibles',
                             style: TextStyle(color: Colors.grey),
                           )
                         else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _personal.map((persona) {
-                              final isSelected = _personalSeleccionado.contains(persona);
-                              return FilterChip(
-                                label: Text(persona.nombre),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      _personalSeleccionado.add(persona);
-                                    } else {
-                                      _personalSeleccionado.remove(persona);
-                                    }
-                                  });
-                                },
-                                selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                checkmarkColor: Theme.of(context).primaryColor,
-                              );
-                            }).toList(),
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 120),
+                            child: SingleChildScrollView(
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _personal.map((persona) {
+                                  final isSelected = _personalSeleccionado.contains(persona);
+                                  return FilterChip(
+                                    label: Text(persona.nombre),
+                                    selected: isSelected,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _personalSeleccionado.add(persona);
+                                        } else {
+                                          _personalSeleccionado.remove(persona);
+                                        }
+                                      });
+                                    },
+                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                                    checkmarkColor: Theme.of(context).primaryColor,
+                                  );
+                                }).toList(),
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -430,6 +454,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
         final data = {
           'tipo': _tipoController.text,
           'cultivo': _cultivoController.text,
+          'observaciones': _descripcionController.text,
           'cliente': _clientes.isNotEmpty ? _clientes.first.nombre : 'Cliente por defecto',
           'estado': 'En progreso',
           'a_terceros': false,

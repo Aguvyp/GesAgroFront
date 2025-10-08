@@ -108,13 +108,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Refrescar la pantalla actual
-              _refreshCurrentScreen();
-            },
-          ),
+          // Botón de recargar removido
         ],
       ),
       drawer: _buildDrawer(context),
@@ -144,7 +138,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            label: 'Inicio',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.landscape),
@@ -170,7 +164,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   String _getAppBarTitle(int index) {
     switch (index) {
       case 0:
-        return 'Dashboard';
+        return 'Inicio';
       case 1:
         return 'Campos';
       case 2:
@@ -215,13 +209,6 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
       default:
         return 'Buscar...';
     }
-  }
-
-  void _refreshCurrentScreen() {
-    // TODO: Implementar refresh específico por pantalla
-    setState(() {
-      // Forzar rebuild
-    });
   }
 
   Widget _buildDrawer(BuildContext context) {
