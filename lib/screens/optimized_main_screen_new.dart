@@ -127,37 +127,6 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.landscape),
-            label: 'Campos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work),
-            label: 'Trabajos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Costos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
-      ),
     );
   }
 
@@ -213,160 +182,215 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
-      width: 280, // Ancho fijo para mejor visibilidad
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Theme.of(context).primaryColor,
-                  Theme.of(context).primaryColor.withOpacity(0.8),
+      width: 320, // Ancho más amplio para elementos flotantes
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          backgroundBlendMode: BlendMode.overlay,
+        ),
+        child: Column(
+          children: [
+            // Header con efecto blur y sombra
+            Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
                 ],
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const Icon(
-                  Icons.agriculture,
-                  size: 48,
-                  color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Icon(
+                      Icons.agriculture,
+                      size: 48,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'GesAgro',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Text(
+                      'Sistema de Gestión Agrícola',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'GesAgro',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+              ),
+            ),
+            
+            // Contenido del drawer con padding y scroll
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildModernDrawerItem(
+                        context,
+                        'Inicio',
+                        Icons.home_rounded,
+                        0,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Campos',
+                        Icons.landscape_rounded,
+                        1,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Trabajos',
+                        Icons.work_rounded,
+                        2,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Costos',
+                        Icons.attach_money_rounded,
+                        3,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Personal',
+                        Icons.people_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PersonalListScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Separador simple
+                      Container(
+                        height: 1,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        color: Colors.grey[300],
+                      ),
+                      
+                      _buildModernDrawerItem(
+                        context,
+                        'Finanzas',
+                        Icons.account_balance_wallet_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OptimizedFinanzasMainScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Reportes',
+                        Icons.analytics_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OptimizedReportesScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Prueba Conexión',
+                        Icons.wifi_find_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const TestConnectionScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Separador simple
+                      Container(
+                        height: 1,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        color: Colors.grey[300],
+                      ),
+                      
+                      _buildModernDrawerItem(
+                        context,
+                        'Perfil',
+                        Icons.person_rounded,
+                        4,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Configuración',
+                        Icons.settings_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Implementar pantalla de configuración
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Cerrar Sesión',
+                        Icons.logout_rounded,
+                        -1,
+                        isDestructive: true,
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Implementar logout
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                const Text(
-                  'Sistema de Gestión Agrícola',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          _buildDrawerItem(
-            context,
-            'Dashboard',
-            Icons.dashboard,
-            0,
-          ),
-          _buildDrawerItem(
-            context,
-            'Campos',
-            Icons.landscape,
-            1,
-          ),
-          _buildDrawerItem(
-            context,
-            'Trabajos',
-            Icons.work,
-            2,
-          ),
-          _buildDrawerItem(
-            context,
-            'Costos',
-            Icons.attach_money,
-            3,
-          ),
-          _buildDrawerItem(
-            context,
-            'Personal',
-            Icons.people,
-            -1, // Navegación especial
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PersonalListScreen()),
-              );
-            },
-          ),
-          const Divider(),
-          _buildDrawerItem(
-            context,
-            'Finanzas',
-            Icons.account_balance_wallet,
-            -1, // Navegación especial
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const OptimizedFinanzasMainScreen()),
-              );
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            'Reportes',
-            Icons.analytics,
-            -1, // Navegación especial
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const OptimizedReportesScreen()),
-              );
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            'Prueba Conexión',
-            Icons.wifi_find,
-            -1, // Navegación especial
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TestConnectionScreen()),
-              );
-            },
-          ),
-          const Divider(),
-          _buildDrawerItem(
-            context,
-            'Perfil',
-            Icons.person,
-            4,
-          ),
-          _buildDrawerItem(
-            context,
-            'Configuración',
-            Icons.settings,
-            -1, // Navegación especial
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Implementar pantalla de configuración
-            },
-          ),
-          _buildDrawerItem(
-            context,
-            'Cerrar Sesión',
-            Icons.logout,
-            -1, // Navegación especial
-            isDestructive: true,
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Implementar logout
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDrawerItem(
+  Widget _buildModernDrawerItem(
     BuildContext context,
     String title,
     IconData icon,
@@ -376,28 +400,65 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   }) {
     final isSelected = index == _currentIndex && index >= 0;
     
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isDestructive ? Colors.red : (isSelected ? Theme.of(context).primaryColor : null),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isDestructive ? Colors.red : (isSelected ? Theme.of(context).primaryColor : null),
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 1),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap ?? () {
+            Navigator.pop(context);
+            if (index >= 0) {
+              setState(() {
+                _currentIndex = index;
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: isSelected 
+                ? Theme.of(context).primaryColor.withOpacity(0.08)
+                : Colors.transparent,
+              border: Border(
+                left: BorderSide(
+                  color: isSelected 
+                    ? Theme.of(context).primaryColor
+                    : Colors.transparent,
+                  width: 3,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 22,
+                  color: isDestructive 
+                    ? Colors.red.shade600
+                    : (isSelected 
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey.shade600),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: isDestructive 
+                        ? Colors.red.shade600
+                        : (isSelected 
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey.shade700),
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      onTap: onTap ?? () {
-        Navigator.pop(context);
-        if (index >= 0) {
-          setState(() {
-            _currentIndex = index;
-          });
-        }
-      },
-      selected: isSelected,
-      hoverColor: Theme.of(context).primaryColor.withOpacity(0.1),
     );
   }
 }
