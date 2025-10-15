@@ -63,6 +63,20 @@ class ApiConfig {
     }
   }
 
+  static Future<http.Response> patch(String endpoint, {String? body}) async {
+    try {
+      final headers = await _buildHeaders();
+      final response = await http.patch(
+        Uri.parse('$_baseUrl$endpoint'),
+        headers: headers,
+        body: body,
+      ).timeout(timeout);
+      return response;
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
   static Future<http.Response> delete(String endpoint) async {
     try {
       final headers = await _buildHeaders();

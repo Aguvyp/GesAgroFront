@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/campo.dart';
 import '../widgets/optimized_widgets.dart';
-import 'optimized_forms.dart';
+import 'forms/forms_screens.dart';
 
 class CampoDetailScreen extends ConsumerWidget {
   final Campo campo;
@@ -219,10 +219,12 @@ class CampoDetailScreen extends ConsumerWidget {
   }
 
   void _showEditDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => CampoFormDialog(
-        campo: campo,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CampoFormScreen(
+          campo: campo,
+        ),
       ),
     ).then((_) {
       // TODO: Actualizar la lista con el campo editado cuando se cierre el diálogo

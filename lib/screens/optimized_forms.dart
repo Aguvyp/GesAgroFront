@@ -5,6 +5,7 @@ import '../models/campo.dart';
 import '../models/maquina.dart';
 import '../models/personal.dart';
 import '../models/cliente.dart';
+import '../services/cliente_service.dart';
 import 'additional_forms.dart';
 
 /// Formulario para crear/editar campos
@@ -393,16 +394,25 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   late TextEditingController _descripcionController;
   late TextEditingController _fechaInicioController;
   late TextEditingController _fechaFinController;
+  late TextEditingController _clienteController;
+  late TextEditingController _montoCobradoController;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
+  
+  // Estados adicionales
+  String? _estadoSeleccionado;
+  bool _esTercero = false;
+  bool _cobrado = false;
   
   // Selectores
   Campo? _campoSeleccionado;
   List<Maquina> _maquinasSeleccionadas = [];
   List<Personal> _personalSeleccionado = [];
+  Cliente? _clienteSeleccionado;
   
   // Listas para los selectores
   List<Campo> _campos = [];
+  List<Campo> _camposFiltrados = []; // Campos filtrados por cliente
   List<Maquina> _maquinas = [];
   List<Personal> _personal = [];
   List<Cliente> _clientes = [];
@@ -417,8 +427,31 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     _descripcionController = TextEditingController(text: widget.trabajo?.observaciones ?? '');
     _fechaInicioController = TextEditingController(text: widget.trabajo?.fechaInicio?.toString() ?? '');
     _fechaFinController = TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
+    _clienteController = TextEditingController(text: widget.trabajo?.cliente ?? '');
+    _montoCobradoController = TextEditingController(text: widget.trabajo?.montoCobrado?.toString() ?? '');
     _fechaInicio = widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
+    
+    // Estados adicionales
+    _estadoSeleccionado = widget.trabajo?.estado ?? 'Pendiente';
+    
+    // FORZAR VALORES CORRECTOS PARA DEBUG
+    if (widget.trabajo != null) {
+      // Si hay un trabajo, usar sus valores reales
+      _esTercero = widget.trabajo!.esTercero;
+      _cobrado = widget.trabajo!.cobrado;
+    } else {
+      // Si es un trabajo nuevo, valores por defecto
+      _esTercero = false;
+      _cobrado = false;
+    }
+    
+    // Debug logs
+    print('DEBUG: Trabajo esTercero: ${widget.trabajo?.esTercero}');
+    print('DEBUG: _esTercero inicializado a: $_esTercero');
+    print('DEBUG: Trabajo cliente: ${widget.trabajo?.cliente}');
+    print('DEBUG: Trabajo completo: ${widget.trabajo?.toJson()}');
+    print('DEBUG: JSON original del trabajo: ${widget.trabajo?.toJson()}');
     
     // Cargar datos necesarios para los selectores
     Future.microtask(() => _loadDataForSelectors());
@@ -431,6 +464,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     _descripcionController.dispose();
     _fechaInicioController.dispose();
     _fechaFinController.dispose();
+    _clienteController.dispose();
+    _montoCobradoController.dispose();
     super.dispose();
   }
 
@@ -450,6 +485,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
         if (newCamposState is LoadedState<List<Campo>>) {
           _campos = newCamposState.data;
         }
+      }
+
+      // Cargar clientes
+      try {
+        _clientes = await ClienteService.getClientes();
+      } catch (e) {
+        print('Error cargando clientes: $e');
+        _clientes = [];
       }
 
       // Cargar máquinas
@@ -476,16 +519,34 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
         }
       }
 
-      // Cargar clientes
-      final clientesState = ref.read(clientesProvider);
-      if (clientesState is LoadedState<List<Cliente>>) {
-        _clientes = clientesState.data;
-      } else {
-        await ref.read(clientesProvider.notifier).loadClientes();
-        final newClientesState = ref.read(clientesProvider);
-        if (newClientesState is LoadedState<List<Cliente>>) {
-          _clientes = newClientesState.data;
+      // Aplicar filtros según el estado actual
+      await _aplicarFiltrosCampos();
+
+      // Seleccionar elementos existentes del trabajo
+      if (widget.trabajo != null) {
+        // Seleccionar cliente si es trabajo a terceros
+        if (_esTercero && widget.trabajo!.cliente != null) {
+          _clienteSeleccionado = _clientes.firstWhere(
+            (cliente) => cliente.nombre == widget.trabajo!.cliente,
+            orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
+          );
         }
+
+        // Seleccionar campo
+        _campoSeleccionado = _camposFiltrados.firstWhere(
+          (campo) => campo.id == widget.trabajo!.idCampo,
+          orElse: () => _camposFiltrados.isNotEmpty ? _camposFiltrados.first : Campo(id: 0, nombre: '', superficieHa: 0),
+        );
+
+        // Seleccionar máquinas
+        _maquinasSeleccionadas = _maquinas.where(
+          (maquina) => widget.trabajo!.idMaquinas.contains(maquina.id),
+        ).toList();
+
+        // Seleccionar personal
+        _personalSeleccionado = _personal.where(
+          (persona) => widget.trabajo!.idPersonal.contains(persona.id),
+        ).toList();
       }
     } catch (e) {
       // Manejar errores silenciosamente
@@ -497,8 +558,34 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     }
   }
 
+  // Método para aplicar filtros de campos según el cliente seleccionado
+  Future<void> _aplicarFiltrosCampos() async {
+    print('DEBUG: _aplicarFiltrosCampos - _esTercero: $_esTercero, _clienteSeleccionado: $_clienteSeleccionado');
+    
+    if (_esTercero && _clienteSeleccionado != null) {
+      // Si es trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
+      print('DEBUG: Cargando campos del cliente ${_clienteSeleccionado!.nombre}');
+      try {
+        _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
+        print('DEBUG: Campos del cliente cargados: ${_camposFiltrados.length}');
+      } catch (e) {
+        print('Error cargando campos del cliente: $e');
+        _camposFiltrados = [];
+      }
+    } else {
+      // Si no es trabajo a terceros, mostrar todos los campos propios
+      print('DEBUG: Mostrando todos los campos propios');
+      _camposFiltrados = List.from(_campos);
+      print('DEBUG: Campos propios cargados: ${_camposFiltrados.length}');
+    }
+    
+    print('DEBUG: _aplicarFiltrosCampos completado. Campos filtrados: ${_camposFiltrados.length}');
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('DEBUG: build() ejecutado - _esTercero: $_esTercero');
+    
     if (_isLoadingData) {
       return AlertDialog(
         title: Text(widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo'),
@@ -566,6 +653,159 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                 ),
                 const SizedBox(height: 16),
                 
+                // Toggle Es Tercero
+                Row(
+                  children: [
+                    const Text('Trabajo a terceros:'),
+                    const Spacer(),
+                    Switch(
+                      value: _esTercero,
+                      onChanged: (value) async {
+                        print('DEBUG: Switch cambiado a: $value');
+                        print('DEBUG: _esTercero antes: $_esTercero');
+                        
+                        // Actualizar el estado ANTES del setState
+                        _esTercero = value;
+                        print('DEBUG: _esTercero actualizado a: $_esTercero');
+                        
+                        // Limpiar selecciones si se desactiva "a terceros"
+                        if (!value) {
+                          print('DEBUG: Limpiando selecciones porque esTercero = false');
+                          _clienteSeleccionado = null;
+                          _clienteController.clear();
+                          _campoSeleccionado = null;
+                        }
+                        
+                        // Forzar rebuild del widget
+                        setState(() {
+                          print('DEBUG: setState ejecutado');
+                          // El estado ya se actualizó arriba
+                        });
+                        
+                        print('DEBUG: setState completado');
+                        
+                        print('DEBUG: Aplicando filtros de campos...');
+                        // Aplicar filtros de campos
+                        await _aplicarFiltrosCampos();
+                        print('DEBUG: Filtros aplicados. _esTercero final: $_esTercero');
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Selector de Cliente (solo visible si es a terceros)
+                // Debug log
+                Builder(builder: (context) {
+                  print('DEBUG: Renderizando formulario - _esTercero: $_esTercero');
+                  return Container();
+                }),
+                
+                // TEST: Mostrar estado actual
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.yellow[100],
+                    border: Border.all(color: Colors.orange),
+                  ),
+                  child: Text(
+                    'DEBUG: _esTercero = $_esTercero, Cliente visible: ${_esTercero ? "SÍ" : "NO"}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                
+                if (_esTercero) ...[
+                  DropdownButtonFormField<Cliente>(
+                    decoration: const InputDecoration(
+                      labelText: 'Cliente',
+                      border: OutlineInputBorder(),
+                      hintText: 'Seleccione un cliente',
+                    ),
+                    value: _clienteSeleccionado,
+                    items: _clientes.map((cliente) {
+                      return DropdownMenuItem<Cliente>(
+                        value: cliente,
+                        child: Text(cliente.nombre),
+                      );
+                    }).toList(),
+                    onChanged: (Cliente? cliente) async {
+                      setState(() {
+                        _clienteSeleccionado = cliente;
+                        _clienteController.text = cliente?.nombre ?? '';
+                        _campoSeleccionado = null; // Limpiar campo seleccionado
+                      });
+                      // Aplicar filtros de campos para el cliente seleccionado
+                      await _aplicarFiltrosCampos();
+                    },
+                    validator: (value) {
+                      if (_esTercero && value == null) {
+                        return 'El cliente es requerido para trabajos a terceros';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
+                // Selector de Estado
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Estado',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _estadoSeleccionado,
+                  items: const [
+                    DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
+                    DropdownMenuItem(value: 'En progreso', child: Text('En progreso')),
+                    DropdownMenuItem(value: 'Completado', child: Text('Completado')),
+                    DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _estadoSeleccionado = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // Toggle Cobrado
+                Row(
+                  children: [
+                    const Text('Cobrado:'),
+                    const Spacer(),
+                    Switch(
+                      value: _cobrado,
+                      onChanged: (value) {
+                        setState(() {
+                          _cobrado = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Campo Monto Cobrado (solo si está cobrado)
+                if (_cobrado) ...[
+                  TextFormField(
+                    controller: _montoCobradoController,
+                    decoration: const InputDecoration(
+                      labelText: 'Monto Cobrado',
+                      border: OutlineInputBorder(),
+                      prefixText: '\$ ',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (_cobrado && (value == null || value.isEmpty)) {
+                        return 'El monto es requerido si está cobrado';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
                 // Selector de Campo
                 Row(
                   children: [
@@ -576,7 +816,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           border: OutlineInputBorder(),
                         ),
                         value: _campoSeleccionado,
-                        items: _campos.map((campo) {
+                        items: _camposFiltrados.map((campo) {
                           return DropdownMenuItem<Campo>(
                             value: campo,
                             child: Text(campo.nombre),
@@ -823,9 +1063,15 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
           'tipo': _tipoController.text,
           'cultivo': _cultivoController.text,
           'observaciones': _descripcionController.text,
-          'cliente': _clientes.isNotEmpty ? _clientes.first.nombre : 'Cliente por defecto',
-          'estado': 'En progreso',
-          'a_terceros': false,
+          'cliente': _esTercero && _clienteSeleccionado != null 
+              ? _clienteSeleccionado!.nombre 
+              : (_esTercero ? 'Cliente no seleccionado' : 'Trabajo propio'),
+          'estado': _estadoSeleccionado ?? 'Pendiente',
+          'a_terceros': _esTercero,
+          'cobrado': _cobrado,
+          'monto_cobrado': _cobrado && _montoCobradoController.text.isNotEmpty 
+              ? double.tryParse(_montoCobradoController.text) 
+              : null,
           'fecha_inicio': _fechaInicio?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'fecha_fin': _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'campo_id': _campoSeleccionado?.id ?? 1,

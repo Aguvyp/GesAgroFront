@@ -7,7 +7,7 @@ import '../../providers/optimized_providers.dart';
 import '../../services/trabajo_service.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../trabajo_detail_screen.dart';
-import 'personal_form_dialog.dart';
+import '../forms/forms_screens.dart';
 
 class PersonalDetailScreen extends ConsumerStatefulWidget {
   final Personal personal;
@@ -454,19 +454,20 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
   }
 
   void _showEditDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => PersonalFormDialog(
-        personal: widget.personal,
-        onSaved: () {
-          // TODO: Actualizar la lista con el personal editado cuando se cierre el diálogo
-          OptimizedSnackBar.showSuccess(
-            context,
-            message: 'Personal actualizado exitosamente',
-          );
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PersonalFormScreen(
+          personal: widget.personal,
+        ),
       ),
-    );
+    ).then((_) {
+      // TODO: Actualizar la lista con el personal editado cuando se cierre el diálogo
+      OptimizedSnackBar.showSuccess(
+        context,
+        message: 'Personal actualizado exitosamente',
+      );
+    });
   }
 
   void _showDeleteConfirmation(BuildContext context) {

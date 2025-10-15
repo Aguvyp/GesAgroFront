@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'optimized_screens.dart';
 import 'optimized_dashboard_screen.dart';
-import 'optimized_forms.dart';
 import 'optimized_finanzas_screens.dart';
 import 'test_connection_screen.dart';
 import 'personal/personal_list_screen.dart';
+import 'forms/forms_screens.dart';
 import '../providers/optimized_providers.dart';
 
 class OptimizedSplashScreen extends ConsumerStatefulWidget {
@@ -559,9 +559,11 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
   }
 
   void _showCostoForm(BuildContext context, {dynamic costo}) {
-    showDialog(
-      context: context,
-      builder: (context) => CostoFormDialog(costo: costo),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CostoFormScreen(costo: costo),
+      ),
     );
   }
 

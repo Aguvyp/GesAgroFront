@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/optimized_widgets.dart';
 import '../providers/optimized_providers.dart';
-import 'optimized_forms.dart';
 import 'campo_detail_screen.dart';
 import 'trabajo_detail_screen.dart';
+import 'forms/forms_screens.dart';
 
 /// ==================== CAMPOS LIST SCREEN OPTIMIZADA ====================
 
@@ -139,9 +139,11 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
   }
 
   void _showCampoForm(BuildContext context, {dynamic campo}) {
-    showDialog(
-      context: context,
-      builder: (context) => CampoFormDialog(campo: campo),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CampoFormScreen(campo: campo),
+      ),
     );
   }
 
@@ -310,9 +312,11 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
   }
 
   void _showTrabajoForm(BuildContext context, {dynamic trabajo}) {
-    showDialog(
-      context: context,
-      builder: (context) => TrabajoFormDialog(trabajo: trabajo),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrabajoFormScreen(trabajo: trabajo),
+      ),
     );
   }
 

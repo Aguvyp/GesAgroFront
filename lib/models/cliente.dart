@@ -1,34 +1,41 @@
 class Cliente {
-  final int id;
+  final int? id;
   final String nombre;
   final String? email;
   final String? telefono;
   final String? direccion;
-  final String? dni;
-  final DateTime fechaRegistro;
-  final bool activo;
+  final String? cuit;
+  final String? observaciones;
+  final DateTime? fechaCreacion;
+  final DateTime? fechaModificacion;
 
   Cliente({
-    required this.id,
+    this.id,
     required this.nombre,
     this.email,
     this.telefono,
     this.direccion,
-    this.dni,
-    required this.fechaRegistro,
-    this.activo = true,
+    this.cuit,
+    this.observaciones,
+    this.fechaCreacion,
+    this.fechaModificacion,
   });
 
   factory Cliente.fromJson(Map<String, dynamic> json) {
     return Cliente(
       id: json['id'],
-      nombre: json['nombre'],
+      nombre: json['nombre'] ?? '',
       email: json['email'],
       telefono: json['telefono'],
       direccion: json['direccion'],
-      dni: json['dni'],
-      fechaRegistro: DateTime.parse(json['fecha_registro']),
-      activo: json['activo'] ?? true,
+      cuit: json['cuit'],
+      observaciones: json['observaciones'],
+      fechaCreacion: json['fecha_creacion'] != null 
+          ? DateTime.parse(json['fecha_creacion'])
+          : null,
+      fechaModificacion: json['fecha_modificacion'] != null 
+          ? DateTime.parse(json['fecha_modificacion'])
+          : null,
     );
   }
 
@@ -39,9 +46,10 @@ class Cliente {
       'email': email,
       'telefono': telefono,
       'direccion': direccion,
-      'dni': dni,
-      'fecha_registro': fechaRegistro.toIso8601String(),
-      'activo': activo,
+      'cuit': cuit,
+      'observaciones': observaciones,
+      'fecha_creacion': fechaCreacion?.toIso8601String(),
+      'fecha_modificacion': fechaModificacion?.toIso8601String(),
     };
   }
 
@@ -51,9 +59,10 @@ class Cliente {
     String? email,
     String? telefono,
     String? direccion,
-    String? dni,
-    DateTime? fechaRegistro,
-    bool? activo,
+    String? cuit,
+    String? observaciones,
+    DateTime? fechaCreacion,
+    DateTime? fechaModificacion,
   }) {
     return Cliente(
       id: id ?? this.id,
@@ -61,9 +70,24 @@ class Cliente {
       email: email ?? this.email,
       telefono: telefono ?? this.telefono,
       direccion: direccion ?? this.direccion,
-      dni: dni ?? this.dni,
-      fechaRegistro: fechaRegistro ?? this.fechaRegistro,
-      activo: activo ?? this.activo,
+      cuit: cuit ?? this.cuit,
+      observaciones: observaciones ?? this.observaciones,
+      fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+      fechaModificacion: fechaModificacion ?? this.fechaModificacion,
     );
   }
+
+  @override
+  String toString() {
+    return 'Cliente(id: $id, nombre: $nombre, email: $email, telefono: $telefono)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Cliente && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

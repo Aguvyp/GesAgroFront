@@ -5,7 +5,7 @@ import '../models/trabajo.dart';
 import '../models/campo.dart';
 import '../widgets/optimized_widgets.dart';
 import '../providers/optimized_providers.dart';
-import 'trabajo_form_dialog.dart';
+import 'forms/forms_screens.dart';
 
 class TrabajoDetailScreen extends ConsumerStatefulWidget {
   final Trabajo trabajo;
@@ -368,10 +368,12 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   }
 
   void _showEditDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => TrabajoFormDialog(
-        trabajo: widget.trabajo,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrabajoFormScreen(
+          trabajo: widget.trabajo,
+        ),
       ),
     ).then((_) {
       // TODO: Actualizar la lista con el trabajo editado cuando se cierre el diálogo

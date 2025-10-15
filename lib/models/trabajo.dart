@@ -48,20 +48,43 @@ class Trabajo {
       idMaquinas: json['id_maquinas'] != null 
           ? (json['id_maquinas'] is List 
               ? List<int>.from(json['id_maquinas'])
-              : [json['id_maquina'] as int])
+              : [json['id_maquinas'] as int])
           : [],
       idCampo: json['id_campo'] ?? 0,
       estado: json['estado'],
       observaciones: json['observaciones'],
-      esTercero: (json['a_terceros'] ?? json['es_tercero'] ?? json['esTercero'] ?? false) == true
-          || (json['a_terceros'] == 1)
-          || (json['es_tercero'] == 1),
+      esTercero: _parseBoolean(json['a_terceros']),
       cobrado: (json['cobrado'] ?? false) == true || (json['cobrado'] == 1),
       montoCobrado: json['monto_cobrado'] != null
           ? (json['monto_cobrado'] as num).toDouble()
           : (json['montoCobrado'] != null ? (json['montoCobrado'] as num).toDouble() : null),
       cliente: json['cliente'],
     );
+  }
+
+  // Helper method para parsear valores booleanos
+  static bool _parseBoolean(dynamic value) {
+    print('DEBUG: _parseBoolean recibió: $value (tipo: ${value.runtimeType})');
+    if (value == null) {
+      print('DEBUG: _parseBoolean retorna false (null)');
+      return false;
+    }
+    if (value is bool) {
+      print('DEBUG: _parseBoolean retorna $value (bool)');
+      return value;
+    }
+    if (value is int) {
+      bool result = value == 1;
+      print('DEBUG: _parseBoolean retorna $result (int: $value)');
+      return result;
+    }
+    if (value is String) {
+      bool result = value.toLowerCase() == 'true';
+      print('DEBUG: _parseBoolean retorna $result (string: $value)');
+      return result;
+    }
+    print('DEBUG: _parseBoolean retorna false (tipo desconocido)');
+    return false;
   }
 
   Map<String, dynamic> toJson() {

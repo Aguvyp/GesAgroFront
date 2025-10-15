@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/personal.dart';
 import '../../providers/optimized_providers.dart';
 import '../../widgets/optimized_widgets.dart';
-import 'personal_form_dialog.dart';
+import '../forms/forms_screens.dart';
 import 'personal_detail_screen.dart';
 
 class PersonalListScreen extends ConsumerStatefulWidget {
@@ -308,34 +308,33 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
   }
 
   void _showAddPersonalDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => PersonalFormDialog(
-        onSaved: () {
-          ref.read(personalProvider.notifier).loadPersonal();
-          OptimizedSnackBar.showSuccess(
-            context,
-            message: 'Personal agregado exitosamente',
-          );
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PersonalFormScreen(),
       ),
-    );
+    ).then((_) {
+      ref.read(personalProvider.notifier).loadPersonal();
+      OptimizedSnackBar.showSuccess(
+        context,
+        message: 'Personal agregado exitosamente',
+      );
+    });
   }
 
   void _showEditPersonalDialog(Personal personal) {
-    showDialog(
-      context: context,
-      builder: (context) => PersonalFormDialog(
-        personal: personal,
-        onSaved: () {
-          ref.read(personalProvider.notifier).loadPersonal();
-          OptimizedSnackBar.showSuccess(
-            context,
-            message: 'Personal actualizado exitosamente',
-          );
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PersonalFormScreen(personal: personal),
       ),
-    );
+    ).then((_) {
+      ref.read(personalProvider.notifier).loadPersonal();
+      OptimizedSnackBar.showSuccess(
+        context,
+        message: 'Personal actualizado exitosamente',
+      );
+    });
   }
 
   void _showDeleteConfirmation(Personal personal) {

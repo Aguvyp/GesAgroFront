@@ -41,6 +41,22 @@ class ApiService {
     }
   }
 
+  static Future<dynamic> patch(String endpoint, {Map<String, dynamic>? data}) async {
+    try {
+      print('ApiService: PATCH $endpoint');
+      if (data != null) {
+        print('ApiService: Data: ${jsonEncode(data)}');
+      }
+      final response = await ApiConfig.patch(endpoint, body: data != null ? jsonEncode(data) : null);
+      print('ApiService: Status code: ${response.statusCode}');
+      print('ApiService: Response body: ${response.body}');
+      return _handleResponse(response);
+    } catch (e) {
+      print('ApiService: Error PATCH $endpoint: $e');
+      throw Exception('Error PATCH $endpoint: $e');
+    }
+  }
+
   static Future<dynamic> delete(String endpoint) async {
     try {
       final response = await ApiConfig.delete(endpoint);
