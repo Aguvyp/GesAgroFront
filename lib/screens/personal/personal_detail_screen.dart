@@ -6,6 +6,7 @@ import '../../models/trabajo.dart';
 import '../../providers/optimized_providers.dart';
 import '../../services/trabajo_service.dart';
 import '../../widgets/optimized_widgets.dart';
+import '../../utils/constants.dart';
 import '../trabajo_detail_screen.dart';
 import '../forms/forms_screens.dart';
 
@@ -58,214 +59,266 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.personal.nombre),
-        elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
+        title: const Text('Detalles del Personal'),
+        backgroundColor: const Color(AppConstants.primaryColor),
         foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _showEditDialog(context),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header con información principal
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                          child: Text(
-                            widget.personal.initials,
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.personal.nombre,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.green,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Personal Activo',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
+            // Encabezado con nombre y estado
+            _buildHeader(),
+            const SizedBox(height: 32),
 
             // Información de contacto
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Información de Contacto',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+            _buildSection(
+              title: 'Información de Contacto',
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoRow('DNI', widget.personal.dni, Icons.badge),
+                  if (widget.personal.telefono != null && widget.personal.telefono!.isNotEmpty)
+                    _buildInfoRow('Teléfono', widget.personal.telefono!, Icons.phone),
+                  _buildInfoRow('ID', widget.personal.id?.toString() ?? 'N/A', Icons.fingerprint),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Trabajos realizados
+            _buildSection(
+              title: 'Trabajos Realizados',
+              content: _buildTrabajosSection(),
+            ),
+            const SizedBox(height: 100), // Espacio para los botones fijos
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _editPersonal(context),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Editar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(AppConstants.primaryColor).withOpacity(0.1),
+                    foregroundColor: const Color(AppConstants.primaryColor),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: const Color(AppConstants.primaryColor).withOpacity(0.3),
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow(
-                      'DNI',
-                      widget.personal.dni,
-                      Icons.badge,
-                    ),
-                    if (widget.personal.telefono != null && widget.personal.telefono!.isNotEmpty)
-                      _buildDetailRow(
-                        'Teléfono',
-                        widget.personal.telefono!,
-                        Icons.phone,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _deletePersonal(context),
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Eliminar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.withOpacity(0.1),
+                    foregroundColor: Colors.red.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Colors.red.withOpacity(0.3),
+                        width: 1,
                       ),
-                    _buildDetailRow(
-                      'ID',
-                      widget.personal.id?.toString() ?? 'N/A',
-                      Icons.fingerprint,
                     ),
-                  ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título principal con avatar
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: const Color(AppConstants.primaryColor).withOpacity(0.1),
+              child: Text(
+                widget.personal.initials,
+                style: const TextStyle(
+                  color: Color(AppConstants.primaryColor),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // Trabajos del personal
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          'Trabajos Realizados',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (_isLoadingTrabajos)
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                      ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.personal.nombre,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    const SizedBox(height: 16),
-                    _buildTrabajosSection(),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Acciones rápidas
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Acciones',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(AppConstants.successColor).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(AppConstants.successColor),
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showEditDialog(context),
-                            icon: const Icon(Icons.edit),
-                            label: const Text('Editar Personal'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showDeleteConfirmation(context),
-                            icon: const Icon(Icons.delete),
-                            label: const Text('Eliminar'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: const Text(
+                      'Personal Activo',
+                      style: TextStyle(
+                        color: Color(AppConstants.successColor),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
                     ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Línea elegante con gradiente
+        Container(
+          height: 3,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(AppConstants.primaryColor).withOpacity(0.3),
+                const Color(AppConstants.primaryColor),
+                const Color(AppConstants.primaryColor).withOpacity(0.3),
+              ],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required Widget content,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título con línea vertical distintiva
+        Row(
+          children: [
+            Container(
+              height: 24,
+              width: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(AppConstants.primaryColor),
+                    const Color(AppConstants.primaryColor).withOpacity(0.7),
                   ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
             ),
           ],
         ),
+        const SizedBox(height: 16),
+        
+        // Contenido
+        content,
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: Colors.grey[600],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -403,57 +456,17 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
   Color _getTrabajoColor(String? estado) {
     switch (estado?.toLowerCase()) {
       case 'completado':
-        return Colors.green;
+        return const Color(AppConstants.successColor);
       case 'en curso':
-        return Colors.orange;
+        return const Color(AppConstants.accentColor);
       case 'pendiente':
-        return Colors.blue;
+        return const Color(AppConstants.infoColor);
       default:
         return Colors.grey;
     }
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: Colors.grey[600],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditDialog(BuildContext context) {
+  void _editPersonal(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -462,7 +475,6 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
         ),
       ),
     ).then((_) {
-      // TODO: Actualizar la lista con el personal editado cuando se cierre el diálogo
       OptimizedSnackBar.showSuccess(
         context,
         message: 'Personal actualizado exitosamente',
@@ -470,7 +482,7 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
     });
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
+  void _deletePersonal(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -484,7 +496,7 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _deletePersonal();
+              await _deletePersonalAction();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Eliminar'),
@@ -494,7 +506,7 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
     );
   }
 
-  Future<void> _deletePersonal() async {
+  Future<void> _deletePersonalAction() async {
     try {
       await ref.read(personalProvider.notifier).deletePersonal(widget.personal.id!);
       if (mounted) {

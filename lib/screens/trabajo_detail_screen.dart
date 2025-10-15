@@ -5,6 +5,7 @@ import '../models/trabajo.dart';
 import '../models/campo.dart';
 import '../widgets/optimized_widgets.dart';
 import '../providers/optimized_providers.dart';
+import '../utils/constants.dart';
 import 'forms/forms_screens.dart';
 
 class TrabajoDetailScreen extends ConsumerStatefulWidget {
@@ -38,336 +39,261 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
     if (campoState is LoadedState<dynamic>) {
       campo = campoState.data as Campo?;
     }
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.trabajo.tipo} - ${widget.trabajo.cultivo}'),
-        elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
+        title: const Text('Detalles del Trabajo'),
+        backgroundColor: const Color(AppConstants.primaryColor),
         foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _showEditDialog(context),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header con información principal
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.work,
-                          color: _getTrabajoColor(widget.trabajo.estado),
-                          size: 32,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${widget.trabajo.tipo} - ${widget.trabajo.cultivo}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getTrabajoColor(widget.trabajo.estado).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _getTrabajoColor(widget.trabajo.estado),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  widget.trabajo.estado ?? 'Pendiente',
-                                  style: TextStyle(
-                                    color: _getTrabajoColor(widget.trabajo.estado),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            // Encabezado con título, fechas y estado
+            _buildHeader(campo),
+            const SizedBox(height: 32),
+
+            // Campo
+            _buildSection(
+              title: 'Campo',
+              content: Text(
+                '${campo?.nombre ?? 'Campo ID: ${widget.trabajo.idCampo}'} - ${campo?.superficieHa.toInt() ?? 0}ha',
+                style: const TextStyle(fontSize: 16),
               ),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 16),
-
-            // Información de fechas
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Fechas',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow(
-                      'Fecha de Inicio',
-                      DateFormat('dd/MM/yyyy').format(widget.trabajo.fechaInicio),
-                      Icons.play_arrow,
-                    ),
-                    if (widget.trabajo.fechaFin != null)
-                      _buildDetailRow(
-                        'Fecha de Fin',
-                        DateFormat('dd/MM/yyyy').format(widget.trabajo.fechaFin!),
-                        Icons.stop,
-                      ),
-                    if (widget.trabajo.durationDays > 0)
-                      _buildDetailRow(
-                        'Duración',
-                        '${widget.trabajo.durationDays} días',
-                        Icons.schedule,
-                      ),
-                  ],
-                ),
+            // Cliente
+            _buildSection(
+              title: 'Cliente',
+              content: Text(
+                widget.trabajo.esTercero 
+                  ? 'Trabajo a Terceros | ${widget.trabajo.cliente ?? 'No especificado'}'
+                  : 'Trabajo Propio',
+                style: const TextStyle(fontSize: 16),
               ),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 16),
-
-            // Información adicional
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Información Adicional',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+            // Personal y Máquinas
+            _buildSection(
+              title: 'Personal y Máquinas',
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Personal',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
                     ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow(
-                      'Campo',
-                      campo != null 
-                          ? campo.nombre 
-                          : campoState is LoadingState 
-                              ? 'Cargando...' 
-                              : 'Campo ID: ${widget.trabajo.idCampo}',
-                      Icons.landscape,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Máquina 1 - Máquina 2', // TODO: Implementar lista real de máquinas
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
                     ),
-                    if (campo != null)
-                      _buildDetailRow(
-                        'Hectáreas',
-                        '${campo.superficieHa.toStringAsFixed(2)} ha',
-                        Icons.straighten,
-                      ),
-                    _buildDetailRow(
-                      'Personal Asignado',
-                      '${widget.trabajo.idPersonal.length} persona(s)',
-                      Icons.people,
-                    ),
-                    _buildDetailRow(
-                      'Máquinas Asignadas',
-                      '${widget.trabajo.idMaquinas.length} máquina(s)',
-                      Icons.build,
-                    ),
-                    if (widget.trabajo.esTercero)
-                      _buildDetailRow(
-                        'Tipo de Trabajo',
-                        'Servicio a Terceros',
-                        Icons.business,
-                      ),
-                    if (widget.trabajo.cliente != null)
-                      _buildDetailRow(
-                        'Cliente',
-                        widget.trabajo.cliente!,
-                        Icons.person,
-                      ),
-                    if (widget.trabajo.cobrado)
-                      _buildDetailRow(
-                        'Estado de Pago',
-                        widget.trabajo.montoCobrado != null
-                            ? 'Cobrado - \$${widget.trabajo.montoCobrado!.toStringAsFixed(2)}'
-                            : 'Cobrado',
-                        Icons.payment,
-                      ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-
-            if (widget.trabajo.observaciones != null && widget.trabajo.observaciones!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              OptimizedCard(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Observaciones',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+            const SizedBox(height: 100), // Espacio para los botones fijos
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _editTrabajo(context),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Editar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(AppConstants.primaryColor).withOpacity(0.1),
+                    foregroundColor: const Color(AppConstants.primaryColor),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: const Color(AppConstants.primaryColor).withOpacity(0.3),
+                        width: 1,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.trabajo.observaciones!,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          height: 1.5,
-                        ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _deleteTrabajo(context),
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Eliminar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.withOpacity(0.1),
+                    foregroundColor: Colors.red.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Colors.red.withOpacity(0.3),
+                        width: 1,
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ],
-
-            const SizedBox(height: 16),
-
-            // Acciones rápidas
-            OptimizedCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Acciones',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showEditDialog(context),
-                            icon: const Icon(Icons.edit),
-                            label: const Text('Editar Trabajo'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              // TODO: Implementar cambiar estado
-                              OptimizedSnackBar.showInfo(
-                                context,
-                                message: 'Cambiar estado en desarrollo',
-                              );
-                            },
-                            icon: const Icon(Icons.swap_horiz),
-                            label: const Text('Cambiar Estado'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 20,
+  Widget _buildHeader(Campo? campo) {
+    final fechaInicio = DateFormat('dd/MM/yyyy').format(widget.trabajo.fechaInicio);
+    final fechaFin = widget.trabajo.fechaFin != null 
+        ? DateFormat('dd/MM/yyyy').format(widget.trabajo.fechaFin!)
+        : 'En curso';
+    final duracion = widget.trabajo.durationDays > 0 
+        ? ' (${widget.trabajo.durationDays} días)'
+        : '';
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título principal
+        Text(
+          '${widget.trabajo.tipo} - ${widget.trabajo.cultivo}',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        
+        // Fechas
+        Text(
+          '$fechaInicio - $fechaFin$duracion',
+          style: TextStyle(
+            fontSize: 16,
             color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+        ),
+        const SizedBox(height: 8),
+        
+        // Estado
+        Text(
+          widget.trabajo.estado ?? 'Pendiente',
+          style: TextStyle(
+            fontSize: 16,
+            color: _getTrabajoColor(widget.trabajo.estado),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // Línea elegante con gradiente
+        Container(
+          height: 3,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(AppConstants.primaryColor).withOpacity(0.3),
+                const Color(AppConstants.primaryColor),
+                const Color(AppConstants.primaryColor).withOpacity(0.3),
               ],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ),
+            borderRadius: BorderRadius.circular(2),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required Widget content,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título con línea vertical distintiva
+        Row(
+          children: [
+            Container(
+              height: 24,
+              width: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(AppConstants.primaryColor),
+                    const Color(AppConstants.primaryColor).withOpacity(0.7),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Contenido
+        content,
+      ],
     );
   }
 
   Color _getTrabajoColor(String? estado) {
     switch (estado?.toLowerCase()) {
       case 'completado':
-        return Colors.green;
+        return const Color(AppConstants.successColor);
       case 'en curso':
-        return Colors.orange;
+      case 'en progreso':
+        return const Color(AppConstants.accentColor);
       case 'pendiente':
-        return Colors.blue;
+        return const Color(AppConstants.infoColor);
       default:
         return Colors.grey;
     }
   }
 
-  void _showEditDialog(BuildContext context) {
+  void _editTrabajo(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -382,5 +308,36 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
         message: 'Trabajo actualizado exitosamente',
       );
     });
+  }
+
+  void _deleteTrabajo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Eliminación'),
+        content: const Text('¿Estás seguro de que quieres eliminar este trabajo? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implementar eliminación del trabajo
+              OptimizedSnackBar.showInfo(
+                context,
+                message: 'Eliminación en desarrollo',
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
   }
 }
