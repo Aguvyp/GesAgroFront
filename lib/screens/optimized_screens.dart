@@ -99,27 +99,28 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   const PopupMenuItem(
-                    value: 'view',
-                    child: Text('Ver Detalles'),
-                  ),
-                  const PopupMenuItem(
                     value: 'edit',
-                    child: Text('Editar'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 20),
+                        SizedBox(width: 8),
+                        Text('Editar'),
+                      ],
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'delete',
-                    child: Text('Eliminar'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, size: 20),
+                        SizedBox(width: 8),
+                        Text('Eliminar'),
+                      ],
+                    ),
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == 'view') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CampoDetailScreen(campo: campo),
-                      ),
-                    );
-                  } else if (value == 'edit') {
+                  if (value == 'edit') {
                     _showCampoForm(context, campo: campo);
                   } else if (value == 'delete') {
                     _showDeleteConfirmation(context, campo);
@@ -272,27 +273,28 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
               trailing: PopupMenuButton(
                 itemBuilder: (context) => [
                   const PopupMenuItem(
-                    value: 'view',
-                    child: Text('Ver Detalles'),
-                  ),
-                  const PopupMenuItem(
                     value: 'edit',
-                    child: Text('Editar'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 20),
+                        SizedBox(width: 8),
+                        Text('Editar'),
+                      ],
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'delete',
-                    child: Text('Eliminar'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, size: 20),
+                        SizedBox(width: 8),
+                        Text('Eliminar'),
+                      ],
+                    ),
                   ),
                 ],
                 onSelected: (value) {
-                  if (value == 'view') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
-                      ),
-                    );
-                  } else if (value == 'edit') {
+                  if (value == 'edit') {
                     _showTrabajoForm(context, trabajo: trabajo);
                   } else if (value == 'delete') {
                     _showDeleteConfirmation(context, trabajo);
