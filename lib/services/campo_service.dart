@@ -1,23 +1,13 @@
 import '../models/campo.dart';
-import '../utils/constants.dart';
-import 'api_service.dart';
+import 'optimized_api_service.dart';
 
 class CampoService {
+  static final ApiService _apiService = ApiService();
+
   static Future<List<Campo>> getCampos() async {
     try {
-      final response = await ApiService.get(AppConstants.camposListEndpoint);
-      
-      // Manejar diferentes formatos de respuesta
-      List<dynamic> camposData;
-      if (response is List) {
-        camposData = response;
-      } else if (response is Map<String, dynamic>) {
-        camposData = response['data'] ?? response['campos'] ?? [];
-      } else {
-        camposData = [];
-      }
-      
-      return camposData.map((json) => Campo.fromJson(json)).toList();
+      await _apiService.initialize();
+      return await _apiService.getCampos();
     } catch (e) {
       print('Error en CampoService.getCampos: $e');
       throw Exception('Error al obtener campos: $e');
@@ -26,8 +16,8 @@ class CampoService {
 
   static Future<Campo> getCampo(int id) async {
     try {
-      final response = await ApiService.get('/campos/$id');
-      return Campo.fromJson(response);
+      await _apiService.initialize();
+      return await _apiService.getCampo(id);
     } catch (e) {
       throw Exception('Error al obtener campo: $e');
     }
@@ -35,11 +25,8 @@ class CampoService {
 
   static Future<Campo> createCampo(Campo campo) async {
     try {
-      final response = await ApiService.post('/campos/', campo.toJson());
-      if (response is Map<String, dynamic>) {
-        return Campo.fromJson(response);
-      }
-      throw Exception('Respuesta inesperada al crear campo');
+      await _apiService.initialize();
+      return await _apiService.createCampo(campo.toJson());
     } catch (e) {
       throw Exception('Error al crear campo: $e');
     }
@@ -47,8 +34,8 @@ class CampoService {
 
   static Future<Campo> updateCampo(Campo campo) async {
     try {
-      final response = await ApiService.put('/campos/${campo.id}', campo.toJson());
-      return Campo.fromJson(response);
+      await _apiService.initialize();
+      return await _apiService.updateCampo(campo.id!, campo.toJson());
     } catch (e) {
       throw Exception('Error al actualizar campo: $e');
     }
@@ -56,7 +43,8 @@ class CampoService {
 
   static Future<void> deleteCampo(int id) async {
     try {
-      await ApiService.delete('/campos/$id');
+      await _apiService.initialize();
+      await _apiService.deleteCampo(id);
     } catch (e) {
       throw Exception('Error al eliminar campo: $e');
     }
@@ -64,9 +52,13 @@ class CampoService {
 
   static Future<List<Campo>> searchCampos(String query) async {
     try {
-      final response = await ApiService.get('/campos/search?q=$query');
-      final List<dynamic> camposData = response['data'] ?? response;
-      return camposData.map((json) => Campo.fromJson(json)).toList();
+      await _apiService.initialize();
+      // Usar el método getCampos con filtros si está disponible, o implementar búsqueda
+      final campos = await _apiService.getCampos();
+      return campos.where((campo) => 
+        campo.nombre.toLowerCase().contains(query.toLowerCase()) ||
+        (campo.detalles?.toLowerCase().contains(query.toLowerCase()) ?? false)
+      ).toList();
     } catch (e) {
       throw Exception('Error al buscar campos: $e');
     }

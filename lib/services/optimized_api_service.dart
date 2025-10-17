@@ -582,6 +582,30 @@ class ApiService {
     }
   }
 
+  /// Probar endpoint de campos con autenticación Bearer
+  Future<Map<String, dynamic>> testCamposEndpoint() async {
+    try {
+      _logger.info('🧪 Probando endpoint /campos/ con autenticación Bearer');
+      final response = await _httpClient.get('/campos/');
+      
+      _logger.info('✅ Respuesta del endpoint /campos/: ${response.statusCode}');
+      _logger.debug('📊 Datos recibidos: ${response.data}');
+      
+      return {
+        'success': true,
+        'statusCode': response.statusCode,
+        'data': response.data,
+        'headers': response.headers,
+      };
+    } catch (e) {
+      _logger.error('❌ Error probando endpoint /campos/: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   /// Limpiar caché del cliente HTTP
   Future<void> clearCache() async {
     await _httpClient.clearCache();
