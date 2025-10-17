@@ -3,13 +3,13 @@ import '../utils/constants.dart';
 import 'api_service.dart';
 
 class CreditoService {
-  static Future<List<Credito>> getCreditos({int? skip, int? limit, String? estado}) async {
+  /// Listar todos los créditos con paginación
+  static Future<List<Credito>> getCreditos({int? skip, int? limit}) async {
     try {
       String endpoint = '${AppConstants.creditosEndpoint}';
       final params = <String>[];
       if (skip != null) params.add('skip=$skip');
       if (limit != null) params.add('limit=$limit');
-      if (estado != null) params.add('estado=$estado');
       
       if (params.isNotEmpty) {
         endpoint += '?${params.join('&')}';
@@ -23,6 +23,7 @@ class CreditoService {
     }
   }
 
+  /// Obtener crédito específico por ID
   static Future<Credito> getCredito(int id) async {
     try {
       final response = await ApiService.get('${AppConstants.creditosEndpoint}/$id');
@@ -32,9 +33,10 @@ class CreditoService {
     }
   }
 
+  /// Crear nuevo crédito
   static Future<Credito> createCredito(Credito credito) async {
     try {
-      final response = await ApiService.post(AppConstants.creditosEndpoint, credito.toJson());
+      final response = await ApiService.post(AppConstants.creditosEndpoint, credito.toCreateJson());
       if (response is Map<String, dynamic>) {
         return Credito.fromJson(response);
       }
@@ -44,15 +46,17 @@ class CreditoService {
     }
   }
 
+  /// Modificar crédito existente
   static Future<Credito> updateCredito(Credito credito) async {
     try {
-      final response = await ApiService.put('${AppConstants.creditosEndpoint}/${credito.id}', credito.toJson());
+      final response = await ApiService.put('${AppConstants.creditosEndpoint}/${credito.id}', credito.toUpdateJson());
       return Credito.fromJson(response);
     } catch (e) {
       throw Exception('Error al actualizar crédito: $e');
     }
   }
 
+  /// Eliminar crédito
   static Future<void> deleteCredito(int id) async {
     try {
       await ApiService.delete('${AppConstants.creditosEndpoint}/$id');
@@ -60,68 +64,79 @@ class CreditoService {
       throw Exception('Error al eliminar crédito: $e');
     }
   }
-
-  static Future<List<Credito>> getCreditosByCliente(int clienteId) async {
-    try {
-      final response = await ApiService.get('${AppConstants.creditosEndpoint}/cliente/$clienteId');
-      final List<dynamic> creditosData = response['data'] ?? response;
-      return creditosData.map((json) => Credito.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('Error al obtener créditos del cliente: $e');
-    }
-  }
-
-  static Future<List<Credito>> getCreditosActivos() async {
-    try {
-      final response = await ApiService.get('${AppConstants.creditosEndpoint}/activos');
-      final List<dynamic> creditosData = response['data'] ?? response;
-      return creditosData.map((json) => Credito.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('Error al obtener créditos activos: $e');
-    }
-  }
-
-  static Future<List<Credito>> getCreditosVencidos() async {
-    try {
-      final response = await ApiService.get('${AppConstants.creditosEndpoint}/vencidos');
-      final List<dynamic> creditosData = response['data'] ?? response;
-      return creditosData.map((json) => Credito.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('Error al obtener créditos vencidos: $e');
-    }
-  }
 }
 
 class CuotaCreditoService {
+  /// Listar todas las cuotas con paginación
+  static Future<List<CuotaCredito>> getCuotas({int? skip, int? limit}) async {
+    try {
+      String endpoint = '${AppConstants.cuotasCreditoEndpoint}';
+      final params = <String>[];
+      if (skip != null) params.add('skip=$skip');
+      if (limit != null) params.add('limit=$limit');
+      
+      if (params.isNotEmpty) {
+        endpoint += '?${params.join('&')}';
+      }
+      
+      final response = await ApiService.get(endpoint);
+      final List<dynamic> cuotasData = response is List ? response : (response['data'] ?? []);
+      return cuotasData.map((json) => CuotaCredito.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Error al obtener cuotas: $e');
+    }
+  }
+
+  /// Obtener cuota específica por ID
+  static Future<CuotaCredito> getCuota(int id) async {
+    try {
+      final response = await ApiService.get('${AppConstants.cuotasCreditoEndpoint}/$id');
+      return CuotaCredito.fromJson(response);
+    } catch (e) {
+      throw Exception('Error al obtener cuota: $e');
+    }
+  }
+
+  /// Crear nueva cuota
+  static Future<CuotaCredito> createCuota(CuotaCredito cuota) async {
+    try {
+      final response = await ApiService.post(AppConstants.cuotasCreditoEndpoint, cuota.toCreateJson());
+      if (response is Map<String, dynamic>) {
+        return CuotaCredito.fromJson(response);
+      }
+      throw Exception('Respuesta inesperada al crear cuota');
+    } catch (e) {
+      throw Exception('Error al crear cuota: $e');
+    }
+  }
+
+  /// Modificar cuota existente
+  static Future<CuotaCredito> updateCuota(CuotaCredito cuota) async {
+    try {
+      final response = await ApiService.put('${AppConstants.cuotasCreditoEndpoint}/${cuota.id}', cuota.toUpdateJson());
+      return CuotaCredito.fromJson(response);
+    } catch (e) {
+      throw Exception('Error al actualizar cuota: $e');
+    }
+  }
+
+  /// Eliminar cuota
+  static Future<void> deleteCuota(int id) async {
+    try {
+      await ApiService.delete('${AppConstants.cuotasCreditoEndpoint}/$id');
+    } catch (e) {
+      throw Exception('Error al eliminar cuota: $e');
+    }
+  }
+
+  /// Obtener cuotas por crédito específico
   static Future<List<CuotaCredito>> getCuotasByCredito(int creditoId) async {
     try {
-      final response = await ApiService.get('${AppConstants.cuotasCreditoEndpoint}/credito/$creditoId');
-      final List<dynamic> cuotasData = response['data'] ?? response;
+      final response = await ApiService.get('${AppConstants.cuotasCreditoEndpoint}/?id_credito=$creditoId');
+      final List<dynamic> cuotasData = response is List ? response : (response['data'] ?? []);
       return cuotasData.map((json) => CuotaCredito.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Error al obtener cuotas del crédito: $e');
-    }
-  }
-
-  static Future<CuotaCredito> pagarCuota(int cuotaId, double montoPagado) async {
-    try {
-      final response = await ApiService.put('${AppConstants.cuotasCreditoEndpoint}/$cuotaId/pagar', {
-        'monto_pagado': montoPagado,
-        'fecha_pago': DateTime.now().toIso8601String(),
-      });
-      return CuotaCredito.fromJson(response);
-    } catch (e) {
-      throw Exception('Error al pagar cuota: $e');
-    }
-  }
-
-  static Future<List<CuotaCredito>> getCuotasVencidas() async {
-    try {
-      final response = await ApiService.get('${AppConstants.cuotasCreditoEndpoint}/vencidas');
-      final List<dynamic> cuotasData = response['data'] ?? response;
-      return cuotasData.map((json) => CuotaCredito.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('Error al obtener cuotas vencidas: $e');
     }
   }
 }

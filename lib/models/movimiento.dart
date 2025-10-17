@@ -1,79 +1,123 @@
 class Movimiento {
   final int id;
-  final int insumoId;
-  final String tipo; // 'Entrada', 'Salida'
-  final double cantidad;
-  final double precioUnitario;
-  final DateTime fecha;
-  final String motivo;
-  final String? observaciones;
-  final String? referencia; // Número de factura, orden de trabajo, etc.
+  final double monto;
+  final DateTime? fecha;
+  final String? descripcion;
+  final String? categoria;
+  final bool pagado;
+  final String? formaPago; // heredado de Costos
+  final String? metodoPago; // heredado de Pagos
+  final bool esCobro; // true=Ingreso, false=Gasto
+  final String? destinatario; // para gastos
+  final String? cobrarA; // para ingresos pendientes
+  final DateTime? fechaPagoLimite;
+  final int? idTrabajo;
+  final int? idFactura;
+  final DateTime? fechaPago; // efectiva
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Movimiento({
     required this.id,
-    required this.insumoId,
-    required this.tipo,
-    required this.cantidad,
-    required this.precioUnitario,
-    required this.fecha,
-    required this.motivo,
-    this.observaciones,
-    this.referencia,
+    required this.monto,
+    this.fecha,
+    this.descripcion,
+    this.categoria,
+    this.pagado = false,
+    this.formaPago,
+    this.metodoPago,
+    required this.esCobro,
+    this.destinatario,
+    this.cobrarA,
+    this.fechaPagoLimite,
+    this.idTrabajo,
+    this.idFactura,
+    this.fechaPago,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Movimiento.fromJson(Map<String, dynamic> json) {
     return Movimiento(
       id: json['id'],
-      insumoId: json['insumo_id'],
-      tipo: json['tipo'],
-      cantidad: json['cantidad'].toDouble(),
-      precioUnitario: json['precio_unitario'].toDouble(),
-      fecha: DateTime.parse(json['fecha']),
-      motivo: json['motivo'],
-      observaciones: json['observaciones'],
-      referencia: json['referencia'],
+      monto: (json['monto'] as num).toDouble(),
+      fecha: json['fecha'] != null ? DateTime.parse(json['fecha']) : null,
+      descripcion: json['descripcion'],
+      categoria: json['categoria'],
+      pagado: json['pagado'] ?? false,
+      formaPago: json['forma_pago'],
+      metodoPago: json['metodo_pago'],
+      esCobro: json['es_cobro'] ?? false,
+      destinatario: json['destinatario'],
+      cobrarA: json['cobrar_a'],
+      fechaPagoLimite: json['fecha_pago_limite'] != null ? DateTime.parse(json['fecha_pago_limite']) : null,
+      idTrabajo: json['id_trabajo'],
+      idFactura: json['id_factura'],
+      fechaPago: json['fecha_pago'] != null ? DateTime.parse(json['fecha_pago']) : null,
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'insumo_id': insumoId,
-      'tipo': tipo,
-      'cantidad': cantidad,
-      'precio_unitario': precioUnitario,
-      'fecha': fecha.toIso8601String(),
-      'motivo': motivo,
-      'observaciones': observaciones,
-      'referencia': referencia,
+      'monto': monto,
+      'fecha': fecha?.toIso8601String().split('T')[0],
+      'descripcion': descripcion,
+      'categoria': categoria,
+      'pagado': pagado,
+      'forma_pago': formaPago,
+      'metodo_pago': metodoPago,
+      'es_cobro': esCobro,
+      'destinatario': destinatario,
+      'cobrar_a': cobrarA,
+      'fecha_pago_limite': fechaPagoLimite?.toIso8601String().split('T')[0],
+      'id_trabajo': idTrabajo,
+      'id_factura': idFactura,
+      'fecha_pago': fechaPago?.toIso8601String().split('T')[0],
     };
   }
 
-  bool get esEntrada => tipo == 'Entrada';
-  bool get esSalida => tipo == 'Salida';
-  double get valorTotal => cantidad * precioUnitario;
+  String get tipoMovimiento => esCobro ? 'Ingreso' : 'Gasto';
 
   Movimiento copyWith({
     int? id,
-    int? insumoId,
-    String? tipo,
-    double? cantidad,
-    double? precioUnitario,
+    double? monto,
     DateTime? fecha,
-    String? motivo,
-    String? observaciones,
-    String? referencia,
+    String? descripcion,
+    String? categoria,
+    bool? pagado,
+    String? formaPago,
+    String? metodoPago,
+    bool? esCobro,
+    String? destinatario,
+    String? cobrarA,
+    DateTime? fechaPagoLimite,
+    int? idTrabajo,
+    int? idFactura,
+    DateTime? fechaPago,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Movimiento(
       id: id ?? this.id,
-      insumoId: insumoId ?? this.insumoId,
-      tipo: tipo ?? this.tipo,
-      cantidad: cantidad ?? this.cantidad,
-      precioUnitario: precioUnitario ?? this.precioUnitario,
+      monto: monto ?? this.monto,
       fecha: fecha ?? this.fecha,
-      motivo: motivo ?? this.motivo,
-      observaciones: observaciones ?? this.observaciones,
-      referencia: referencia ?? this.referencia,
+      descripcion: descripcion ?? this.descripcion,
+      categoria: categoria ?? this.categoria,
+      pagado: pagado ?? this.pagado,
+      formaPago: formaPago ?? this.formaPago,
+      metodoPago: metodoPago ?? this.metodoPago,
+      esCobro: esCobro ?? this.esCobro,
+      destinatario: destinatario ?? this.destinatario,
+      cobrarA: cobrarA ?? this.cobrarA,
+      fechaPagoLimite: fechaPagoLimite ?? this.fechaPagoLimite,
+      idTrabajo: idTrabajo ?? this.idTrabajo,
+      idFactura: idFactura ?? this.idFactura,
+      fechaPago: fechaPago ?? this.fechaPago,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

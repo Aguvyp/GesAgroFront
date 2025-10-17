@@ -1,122 +1,120 @@
 class Credito {
   final int id;
-  final int clienteId;
-  final double montoTotal;
-  final double montoPagado;
-  final DateTime fechaInicio;
-  final DateTime fechaVencimiento;
-  final double tasaInteres;
-  final String estado; // 'Activo', 'Pagado', 'Vencido', 'Cancelado'
-  final String? observaciones;
-  final List<CuotaCredito> cuotas;
+  final String entidad;
+  final double montoOtorgado;
+  final double tasaInteresAnual;
+  final int plazoMeses;
+  final DateTime fechaDesembolso;
+  final String estado; // 'Activo', 'Finalizado', 'Cancelado', 'Suspendido'
 
   Credito({
     required this.id,
-    required this.clienteId,
-    required this.montoTotal,
-    this.montoPagado = 0.0,
-    required this.fechaInicio,
-    required this.fechaVencimiento,
-    this.tasaInteres = 0.0,
+    required this.entidad,
+    required this.montoOtorgado,
+    required this.tasaInteresAnual,
+    required this.plazoMeses,
+    required this.fechaDesembolso,
     this.estado = 'Activo',
-    this.observaciones,
-    this.cuotas = const [],
   });
 
   factory Credito.fromJson(Map<String, dynamic> json) {
     return Credito(
       id: json['id'],
-      clienteId: json['cliente_id'],
-      montoTotal: json['monto_total'].toDouble(),
-      montoPagado: json['monto_pagado']?.toDouble() ?? 0.0,
-      fechaInicio: DateTime.parse(json['fecha_inicio']),
-      fechaVencimiento: DateTime.parse(json['fecha_vencimiento']),
-      tasaInteres: json['tasa_interes']?.toDouble() ?? 0.0,
+      entidad: json['entidad'],
+      montoOtorgado: json['monto_otorgado'].toDouble(),
+      tasaInteresAnual: json['tasa_interes_anual'].toDouble(),
+      plazoMeses: json['plazo_meses'],
+      fechaDesembolso: DateTime.parse(json['fecha_desembolso']),
       estado: json['estado'],
-      observaciones: json['observaciones'],
-      cuotas: (json['cuotas'] as List<dynamic>?)
-          ?.map((cuota) => CuotaCredito.fromJson(cuota))
-          .toList() ?? [],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'cliente_id': clienteId,
-      'monto_total': montoTotal,
-      'monto_pagado': montoPagado,
-      'fecha_inicio': fechaInicio.toIso8601String(),
-      'fecha_vencimiento': fechaVencimiento.toIso8601String(),
-      'tasa_interes': tasaInteres,
+      'entidad': entidad,
+      'monto_otorgado': montoOtorgado,
+      'tasa_interes_anual': tasaInteresAnual,
+      'plazo_meses': plazoMeses,
+      'fecha_desembolso': fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
       'estado': estado,
-      'observaciones': observaciones,
-      'cuotas': cuotas.map((cuota) => cuota.toJson()).toList(),
     };
   }
 
-  double get montoPendiente => montoTotal - montoPagado;
+  // Método para crear un nuevo crédito (sin ID)
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'entidad': entidad,
+      'monto_otorgado': montoOtorgado,
+      'tasa_interes_anual': tasaInteresAnual,
+      'plazo_meses': plazoMeses,
+      'fecha_desembolso': fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
+      'estado': estado,
+    };
+  }
+
+  // Método para actualizar un crédito (solo campos modificables)
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      'entidad': entidad,
+      'monto_otorgado': montoOtorgado,
+      'tasa_interes_anual': tasaInteresAnual,
+      'plazo_meses': plazoMeses,
+      'fecha_desembolso': fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
+      'estado': estado,
+    };
+  }
+
   bool get estaActivo => estado == 'Activo';
-  bool get estaVencido => estado == 'Vencido' || (DateTime.now().isAfter(fechaVencimiento) && estado == 'Activo');
-  bool get estaPagado => estado == 'Pagado';
+  bool get estaFinalizado => estado == 'Finalizado';
+  bool get estaCancelado => estado == 'Cancelado';
+  bool get estaSuspendido => estado == 'Suspendido';
 
   Credito copyWith({
     int? id,
-    int? clienteId,
-    double? montoTotal,
-    double? montoPagado,
-    DateTime? fechaInicio,
-    DateTime? fechaVencimiento,
-    double? tasaInteres,
+    String? entidad,
+    double? montoOtorgado,
+    double? tasaInteresAnual,
+    int? plazoMeses,
+    DateTime? fechaDesembolso,
     String? estado,
-    String? observaciones,
-    List<CuotaCredito>? cuotas,
   }) {
     return Credito(
       id: id ?? this.id,
-      clienteId: clienteId ?? this.clienteId,
-      montoTotal: montoTotal ?? this.montoTotal,
-      montoPagado: montoPagado ?? this.montoPagado,
-      fechaInicio: fechaInicio ?? this.fechaInicio,
-      fechaVencimiento: fechaVencimiento ?? this.fechaVencimiento,
-      tasaInteres: tasaInteres ?? this.tasaInteres,
+      entidad: entidad ?? this.entidad,
+      montoOtorgado: montoOtorgado ?? this.montoOtorgado,
+      tasaInteresAnual: tasaInteresAnual ?? this.tasaInteresAnual,
+      plazoMeses: plazoMeses ?? this.plazoMeses,
+      fechaDesembolso: fechaDesembolso ?? this.fechaDesembolso,
       estado: estado ?? this.estado,
-      observaciones: observaciones ?? this.observaciones,
-      cuotas: cuotas ?? this.cuotas,
     );
   }
 }
 
 class CuotaCredito {
   final int id;
-  final int creditoId;
+  final int idCredito;
   final int numeroCuota;
-  final double monto;
   final DateTime fechaVencimiento;
-  final DateTime? fechaPago;
-  final double? montoPagado;
-  final String estado; // 'Pendiente', 'Pagada', 'Vencida'
+  final double montoTotal;
+  final String estado; // 'Pendiente', 'Pagada', 'Vencida', 'Cancelada'
 
   CuotaCredito({
     required this.id,
-    required this.creditoId,
+    required this.idCredito,
     required this.numeroCuota,
-    required this.monto,
     required this.fechaVencimiento,
-    this.fechaPago,
-    this.montoPagado,
+    required this.montoTotal,
     this.estado = 'Pendiente',
   });
 
   factory CuotaCredito.fromJson(Map<String, dynamic> json) {
     return CuotaCredito(
       id: json['id'],
-      creditoId: json['credito_id'],
+      idCredito: json['id_credito'],
       numeroCuota: json['numero_cuota'],
-      monto: json['monto'].toDouble(),
       fechaVencimiento: DateTime.parse(json['fecha_vencimiento']),
-      fechaPago: json['fecha_pago'] != null ? DateTime.parse(json['fecha_pago']) : null,
-      montoPagado: json['monto_pagado']?.toDouble(),
+      montoTotal: json['monto_total'].toDouble(),
       estado: json['estado'],
     );
   }
@@ -124,12 +122,32 @@ class CuotaCredito {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'credito_id': creditoId,
+      'id_credito': idCredito,
       'numero_cuota': numeroCuota,
-      'monto': monto,
-      'fecha_vencimiento': fechaVencimiento.toIso8601String(),
-      'fecha_pago': fechaPago?.toIso8601String(),
-      'monto_pagado': montoPagado,
+      'fecha_vencimiento': fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
+      'monto_total': montoTotal,
+      'estado': estado,
+    };
+  }
+
+  // Método para crear una nueva cuota (sin ID)
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'id_credito': idCredito,
+      'numero_cuota': numeroCuota,
+      'fecha_vencimiento': fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
+      'monto_total': montoTotal,
+      'estado': estado,
+    };
+  }
+
+  // Método para actualizar una cuota (solo campos modificables)
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      'id_credito': idCredito,
+      'numero_cuota': numeroCuota,
+      'fecha_vencimiento': fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
+      'monto_total': montoTotal,
       'estado': estado,
     };
   }
@@ -137,4 +155,23 @@ class CuotaCredito {
   bool get estaPagada => estado == 'Pagada';
   bool get estaVencida => estado == 'Vencida' || (DateTime.now().isAfter(fechaVencimiento) && estado == 'Pendiente');
   bool get estaPendiente => estado == 'Pendiente' && !estaVencida;
+  bool get estaCancelada => estado == 'Cancelada';
+
+  CuotaCredito copyWith({
+    int? id,
+    int? idCredito,
+    int? numeroCuota,
+    DateTime? fechaVencimiento,
+    double? montoTotal,
+    String? estado,
+  }) {
+    return CuotaCredito(
+      id: id ?? this.id,
+      idCredito: idCredito ?? this.idCredito,
+      numeroCuota: numeroCuota ?? this.numeroCuota,
+      fechaVencimiento: fechaVencimiento ?? this.fechaVencimiento,
+      montoTotal: montoTotal ?? this.montoTotal,
+      estado: estado ?? this.estado,
+    );
+  }
 }

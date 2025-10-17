@@ -89,7 +89,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
       ),
       const OptimizedCamposListScreen(),
       const OptimizedTrabajosListScreen(),
-      const OptimizedCostosScreen(),
+      const OptimizedMantenimientosScreen(),
       const OptimizedProfileScreen(),
     ];
   }
@@ -273,8 +273,8 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
                       const SizedBox(height: 8),
                       _buildModernDrawerItem(
                         context,
-                        'Costos',
-                        Icons.attach_money_rounded,
+                        'Mantenimientos',
+                        Icons.build_rounded,
                         3,
                       ),
                       const SizedBox(height: 8),

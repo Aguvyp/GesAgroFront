@@ -14,6 +14,7 @@ import '../models/maquina.dart';
 import '../models/personal.dart';
 import '../models/trabajo.dart';
 import '../models/usuario.dart';
+import '../models/movimiento.dart';
 
 /// Estados base para todos los providers
 abstract class BaseState extends Equatable {
@@ -290,6 +291,71 @@ class CostosNotifier extends StateNotifier<BaseState> {
     } catch (e) {
       state = ErrorState('Error eliminando costo: $e');
       _logger.error('Error deleting costo', e);
+    }
+  }
+}
+
+/// ==================== MOVIMIENTOS PROVIDER ====================
+
+final movimientosProvider = StateNotifierProvider<MovimientosNotifier, BaseState>((ref) {
+  return MovimientosNotifier();
+});
+
+class MovimientosNotifier extends StateNotifier<BaseState> {
+  final AppLogger _logger = AppLogger.instance;
+
+  MovimientosNotifier() : super(const InitialState());
+
+  Future<void> loadMovimientos() async {
+    try {
+      state = const LoadingState();
+      final apiService = ApiService();
+      await apiService.initialize();
+      final movimientos = await apiService.getMovimientos();
+      state = LoadedState<List<Movimiento>>(movimientos);
+      _logger.info('Movimientos loaded successfully: ${movimientos.length} items');
+    } catch (e) {
+      state = ErrorState('Error cargando movimientos: $e');
+      _logger.error('Error loading movimientos', e);
+    }
+  }
+
+  Future<void> createMovimiento(Map<String, dynamic> data) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.createMovimiento(data);
+      await loadMovimientos();
+      _logger.info('Movimiento created successfully');
+    } catch (e) {
+      state = ErrorState('Error creando movimiento: $e');
+      _logger.error('Error creating movimiento', e);
+    }
+  }
+
+  Future<void> updateMovimiento(int id, Map<String, dynamic> data) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.updateMovimiento(id, data);
+      await loadMovimientos();
+      _logger.info('Movimiento updated successfully');
+    } catch (e) {
+      state = ErrorState('Error actualizando movimiento: $e');
+      _logger.error('Error updating movimiento', e);
+    }
+  }
+
+  Future<void> deleteMovimiento(int id) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.deleteMovimiento(id);
+      await loadMovimientos();
+      _logger.info('Movimiento deleted successfully');
+    } catch (e) {
+      state = ErrorState('Error eliminando movimiento: $e');
+      _logger.error('Error deleting movimiento', e);
     }
   }
 }
@@ -754,6 +820,20 @@ class MantenimientosNotifier extends StateNotifier<BaseState> {
       _logger.error('Error creating mantenimiento', e);
     }
   }
+
+  Future<void> updateMantenimiento(int id, Map<String, dynamic> data) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.updateMantenimiento(id, data);
+      
+      await loadMantenimientos();
+      _logger.info('Mantenimiento updated successfully');
+    } catch (e) {
+      state = ErrorState('Error actualizando mantenimiento: $e');
+      _logger.error('Error updating mantenimiento', e);
+    }
+  }
 }
 
 /// ==================== CRÉDITOS PROVIDER ====================
@@ -783,17 +863,31 @@ class CreditosNotifier extends StateNotifier<BaseState> {
     }
   }
 
-  Future<void> createCredito(Map<String, dynamic> data) async {
+  Future<void> createCredito(Credito credito) async {
     try {
       final apiService = ApiService();
       await apiService.initialize();
-      await apiService.createCredito(data);
+      await apiService.createCredito(credito.toCreateJson());
       
       await loadCreditos(); // Recargar lista
       _logger.info('Credito created successfully');
     } catch (e) {
       state = ErrorState('Error creando crédito: $e');
       _logger.error('Error creating credito', e);
+    }
+  }
+
+  Future<void> updateCredito(Credito credito) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.updateCredito(credito.id, credito.toUpdateJson());
+      
+      await loadCreditos(); // Recargar lista
+      _logger.info('Credito updated successfully');
+    } catch (e) {
+      state = ErrorState('Error actualizando crédito: $e');
+      _logger.error('Error updating credito', e);
     }
   }
 }

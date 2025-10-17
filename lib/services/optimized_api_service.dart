@@ -11,6 +11,7 @@ import '../../models/mantenimiento.dart';
 import '../../models/maquina.dart';
 import '../../models/personal.dart';
 import '../../models/trabajo.dart';
+import '../../models/movimiento.dart';
 import '../../models/usuario.dart';
 
 /// Servicio API ultra optimizado con todos los endpoints
@@ -253,8 +254,11 @@ class ApiService {
   
   /// Listar costos
   Future<List<Costo>> getCostos() async {
-    final response = await _httpClient.get('/costos/');
-    return (response.data as List).map((json) => Costo.fromJson(json)).toList();
+    final responseData = await getCostosFlutter();
+    
+    // El endpoint Flutter devuelve {success: true, data: [...], pagination: {...}}
+    final List<dynamic> costosData = responseData['data'] ?? [];
+    return costosData.map((json) => Costo.fromJson(json)).toList();
   }
 
   /// Obtener costo por ID
@@ -399,6 +403,17 @@ class ApiService {
     return Mantenimiento.fromJson(response.data);
   }
 
+  /// Actualizar mantenimiento
+  Future<Mantenimiento> updateMantenimiento(int id, Map<String, dynamic> data) async {
+    final response = await _httpClient.put('/mantenimientos/$id', data: data);
+    return Mantenimiento.fromJson(response.data);
+  }
+
+  /// Eliminar mantenimiento
+  Future<void> deleteMantenimiento(int id) async {
+    await _httpClient.delete('/mantenimientos/$id');
+  }
+
   /// ==================== CRÉDITOS ====================
   
   /// Listar créditos
@@ -411,6 +426,37 @@ class ApiService {
   Future<Credito> createCredito(Map<String, dynamic> data) async {
     final response = await _httpClient.post('/creditos/', data: data);
     return Credito.fromJson(response.data);
+  }
+
+  /// ==================== MOVIMIENTOS ====================
+  Future<List<Movimiento>> getMovimientos() async {
+    final response = await _httpClient.get('/movimientos/');
+    return (response.data as List).map((json) => Movimiento.fromJson(json)).toList();
+  }
+
+  Future<Movimiento> createMovimiento(Map<String, dynamic> data) async {
+    final response = await _httpClient.post('/movimientos/', data: data);
+    return Movimiento.fromJson(response.data);
+  }
+
+  Future<Movimiento> updateMovimiento(int id, Map<String, dynamic> data) async {
+    final response = await _httpClient.put('/movimientos/$id', data: data);
+    return Movimiento.fromJson(response.data);
+  }
+
+  Future<void> deleteMovimiento(int id) async {
+    await _httpClient.delete('/movimientos/$id');
+  }
+
+  /// Actualizar crédito
+  Future<Credito> updateCredito(int id, Map<String, dynamic> data) async {
+    final response = await _httpClient.put('/creditos/$id', data: data);
+    return Credito.fromJson(response.data);
+  }
+
+  /// Eliminar crédito
+  Future<void> deleteCredito(int id) async {
+    await _httpClient.delete('/creditos/$id');
   }
 
   /// ==================== ENDPOINTS FLUTTER OPTIMIZADOS ====================
