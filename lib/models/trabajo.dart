@@ -38,7 +38,9 @@ class Trabajo {
       id: json['id'],
       tipo: json['tipo'] ?? '',
       cultivo: json['cultivo'] ?? '',
-      fechaInicio: DateTime.parse(json['fecha_inicio']),
+      fechaInicio: json['fecha_inicio'] != null 
+          ? DateTime.parse(json['fecha_inicio'])
+          : DateTime.now(), // Valor por defecto si es null
       fechaFin: json['fecha_fin'] != null ? DateTime.parse(json['fecha_fin']) : null,
       idPersonal: json['id_personal'] != null 
           ? (json['id_personal'] is List 

@@ -22,10 +22,14 @@ final apiServiceProvider = Provider<ApiService>((ref) {
 class ApiService {
   late final OptimizedHttpClient _httpClient;
   final AppLogger _logger = AppLogger.instance;
+  bool _isInitialized = false;
+
+  bool get isInitialized => _isInitialized;
 
   Future<void> initialize() async {
     _httpClient = OptimizedHttpClient.instance;
     await _httpClient.initialize();
+    _isInitialized = true;
     _logger.info('ApiService initialized');
   }
 
@@ -604,6 +608,45 @@ class ApiService {
         'error': e.toString(),
       };
     }
+  }
+
+  /// Crear movimiento con datos específicos
+  Future<Movimiento> createMovimientoCompleto({
+    required double monto,
+    required DateTime fecha,
+    required String descripcion,
+    required String categoria,
+    required bool pagado,
+    required String formaPago,
+    required bool esCobro,
+    String? destinatario,
+    DateTime? fechaPagoLimite,
+    DateTime? fechaPago,
+    int? idTrabajo,
+  }) async {
+    _logger.info('💰 Creando movimiento: $descripcion - \$${monto.toStringAsFixed(2)}');
+    
+    final movimientoData = {
+      'monto': monto,
+      'fecha': fecha.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+      'descripcion': descripcion,
+      'categoria': categoria,
+      'pagado': pagado,
+      'forma_pago': formaPago,
+      'es_cobro': esCobro,
+      if (destinatario != null) 'destinatario': destinatario,
+      if (fechaPagoLimite != null) 'fecha_pago_limite': fechaPagoLimite.toIso8601String().split('T')[0],
+      if (fechaPago != null) 'fecha_pago': fechaPago.toIso8601String().split('T')[0],
+      if (idTrabajo != null) 'id_trabajo': idTrabajo,
+    };
+
+    _logger.apiCall('POST', '/movimientos/', data: movimientoData);
+    
+    final response = await _httpClient.post('/movimientos/', data: movimientoData);
+    
+    _logger.apiResponse('/movimientos/', response.statusCode!, data: response.data);
+    
+    return Movimiento.fromJson(response.data);
   }
 
   /// Limpiar caché del cliente HTTP

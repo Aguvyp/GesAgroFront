@@ -6,6 +6,8 @@ import '../models/trabajo.dart';
 import '../models/maquina.dart';
 import '../models/personal.dart';
 import '../utils/constants.dart';
+import '../services/optimized_api_service.dart';
+import '../core/logger/app_logger.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -22,39 +24,159 @@ class OptimizedDashboardScreen extends ConsumerStatefulWidget {
 class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  
+  // Estados para datos reales
+  List<Trabajo> _trabajos = [];
+  List<Maquina> _maquinas = [];
+  List<Personal> _personal = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  
+  final ApiService _apiService = ApiService();
+  final AppLogger _logger = AppLogger.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  /// Cargar datos del dashboard desde la API
+  Future<void> _loadDashboardData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      _logger.info('🔄 Cargando datos del dashboard...');
+      
+      // Inicializar el servicio API
+      await _apiService.initialize();
+      
+      // Cargar datos en paralelo
+      final results = await Future.wait([
+        _apiService.getTrabajos(),
+        _apiService.getMaquinas(),
+        _apiService.getPersonal(),
+      ]);
+
+      setState(() {
+        _trabajos = results[0] as List<Trabajo>;
+        _maquinas = results[1] as List<Maquina>;
+        _personal = results[2] as List<Personal>;
+        _isLoading = false;
+      });
+
+      _logger.info('✅ Datos del dashboard cargados: ${_trabajos.length} trabajos, ${_maquinas.length} máquinas, ${_personal.length} personal');
+      
+    } catch (e) {
+      _logger.error('❌ Error cargando datos del dashboard: $e');
+      setState(() {
+        _errorMessage = 'Error cargando datos: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Refrescar datos del dashboard
+  Future<void> _refreshDashboard() async {
+    await _loadDashboardData();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Datos de prueba por el momento
-    final trabajosPrueba = _getTrabajosPrueba();
-    final maquinasPrueba = _getMaquinasPrueba();
-    final personalPrueba = _getPersonalPrueba();
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                'Cargando dashboard...',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error al cargar datos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _refreshDashboard,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // // Encabezado
-            // _buildHeader(),
-            // const SizedBox(height: 24),
+      body: RefreshIndicator(
+        onRefresh: _refreshDashboard,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Encabezado
+              _buildHeader(),
+              const SizedBox(height: 24),
 
-            // Lista de trabajos por estado
-            _buildTrabajosSection(trabajosPrueba),
-            const SizedBox(height: 24),
+              // Lista de trabajos por estado
+              _buildTrabajosSection(_trabajos),
+              const SizedBox(height: 24),
 
-            // Calendario de trabajos pendientes
-            _buildCalendarioTrabajos(trabajosPrueba),
-            const SizedBox(height: 24),
+              // Calendario de trabajos pendientes
+              _buildCalendarioTrabajos(_trabajos),
+              const SizedBox(height: 24),
 
-            // Superficies de máquinas
-            _buildMaquinasSection(maquinasPrueba),
-            const SizedBox(height: 24),
+              // Superficies de máquinas
+              _buildMaquinasSection(_maquinas),
+              const SizedBox(height: 24),
 
-            // Superficies y horas de operadores
-            _buildPersonalSection(personalPrueba),
-          ],
+              // Superficies y horas de operadores
+              _buildPersonalSection(_personal),
+            ],
+          ),
         ),
       ),
     );
@@ -142,9 +264,19 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
 
 
   Widget _buildTrabajosCards(List<Trabajo> trabajos) {
-    final pendientes = trabajos.where((t) => t.estado?.toLowerCase() == 'pendiente').length;
-    final enCurso = trabajos.where((t) => t.estado?.toLowerCase() == 'en curso').length;
-    final completados = trabajos.where((t) => t.estado?.toLowerCase() == 'completado').length;
+    final pendientes = trabajos.where((t) => 
+      t.estado?.toLowerCase() == 'pendiente' || 
+      t.estado?.toLowerCase() == 'programado'
+    ).length;
+    final enCurso = trabajos.where((t) => 
+      t.estado?.toLowerCase() == 'en curso' || 
+      t.estado?.toLowerCase() == 'en ejecución' ||
+      t.estado?.toLowerCase() == 'ejecutando'
+    ).length;
+    final completados = trabajos.where((t) => 
+      t.estado?.toLowerCase() == 'completado' || 
+      t.estado?.toLowerCase() == 'finalizado'
+    ).length;
 
     return Row(
       children: [
@@ -179,8 +311,11 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   }
 
   Widget _buildCalendarioTrabajos(List<Trabajo> trabajos) {
-    // Filtrar solo trabajos pendientes
-    final trabajosPendientes = trabajos.where((t) => t.estado == 'Pendiente').toList();
+    // Filtrar trabajos pendientes/programados
+    final trabajosPendientes = trabajos.where((t) => 
+      t.estado?.toLowerCase() == 'pendiente' || 
+      t.estado?.toLowerCase() == 'programado'
+    ).toList();
     
     // Crear mapa de fechas con trabajos
     final Map<DateTime, List<Trabajo>> trabajosPorFecha = {};
@@ -532,6 +667,43 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   }
 
   Widget _buildMaquinasCards(List<Maquina> maquinas) {
+    if (maquinas.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.build_circle_outlined,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No hay máquinas registradas',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Agrega máquinas para ver estadísticas',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: maquinas.take(3).map((maquina) => 
         Container(
@@ -569,7 +741,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                       ),
                     ),
                     Text(
-                      'Superficie: ${(maquina.id! * 25.5).toStringAsFixed(1)} ha',
+                      'Año: ${maquina.ano}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -628,6 +800,43 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   }
 
   Widget _buildPersonalCards(List<Personal> personal) {
+    if (personal.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.person_outline,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No hay personal registrado',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Agrega personal para ver estadísticas',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: personal.take(3).map((operario) => 
         Container(
@@ -672,12 +881,20 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                       ),
                     ),
                     Text(
-                      'Superficie: ${(operario.id! * 18.5).toStringAsFixed(1)} ha | Horas: ${(operario.id! * 12.5).toStringAsFixed(1)}h',
+                      'DNI: ${operario.dni}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
+                    if (operario.telefono != null && operario.telefono!.isNotEmpty)
+                      Text(
+                        'Tel: ${operario.telefono}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -727,186 +944,5 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
         ],
       ),
     );
-  }
-
-  // Métodos de datos de prueba
-  List<Trabajo> _getTrabajosPrueba() {
-    final ahora = DateTime.now();
-    return [
-      Trabajo(
-        id: 1,
-        tipo: 'Siembra',
-        cultivo: 'Soja',
-        fechaInicio: ahora.subtract(const Duration(days: 5)),
-        fechaFin: ahora.subtract(const Duration(days: 3)),
-        estado: 'Completado',
-        idCampo: 1,
-        idPersonal: [1, 2],
-        idMaquinas: [1, 2],
-        cobrado: true,
-        montoCobrado: 150000.0,
-        observaciones: 'Siembra directa de soja en campo norte',
-        cliente: 'Juan Pérez',
-        esTercero: true,
-      ),
-      Trabajo(
-        id: 2,
-        tipo: 'Fumigación',
-        cultivo: 'Maíz',
-        fechaInicio: ahora.subtract(const Duration(days: 2)),
-        fechaFin: ahora.subtract(const Duration(days: 1)),
-        estado: 'En Ejecución',
-        idCampo: 2,
-        idPersonal: [3],
-        idMaquinas: [3],
-        cobrado: false,
-        montoCobrado: 85000.0,
-        observaciones: 'Aplicación de herbicida pre-emergente',
-        cliente: null, // Trabajo propio
-        esTercero: false,
-      ),
-      Trabajo(
-        id: 3,
-        tipo: 'Cosecha',
-        cultivo: 'Trigo',
-        fechaInicio: ahora.add(const Duration(days: 3)),
-        fechaFin: ahora.add(const Duration(days: 7)),
-        estado: 'Pendiente',
-        idCampo: 3,
-        idPersonal: [4, 5, 6],
-        idMaquinas: [4, 5],
-        cobrado: false,
-        montoCobrado: 200000.0,
-        observaciones: 'Cosecha mecanizada de trigo',
-        cliente: 'Agro Norte S.A.',
-        esTercero: true,
-      ),
-      Trabajo(
-        id: 4,
-        tipo: 'Preparación',
-        cultivo: 'Girasol',
-        fechaInicio: ahora.add(const Duration(days: 10)),
-        fechaFin: ahora.add(const Duration(days: 12)),
-        estado: 'Pendiente',
-        idCampo: 1,
-        idPersonal: [1],
-        idMaquinas: [6, 7],
-        cobrado: false,
-        montoCobrado: 120000.0,
-        observaciones: 'Labranza y preparación para girasol',
-        cliente: null, // Trabajo propio
-        esTercero: false,
-      ),
-      Trabajo(
-        id: 5,
-        tipo: 'Fumigación',
-        cultivo: 'Soja',
-        fechaInicio: ahora.add(const Duration(days: 5)),
-        fechaFin: ahora.add(const Duration(days: 6)),
-        estado: 'Pendiente',
-        idCampo: 2,
-        idPersonal: [2],
-        idMaquinas: [3],
-        cobrado: false,
-        montoCobrado: 75000.0,
-        observaciones: 'Aplicación de herbicida post-emergente',
-        cliente: 'Campo Sur S.A.',
-        esTercero: true,
-      ),
-      Trabajo(
-        id: 6,
-        tipo: 'Siembra',
-        cultivo: 'Maíz',
-        fechaInicio: ahora.add(const Duration(days: 15)),
-        fechaFin: ahora.add(const Duration(days: 17)),
-        estado: 'Pendiente',
-        idCampo: 1,
-        idPersonal: [1, 3],
-        idMaquinas: [1, 2],
-        cobrado: false,
-        montoCobrado: 180000.0,
-        observaciones: 'Siembra directa de maíz tardío',
-        cliente: null, // Trabajo propio
-        esTercero: false,
-      ),
-      Trabajo(
-        id: 7,
-        tipo: 'Fertilización',
-        cultivo: 'Trigo',
-        fechaInicio: ahora.add(const Duration(days: 8)),
-        fechaFin: ahora.add(const Duration(days: 9)),
-        estado: 'Pendiente',
-        idCampo: 3,
-        idPersonal: [4],
-        idMaquinas: [3],
-        cobrado: false,
-        montoCobrado: 95000.0,
-        observaciones: 'Aplicación de fertilizante nitrogenado',
-        cliente: 'Agro Norte S.A.',
-        esTercero: true,
-      ),
-    ];
-  }
-
-  List<Maquina> _getMaquinasPrueba() {
-    return [
-      Maquina(
-        id: 1,
-        nombre: 'Tractor John Deere',
-        marca: 'John Deere',
-        modelo: '6120R',
-        ano: 2020,
-      ),
-      Maquina(
-        id: 2,
-        nombre: 'Sembradora',
-        marca: 'Kinze',
-        modelo: '3600',
-        ano: 2019,
-      ),
-      Maquina(
-        id: 3,
-        nombre: 'Pulverizadora',
-        marca: 'Jacto',
-        modelo: 'Uniport 3030',
-        ano: 2021,
-      ),
-      Maquina(
-        id: 4,
-        nombre: 'Cosechadora Claas',
-        marca: 'Claas',
-        modelo: 'Lexion 780',
-        ano: 2018,
-      ),
-    ];
-  }
-
-  List<Personal> _getPersonalPrueba() {
-    return [
-      Personal(
-        id: 1,
-        nombre: 'Carlos López',
-        dni: '12345678',
-        telefono: '011-1234-5678',
-      ),
-      Personal(
-        id: 2,
-        nombre: 'María García',
-        dni: '87654321',
-        telefono: '011-8765-4321',
-      ),
-      Personal(
-        id: 3,
-        nombre: 'Roberto Silva',
-        dni: '11223344',
-        telefono: '011-1122-3344',
-      ),
-      Personal(
-        id: 4,
-        nombre: 'Pedro Martínez',
-        dni: '55667788',
-        telefono: '011-5566-7788',
-      ),
-    ];
   }
 }
