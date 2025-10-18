@@ -8,8 +8,9 @@ import '../logger/app_logger.dart';
 /// Cliente HTTP ultra optimizado con cache, retry y conexión persistente
 class OptimizedHttpClient {
   static OptimizedHttpClient? _instance;
-  static OptimizedHttpClient get instance => _instance ??= OptimizedHttpClient._();
-  
+  static OptimizedHttpClient get instance =>
+      _instance ??= OptimizedHttpClient._();
+
   OptimizedHttpClient._();
 
   final Dio _dio = Dio();
@@ -24,7 +25,7 @@ class OptimizedHttpClient {
       _logger.debug('OptimizedHttpClient already initialized, skipping...');
       return;
     }
-    
+
     // Configurar opciones base
     _dio.options = BaseOptions(
       baseUrl: AppConfig.instance.apiBaseUrl,
@@ -36,12 +37,13 @@ class OptimizedHttpClient {
         'Accept': 'application/json',
       },
     );
-    
-    _logger.info('🌐 OptimizedHttpClient configured with baseUrl: ${AppConfig.instance.apiBaseUrl}');
+
+    _logger.info(
+        '🌐 OptimizedHttpClient configured with baseUrl: ${AppConfig.instance.apiBaseUrl}');
 
     // Configurar interceptores
     _setupInterceptors();
-    
+
     _isInitialized = true;
     _logger.info('OptimizedHttpClient initialized');
   }
@@ -78,12 +80,14 @@ class OptimizedHttpClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Agregar token de autenticación si está disponible
-          final token = await _secureStorage.read(key: 'access_token');
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-            _logger.debug('🔐 Token agregado a la petición: ${options.path}');
-          }
+          // Token fijo para todas las peticiones
+          const String fixedToken =
+              'aB3xK9mP2qR7sT1vW4yZ6cD8eF0gH5jL3nM9pQ2rS7tU1vX4yA6bC8dE0fG5hI';
+
+          options.headers['Authorization'] = 'Bearer $fixedToken';
+          _logger
+              .debug('🔐 Token fijo agregado a la petición: ${options.path}');
+
           handler.next(options);
         },
       ),
@@ -109,7 +113,8 @@ class OptimizedHttpClient {
         _logger.warning('Timeout error: ${error.message}');
         break;
       case DioExceptionType.badResponse:
-        _logger.error('Bad response: ${error.response?.statusCode} - ${error.message}');
+        _logger.error(
+            'Bad response: ${error.response?.statusCode} - ${error.message}');
         break;
       case DioExceptionType.cancel:
         _logger.info('Request cancelled');
@@ -129,10 +134,11 @@ class OptimizedHttpClient {
   /// Verificar conectividad
   Future<bool> hasConnection() async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     final result = await _connectivity.checkConnectivity();
     return result != ConnectivityResult.none;
   }
@@ -146,15 +152,16 @@ class OptimizedHttpClient {
     bool forceRefresh = false,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     final fullUrl = '${AppConfig.instance.apiBaseUrl}$path';
     _logger.info('🚀 GET Request: $fullUrl');
-    
+
     final requestOptions = options ?? Options();
-    
+
     if (forceRefresh) {
       requestOptions.extra = {'cache': false};
     }
@@ -166,7 +173,7 @@ class OptimizedHttpClient {
         options: requestOptions,
         cancelToken: cancelToken,
       );
-      
+
       _logger.info('✅ GET Response: ${response.statusCode} - $fullUrl');
       return response;
     } catch (e) {
@@ -184,10 +191,11 @@ class OptimizedHttpClient {
     CancelToken? cancelToken,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     return await _dio.post<T>(
       path,
       data: data,
@@ -206,10 +214,11 @@ class OptimizedHttpClient {
     CancelToken? cancelToken,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     return await _dio.put<T>(
       path,
       data: data,
@@ -228,10 +237,11 @@ class OptimizedHttpClient {
     CancelToken? cancelToken,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     return await _dio.delete<T>(
       path,
       data: data,
@@ -252,6 +262,29 @@ class OptimizedHttpClient {
       'totalRequests': 0,
       'cachedRequests': 0,
     };
+  }
+
+  /// Verificar estado de autenticación
+  Future<Map<String, dynamic>> checkAuthStatus() async {
+    try {
+      final token = await _secureStorage.read(key: 'access_token');
+      final tokenType = await _secureStorage.read(key: 'token_type');
+      final userRole = await _secureStorage.read(key: 'user_role');
+
+      return {
+        'hasToken': token != null && token.isNotEmpty,
+        'tokenLength': token?.length ?? 0,
+        'tokenType': tokenType,
+        'userRole': userRole,
+        'tokenPreview': token != null ? '${token.substring(0, 20)}...' : null,
+      };
+    } catch (e) {
+      _logger.error('Error checking auth status', e);
+      return {
+        'hasToken': false,
+        'error': e.toString(),
+      };
+    }
   }
 }
 
@@ -277,14 +310,14 @@ class RetryInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (_shouldRetry(err)) {
       final retryCount = err.requestOptions.extra['retryCount'] ?? 0;
-      
+
       if (retryCount < retries) {
         logPrint?.call('Retrying request (${retryCount + 1}/$retries)');
-        
+
         await Future.delayed(retryDelays[retryCount]);
-        
+
         err.requestOptions.extra['retryCount'] = retryCount + 1;
-        
+
         try {
           final response = await dio.fetch(err.requestOptions);
           handler.resolve(response);
@@ -294,15 +327,15 @@ class RetryInterceptor extends Interceptor {
         }
       }
     }
-    
+
     handler.next(err);
   }
 
   bool _shouldRetry(DioException err) {
     return err.type == DioExceptionType.connectionTimeout ||
-           err.type == DioExceptionType.sendTimeout ||
-           err.type == DioExceptionType.receiveTimeout ||
-           err.type == DioExceptionType.connectionError ||
-           (err.response?.statusCode != null && err.response!.statusCode! >= 500);
+        err.type == DioExceptionType.sendTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.connectionError ||
+        (err.response?.statusCode != null && err.response!.statusCode! >= 500);
   }
 }

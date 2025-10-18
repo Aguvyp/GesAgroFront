@@ -26,15 +26,15 @@ class AuthService {
   /// Login con email y password
   Future<Map<String, dynamic>> login(String email, String password) async {
     _logger.auth('LOGIN_ATTEMPT', userId: email);
-    
+
     try {
       final apiService = ApiService();
       await apiService.initialize();
       final response = await apiService.login(email, password);
-      
+
       // Guardar token y datos del usuario
       await _saveAuthData(response);
-      
+
       _logger.auth('LOGIN_SUCCESS', userId: email, role: response['role']);
       return response;
     } catch (e) {
@@ -53,7 +53,7 @@ class AuthService {
     required String password,
   }) async {
     _logger.auth('REGISTER_ATTEMPT', userId: email);
-    
+
     try {
       final apiService = ApiService();
       await apiService.initialize();
@@ -64,7 +64,7 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       _logger.auth('REGISTER_SUCCESS', userId: email);
       return response;
     } catch (e) {
@@ -77,14 +77,14 @@ class AuthService {
   /// Logout
   Future<void> logout() async {
     _logger.auth('LOGOUT');
-    
+
     try {
       // Limpiar datos de autenticación
       await _clearAuthData();
-      
+
       // Limpiar caché de la aplicación
       await AppConfig.instance.clearCache();
-      
+
       _logger.auth('LOGOUT_SUCCESS');
     } catch (e) {
       _logger.error('Logout error', e);
@@ -97,19 +97,24 @@ class AuthService {
     try {
       final token = await getToken();
       if (token == null || token.isEmpty) {
+        _logger.warning('No token found in storage');
         return false;
       }
+
+      _logger.info('Token found, length: ${token.length}');
 
       // Verificar si el token es válido haciendo una llamada al servidor
       final apiService = ApiService();
       await apiService.initialize();
       final isValid = await apiService.checkHealth();
-      
+
       if (!isValid) {
+        _logger.warning('Token validation failed, logging out');
         await logout();
         return false;
       }
 
+      _logger.info('Token is valid');
       return true;
     } catch (e) {
       _logger.error('Error checking auth status', e);
@@ -178,7 +183,8 @@ class AuthService {
   /// Guardar datos del usuario actual
   Future<void> setCurrentUser(Map<String, dynamic> user) async {
     try {
-      final userString = user.entries.map((e) => '${e.key}:${e.value}').join(',');
+      final userString =
+          user.entries.map((e) => '${e.key}:${e.value}').join(',');
       await _secureStorage.write(key: 'current_user', value: userString);
       _logger.auth('USER_DATA_SAVED');
     } catch (e) {
@@ -227,7 +233,7 @@ class AuthService {
 
       final now = DateTime.now().millisecondsSinceEpoch;
       final sessionTimeout = const Duration(hours: 24).inMilliseconds;
-      
+
       return (now - lastActivity) < sessionTimeout;
     } catch (e) {
       _logger.error('Error checking session activity', e);
@@ -238,7 +244,8 @@ class AuthService {
   /// Actualizar última actividad
   Future<void> updateLastActivity() async {
     try {
-      await _prefs.setInt('last_activity', DateTime.now().millisecondsSinceEpoch);
+      await _prefs.setInt(
+          'last_activity', DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
       _logger.error('Error updating last activity', e);
     }
@@ -265,11 +272,11 @@ class AuthService {
     try {
       await setToken(response['access_token'] ?? '');
       await setTokenType(response['token_type'] ?? 'bearer');
-      
+
       if (response['role'] != null) {
         await setUserRole(response['role']);
       }
-      
+
       // Guardar datos del usuario si están disponibles
       if (response['personal_id'] != null || response['usuario_id'] != null) {
         await setCurrentUser({
@@ -278,10 +285,10 @@ class AuthService {
           'role': response['role'],
         });
       }
-      
+
       // Actualizar última actividad
       await updateLastActivity();
-      
+
       _logger.auth('AUTH_DATA_SAVED');
     } catch (e) {
       _logger.error('Error saving auth data', e);
@@ -295,9 +302,9 @@ class AuthService {
       await _secureStorage.delete(key: 'token_type');
       await _secureStorage.delete(key: 'user_role');
       await _secureStorage.delete(key: 'current_user');
-      
+
       await _prefs.remove('last_activity');
-      
+
       _logger.auth('AUTH_DATA_CLEARED');
     } catch (e) {
       _logger.error('Error clearing auth data', e);
@@ -315,7 +322,7 @@ class AuthService {
       final currentUser = await getCurrentUser();
       final lastActivity = await getLastActivity();
       final isActive = await isSessionActive();
-      
+
       return {
         'hasToken': token != null && token.isNotEmpty,
         'tokenType': tokenType,
@@ -342,9 +349,9 @@ class AuthService {
 
   /// Validar fortaleza de password
   bool isValidPassword(String password) {
-    return password.length >= 8 && 
-           password.contains(RegExp(r'[A-Z]')) &&
-           password.contains(RegExp(r'[a-z]')) &&
-           password.contains(RegExp(r'[0-9]'));
+    return password.length >= 8 &&
+        password.contains(RegExp(r'[A-Z]')) &&
+        password.contains(RegExp(r'[a-z]')) &&
+        password.contains(RegExp(r'[0-9]'));
   }
 }
