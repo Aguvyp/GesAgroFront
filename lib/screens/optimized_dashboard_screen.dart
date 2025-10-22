@@ -8,7 +8,6 @@ import '../models/personal.dart';
 import '../utils/constants.dart';
 import '../services/optimized_api_service.dart';
 import '../core/logger/app_logger.dart';
-import '../widgets/campo_info_widget.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -581,9 +580,9 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                 color: Colors.grey[600],
               ),
               const SizedBox(width: 4),
-              TrabajoCampoInfo(
-                campoId: trabajo.idCampo,
-                textStyle: TextStyle(
+              Text(
+                'Campo ID: ${trabajo.idCampo}',
+                style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
                 ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/optimized_widgets.dart';
-import '../widgets/campo_info_widget.dart';
 import '../providers/optimized_providers.dart';
 import 'campo_detail_screen.dart';
 import 'trabajo_detail_screen.dart';
@@ -266,8 +265,6 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('${trabajo.formattedDateRange} • ${trabajo.estado ?? 'Pendiente'}'),
-                  const SizedBox(height: 2),
-                  TrabajoCampoInfo(campoId: trabajo.idCampo),
                 ],
               ),
               onTap: () {

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
+import '../../providers/trabajo_detalle_provider.dart';
 import '../../models/campo.dart';
 import '../../models/maquina.dart';
 import '../../models/personal.dart';
 import '../../models/cliente.dart';
 import '../../models/personal_con_hectareas.dart';
+import '../../models/trabajo_detalle.dart';
 import '../../services/cliente_service.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/custom_text_field.dart';
@@ -66,6 +68,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   
   bool _isLoadingData = false;
   bool _isSaving = false;
+  
+  // Detalles del trabajo para edición
+  TrabajoDetalle? _trabajoDetalle;
 
   @override
   void initState() {
@@ -116,6 +121,19 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     });
 
     try {
+      // Si estamos editando un trabajo, cargar sus detalles completos primero
+      if (widget.trabajo != null && widget.trabajo!.id != null) {
+        try {
+          await ref.read(trabajoDetalleProvider.notifier).loadTrabajoDetalle(widget.trabajo!.id!);
+          final trabajoDetalleState = ref.read(trabajoDetalleProvider);
+          if (trabajoDetalleState is AsyncData<TrabajoDetalle?>) {
+            _trabajoDetalle = trabajoDetalleState.value;
+          }
+        } catch (e) {
+          print('Error cargando detalles del trabajo: $e');
+        }
+      }
+
       // Cargar campos
       final camposState = ref.read(camposProvider);
       if (camposState is LoadedState<List<Campo>>) {
@@ -163,8 +181,46 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
       // Aplicar filtros según el estado actual
       await _aplicarFiltrosCampos();
 
-      // Seleccionar elementos existentes del trabajo
-      if (widget.trabajo != null) {
+      // Seleccionar elementos existentes del trabajo usando los detalles completos
+      if (_trabajoDetalle != null) {
+        // Seleccionar cliente si es trabajo a terceros
+        if (_trabajoDetalle!.aTerceros && _trabajoDetalle!.clienteInfo != null) {
+          _clienteSeleccionado = _clientes.firstWhere(
+            (cliente) => cliente.id == _trabajoDetalle!.clienteInfo!.id,
+            orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
+          );
+        }
+
+        // Seleccionar campo
+        _campoSeleccionado = _camposFiltrados.firstWhere(
+          (campo) => campo.id == _trabajoDetalle!.campoId,
+          orElse: () => _camposFiltrados.isNotEmpty ? _camposFiltrados.first : Campo(id: 0, nombre: '', superficieHa: 0),
+        );
+
+        // Seleccionar máquinas usando los detalles completos
+        _maquinasSeleccionadas = _maquinas.where(
+          (maquina) => _trabajoDetalle!.maquinas.any((maq) => maq.id == maquina.id),
+        ).toList();
+
+        // Seleccionar personal usando los detalles completos
+        _personalSeleccionado = _personal.where(
+          (persona) => _trabajoDetalle!.personal.any((per) => per.id == persona.id),
+        ).map((persona) {
+          // Buscar las hectáreas específicas de este personal en el trabajo
+          final personalTrabajo = _trabajoDetalle!.personal.firstWhere(
+            (per) => per.id == persona.id,
+            orElse: () => PersonalTrabajo(id: persona.id!, nombre: persona.nombre, dni: persona.dni, ha: _campoSeleccionado?.superficieHa ?? 0.0),
+          );
+          
+          return PersonalConHectareas(
+            id: persona.id!,
+            nombre: persona.nombre,
+            dni: persona.dni,
+            hectareas: personalTrabajo.ha,
+          );
+        }).toList();
+      } else if (widget.trabajo != null) {
+        // Fallback para trabajos sin detalles completos
         // Seleccionar cliente si es trabajo a terceros
         if (_esTercero && widget.trabajo!.cliente != null) {
           _clienteSeleccionado = _clientes.firstWhere(
@@ -178,21 +234,6 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
           (campo) => campo.id == widget.trabajo!.idCampo,
           orElse: () => _camposFiltrados.isNotEmpty ? _camposFiltrados.first : Campo(id: 0, nombre: '', superficieHa: 0),
         );
-
-        // Seleccionar máquinas
-        _maquinasSeleccionadas = _maquinas.where(
-          (maquina) => widget.trabajo!.idMaquinas.contains(maquina.id),
-        ).toList();
-
-        // Seleccionar personal
-        _personalSeleccionado = _personal.where(
-          (persona) => widget.trabajo!.idPersonal.contains(persona.id),
-        ).map((persona) => PersonalConHectareas(
-          id: persona.id!,
-          nombre: persona.nombre,
-          dni: persona.dni,
-          hectareas: _campoSeleccionado?.superficieHa ?? 0.0,
-        )).toList();
       }
     } catch (e) {
       // Manejar errores silenciosamente
