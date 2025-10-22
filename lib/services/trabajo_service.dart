@@ -19,7 +19,7 @@ class TrabajoService {
 
   static Future<Trabajo> getTrabajo(int id) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}/$id');
+      final response = await ApiService.get('${AppConstants.trabajosEndpoint}$id');
       return Trabajo.fromJson(response);
     } catch (e) {
       throw Exception('Error al obtener trabajo: $e');
@@ -40,7 +40,7 @@ class TrabajoService {
 
   static Future<Trabajo> updateTrabajo(Trabajo trabajo) async {
     try {
-      final response = await ApiService.put('${AppConstants.trabajosEndpoint}/${trabajo.id}', trabajo.toJson());
+      final response = await ApiService.put('${AppConstants.trabajosEndpoint}${trabajo.id}', trabajo.toJson());
       return Trabajo.fromJson(response);
     } catch (e) {
       throw Exception('Error al actualizar trabajo: $e');
@@ -49,7 +49,7 @@ class TrabajoService {
 
   static Future<Trabajo> updateTrabajoEstado(int trabajoId, String estado) async {
     try {
-      final response = await ApiService.put('${AppConstants.trabajosEndpoint}/$trabajoId/estado', {'estado': estado});
+      final response = await ApiService.put('${AppConstants.trabajosEndpoint}$trabajoId/estado', {'estado': estado});
       return Trabajo.fromJson(response);
     } catch (e) {
       throw Exception('Error al actualizar estado del trabajo: $e');
@@ -58,7 +58,7 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByPersonal(int personalId) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}/personal/$personalId');
+      final response = await ApiService.get('${AppConstants.trabajosEndpoint}personal/$personalId');
       final List<dynamic> trabajosData = response is List ? response : (response['data'] ?? []);
       return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
     } catch (e) {
@@ -68,7 +68,7 @@ class TrabajoService {
 
   static Future<void> deleteTrabajo(int id) async {
     try {
-      await ApiService.delete('${AppConstants.trabajosEndpoint}/$id');
+      await ApiService.delete('${AppConstants.trabajosEndpoint}$id');
     } catch (e) {
       throw Exception('Error al eliminar trabajo: $e');
     }
@@ -76,7 +76,7 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByCampo(int campoId) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}/campo/$campoId');
+      final response = await ApiService.get('${AppConstants.trabajosEndpoint}campo/$campoId');
       final List<dynamic> trabajosData = response['data'] ?? response;
       return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
     } catch (e) {
@@ -86,7 +86,7 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByMaquina(int maquinaId) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}/maquina/$maquinaId');
+      final response = await ApiService.get('${AppConstants.trabajosEndpoint}maquina/$maquinaId');
       final List<dynamic> trabajosData = response['data'] ?? response;
       return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
     } catch (e) {
@@ -96,7 +96,7 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByEstado(String estado) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}/estado/$estado');
+      final response = await ApiService.get('${AppConstants.trabajosEndpoint}estado/$estado');
       final List<dynamic> trabajosData = response['data'] ?? response;
       return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
     } catch (e) {
@@ -116,7 +116,7 @@ class TrabajoService {
 
   static Future<List<Trabajo>> searchTrabajos(String query) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}/search?q=$query');
+      final response = await ApiService.get('${AppConstants.trabajosEndpoint}search?q=$query');
       final List<dynamic> trabajosData = response['data'] ?? response;
       return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
     } catch (e) {
