@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/optimized_providers.dart';
-import '../../widgets/custom_app_bar.dart';
-import '../../widgets/custom_text_field.dart';
-import '../../widgets/custom_button.dart';
-import '../../utils/validators.dart';
 import '../../models/credito.dart';
+import '../../services/optimized_api_service.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../core/logger/app_logger.dart';
+import '../../utils/validators.dart';
 
 /// Pantalla completa para crear/editar créditos
 class CreditoFormScreen extends ConsumerStatefulWidget {
@@ -19,34 +18,232 @@ class CreditoFormScreen extends ConsumerStatefulWidget {
 
 class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _entidadController;
-  late TextEditingController _montoController;
-  late TextEditingController _tasaController;
-  late TextEditingController _plazoController;
+  final ApiService _apiService = ApiService();
+  final AppLogger _logger = AppLogger.instance;
   
+  // Controladores de texto
+  late TextEditingController _entidadController;
+  late TextEditingController _montoOtorgadoController;
+  late TextEditingController _tasaInteresController;
+  late TextEditingController _plazoMesesController;
+  late TextEditingController _fechaDesembolsoController;
+  
+  // Estados del formulario
   DateTime? _fechaDesembolso;
   String? _estadoSeleccionado;
   bool _isSaving = false;
 
+  final List<String> _estados = [
+    'Activo',
+    'Finalizado',
+    'Cancelado',
+    'Suspendido',
+  ];
+
   @override
   void initState() {
     super.initState();
-    _entidadController = TextEditingController(text: widget.credito?.entidad ?? '');
-    _montoController = TextEditingController(text: widget.credito?.montoOtorgado.toString() ?? '');
-    _tasaController = TextEditingController(text: widget.credito?.tasaInteresAnual.toString() ?? '');
-    _plazoController = TextEditingController(text: widget.credito?.plazoMeses.toString() ?? '');
+    final c = widget.credito;
     
-    _fechaDesembolso = widget.credito?.fechaDesembolso ?? DateTime.now();
-    _estadoSeleccionado = widget.credito?.estado ?? 'Activo';
+    // Inicializar controladores
+    _entidadController = TextEditingController(text: c?.entidad ?? '');
+    _montoOtorgadoController = TextEditingController(text: c?.montoOtorgado.toString() ?? '');
+    _tasaInteresController = TextEditingController(text: c?.tasaInteresAnual.toString() ?? '');
+    _plazoMesesController = TextEditingController(text: c?.plazoMeses.toString() ?? '');
+    _fechaDesembolsoController = TextEditingController();
+    
+    // Inicializar estados
+    _fechaDesembolso = c?.fechaDesembolso ?? DateTime.now();
+    _estadoSeleccionado = c?.estado ?? _estados.first;
+    
+    // Actualizar controladores de fecha
+    _updateFechaDesembolsoController();
+    
+    // Inicializar el servicio API
+    _initializeApiService();
+  }
+
+  /// Inicializar el servicio API
+  Future<void> _initializeApiService() async {
+    try {
+      await _apiService.initialize();
+      _logger.info('✅ ApiService inicializado correctamente');
+    } catch (e) {
+      _logger.error('❌ Error inicializando ApiService: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error inicializando servicio: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _entidadController.dispose();
-    _montoController.dispose();
-    _tasaController.dispose();
-    _plazoController.dispose();
+    _montoOtorgadoController.dispose();
+    _tasaInteresController.dispose();
+    _plazoMesesController.dispose();
+    _fechaDesembolsoController.dispose();
     super.dispose();
+  }
+
+  /// Actualiza el controlador de fecha de desembolso
+  void _updateFechaDesembolsoController() {
+    if (_fechaDesembolso != null) {
+      _fechaDesembolsoController.text = '${_fechaDesembolso!.day}/${_fechaDesembolso!.month}/${_fechaDesembolso!.year}';
+    }
+  }
+
+  /// Selecciona una fecha usando el date picker
+  Future<void> _selectDate(BuildContext context, DateTime? initialDate, Function(DateTime?) onDateSelected) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 10)), // 10 años
+    );
+    
+    if (picked != null && picked != initialDate) {
+      onDateSelected(picked);
+      
+      // Actualizar el controlador correspondiente
+      if (initialDate == _fechaDesembolso) {
+        _updateFechaDesembolsoController();
+      }
+    }
+  }
+
+  /// Construye una sección con título y línea vertical distintiva
+  Widget _buildSection({
+    required String title,
+    required Widget content,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título con línea vertical distintiva
+        Row(
+          children: [
+            Container(
+              height: 24,
+              width: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF7E57C2),
+                    const Color(0xFF7E57C2).withOpacity(0.7),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Contenido
+        content,
+      ],
+    );
+  }
+
+  /// Guarda el crédito
+  Future<void> _saveCredito() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor complete todos los campos requeridos'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      // Verificar que el servicio esté inicializado
+      if (!_apiService.isInitialized) {
+        _logger.warning('⚠️ ApiService no está inicializado, inicializando...');
+        await _apiService.initialize();
+      }
+
+      _logger.info('💳 ${widget.credito == null ? 'Creando' : 'Actualizando'} crédito...');
+
+      // Preparar datos del crédito
+      final creditoData = {
+        'entidad': _entidadController.text.trim(),
+        'monto_otorgado': double.parse(_montoOtorgadoController.text.trim()),
+        'tasa_interes_anual': double.parse(_tasaInteresController.text.trim()),
+        'plazo_meses': int.parse(_plazoMesesController.text.trim()),
+        'fecha_desembolso': _fechaDesembolso!.toIso8601String().split('T')[0],
+        'estado': _estadoSeleccionado ?? '',
+      };
+
+      if (widget.credito == null) {
+        // Crear nuevo crédito
+        await _apiService.createCredito(creditoData);
+        _logger.info('✅ Crédito creado exitosamente');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Crédito creado exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        // Actualizar crédito existente
+        await _apiService.updateCredito(widget.credito!.id, creditoData);
+        _logger.info('✅ Crédito actualizado exitosamente');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Crédito actualizado exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      _logger.error('❌ Error ${widget.credito == null ? 'creando' : 'actualizando'} crédito: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error ${widget.credito == null ? 'creando' : 'actualizando'} crédito: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -54,230 +251,173 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
     final isEditing = widget.credito != null;
     
     return Scaffold(
-      appBar: CustomAppBar(
-        title: isEditing ? 'Editar Crédito' : 'Nuevo Crédito',
-        showBackButton: true,
-        onBackPressed: () => Navigator.pop(context),
+      appBar: AppBar(
+        title: const Text('Créditos'),
+        elevation: 0,
+        backgroundColor: const Color(0xFF7E57C2), // Color lila de finanzas
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información básica
-              _buildSectionHeader('Información Básica'),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _entidadController,
-                label: 'Entidad Financiera',
-                hint: 'Ej: Banco Santander',
-                validator: (value) => Validators.validateRequired(value, 'Entidad'),
-              ),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _montoController,
-                label: 'Monto Otorgado',
-                hint: '0.00',
-                keyboardType: TextInputType.number,
-                validator: (value) => Validators.validateRequired(value, 'Monto'),
-              ),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _tasaController,
-                label: 'Tasa de Interés Anual',
-                hint: '0.00',
-                keyboardType: TextInputType.number,
-                validator: (value) => Validators.validateRequired(value, 'Tasa de interés'),
-              ),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _plazoController,
-                label: 'Plazo en Meses',
-                hint: '12',
-                keyboardType: TextInputType.number,
-                validator: (value) => Validators.validateRequired(value, 'Plazo'),
-              ),
-              const SizedBox(height: 24),
-              
-              // Fechas y estado
-              _buildSectionHeader('Fechas y Estado'),
-              const SizedBox(height: 16),
-              
-              // Campo de fecha de desembolso
-              InkWell(
-                onTap: _selectFechaDesembolso,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Fecha de Desembolso',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _fechaDesembolso != null
-                                  ? '${_fechaDesembolso!.day}/${_fechaDesembolso!.month}/${_fechaDesembolso!.year}'
-                                  : 'Seleccionar fecha',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
+              _buildSection(
+                title: 'Información Básica',
+                content: Column(
+                  children: [
+                    // Entidad
+                    CustomTextField(
+                      controller: _entidadController,
+                      label: 'Entidad Financiera',
+                      hint: 'Ingrese el nombre de la entidad',
+                      prefixIcon: const Icon(Icons.account_balance),
+                      validator: (value) => Validators.validateRequired(value, 'Entidad financiera'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Estado
+                    DropdownButtonFormField<String>(
+                      value: _estadoSeleccionado,
+                      decoration: const InputDecoration(
+                        labelText: 'Estado',
+                        prefixIcon: Icon(Icons.flag),
+                        border: OutlineInputBorder(),
                       ),
-                    ],
-                  ),
+                      items: _estados.map((String estado) {
+                        return DropdownMenuItem<String>(
+                          value: estado,
+                          child: Text(estado),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _estadoSeleccionado = newValue;
+                        });
+                      },
+                      validator: (value) => Validators.validateRequired(value, 'Estado'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
               
-              // Selector de estado
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Estado',
-                  border: OutlineInputBorder(),
-                ),
-                value: _estadoSeleccionado,
-                items: const [
-                  DropdownMenuItem(value: 'Activo', child: Text('Activo')),
-                  DropdownMenuItem(value: 'Finalizado', child: Text('Finalizado')),
-                  DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
-                  DropdownMenuItem(value: 'Suspendido', child: Text('Suspendido')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _estadoSeleccionado = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Seleccione un estado';
-                  }
-                  return null;
-                },
-              ),
               const SizedBox(height: 32),
               
-              // Botones de acción
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomButton(
-                      text: 'Cancelar',
-                      onPressed: () => Navigator.pop(context),
-                      isOutlined: true,
+              // Montos y términos
+              _buildSection(
+                title: 'Montos y Términos',
+                content: Column(
+                  children: [
+                    // Monto otorgado
+                    CustomTextField(
+                      controller: _montoOtorgadoController,
+                      label: 'Monto Otorgado',
+                      hint: 'Ingrese el monto del crédito',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => Validators.validateRequired(value, 'Monto otorgado'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Tasa de interés
+                    CustomTextField(
+                      controller: _tasaInteresController,
+                      label: 'Tasa de Interés (%)',
+                      hint: 'Ingrese la tasa de interés',
+                      prefixIcon: const Icon(Icons.percent),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => Validators.validateRequired(value, 'Tasa de interés'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Plazo en meses
+                    CustomTextField(
+                      controller: _plazoMesesController,
+                      label: 'Plazo (Meses)',
+                      hint: 'Ingrese el plazo en meses',
+                      prefixIcon: const Icon(Icons.schedule),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => Validators.validateRequired(value, 'Plazo en meses'),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Fechas
+              _buildSection(
+                title: 'Fechas',
+                content: Column(
+                  children: [
+                    // Fecha de desembolso
+                    CustomTextField(
+                      controller: _fechaDesembolsoController,
+                      label: 'Fecha de Desembolso',
+                      hint: 'Seleccione la fecha de desembolso',
+                      prefixIcon: const Icon(Icons.calendar_today),
+                      readOnly: true,
+                      onTap: () => _selectDate(context, _fechaDesembolso, (date) {
+                        setState(() => _fechaDesembolso = date);
+                      }),
+                      validator: (value) => Validators.validateRequired(value, 'Fecha de desembolso'),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Botón de guardar
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _saveCredito,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7E57C2),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomButton(
-                      text: isEditing ? 'Actualizar' : 'Crear',
-                      onPressed: _isSaving ? null : _saveCredito,
-                      isLoading: _isSaving,
-                    ),
-                  ),
-                ],
+                  child: _isSaving
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Text('Guardando...'),
+                          ],
+                        )
+                      : Text(
+                          isEditing ? 'Actualizar Crédito' : 'Crear Crédito',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: Theme.of(context).primaryColor,
-      ),
-    );
-  }
-
-  Future<void> _selectFechaDesembolso() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _fechaDesembolso ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    
-    if (date != null) {
-      setState(() {
-        _fechaDesembolso = date;
-      });
-    }
-  }
-
-  Future<void> _saveCredito() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_fechaDesembolso == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Seleccione una fecha de desembolso')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      final credito = Credito(
-        id: widget.credito?.id ?? 0,
-        entidad: _entidadController.text.trim(),
-        montoOtorgado: double.parse(_montoController.text),
-        tasaInteresAnual: double.parse(_tasaController.text),
-        plazoMeses: int.parse(_plazoController.text),
-        fechaDesembolso: _fechaDesembolso!,
-        estado: _estadoSeleccionado!,
-      );
-
-      if (widget.credito != null) {
-        // Actualizar crédito existente
-        await ref.read(creditosProvider.notifier).updateCredito(credito);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Crédito actualizado exitosamente')),
-        );
-      } else {
-        // Crear nuevo crédito
-        await ref.read(creditosProvider.notifier).createCredito(credito);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Crédito creado exitosamente')),
-        );
-      }
-
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
-      setState(() {
-        _isSaving = false;
-      });
-    }
   }
 }

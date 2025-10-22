@@ -5,10 +5,12 @@ import '../../models/campo.dart';
 import '../../models/maquina.dart';
 import '../../models/personal.dart';
 import '../../models/cliente.dart';
+import '../../models/personal_con_hectareas.dart';
 import '../../services/cliente_service.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../utils/validators.dart';
+import '../../utils/constants.dart';
 import 'campo_form_screen.dart';
 import 'maquina_form_screen.dart';
 import 'personal_form_screen.dart';
@@ -44,7 +46,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   // Selectores
   Campo? _campoSeleccionado;
   List<Maquina> _maquinasSeleccionadas = [];
-  List<Personal> _personalSeleccionado = [];
+  List<PersonalConHectareas> _personalSeleccionado = [];
   
   // Listas para los selectores
   List<Campo> _campos = [];
@@ -185,7 +187,12 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         // Seleccionar personal
         _personalSeleccionado = _personal.where(
           (persona) => widget.trabajo!.idPersonal.contains(persona.id),
-        ).toList();
+        ).map((persona) => PersonalConHectareas(
+          id: persona.id!,
+          nombre: persona.nombre,
+          dni: persona.dni,
+          hectareas: _campoSeleccionado?.superficieHa ?? 0.0,
+        )).toList();
       }
     } catch (e) {
       // Manejar errores silenciosamente
@@ -333,34 +340,6 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                       addButtonText: 'Nueva',
                       child: _buildMaquinasSelector(),
                     ),
-                    // Leyenda de máquinas seleccionadas
-                    if (_maquinasSeleccionadas.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Máquinas seleccionadas:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _maquinasSeleccionadas.map((m) => m.nombre).join(', '),
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 16),
 
                     // Personal/Operarios
@@ -373,34 +352,6 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                       addButtonText: 'Nuevo',
                       child: _buildPersonalSelector(),
                     ),
-                    // Leyenda de personal seleccionado
-                    if (_personalSeleccionado.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Operarios seleccionados:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _personalSeleccionado.map((p) => p.nombre).join(', '),
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 16),
 
                     // Fechas
@@ -722,92 +673,256 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
   Widget _buildMaquinasSelector() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade50,
       ),
-      child: _maquinas.isEmpty
-          ? const Text(
-              'No hay máquinas disponibles',
-              style: TextStyle(color: Colors.grey),
-            )
-          : Container(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _maquinas.length,
-                itemBuilder: (context, index) {
-                  final maquina = _maquinas[index];
-                  return CheckboxListTile(
-                    title: Text(maquina.nombre),
-                    subtitle: Text(_getMaquinaSubtitle(maquina)),
-                    value: _maquinasSeleccionadas.contains(maquina),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _maquinasSeleccionadas.add(maquina);
-                        } else {
-                          _maquinasSeleccionadas.remove(maquina);
-                        }
-                      });
-                    },
-                  );
-                },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.build, color: Colors.grey[600], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Máquinas',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
               ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_maquinas.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey[600], size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'No hay máquinas disponibles',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _maquinas.map((maquina) {
+                final isSelected = _maquinasSeleccionadas.contains(maquina);
+                return FilterChip(
+                  label: Text(
+                    maquina.nombre,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  selected: isSelected,
+                  onSelected: (bool selected) {
+                    setState(() {
+                      if (selected) {
+                        _maquinasSeleccionadas.add(maquina);
+                      } else {
+                        _maquinasSeleccionadas.remove(maquina);
+                      }
+                    });
+                  },
+                  selectedColor: const Color(AppConstants.primaryColor).withValues(alpha: 0.2),
+                  checkmarkColor: const Color(AppConstants.primaryColor),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(
+                    color: isSelected 
+                        ? const Color(AppConstants.primaryColor)
+                        : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1,
+                  ),
+                );
+              }).toList(),
             ),
+        ],
+      ),
     );
   }
 
   Widget _buildPersonalSelector() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade50,
       ),
-      child: _personal.isEmpty
-          ? const Text(
-              'No hay operarios disponibles',
-              style: TextStyle(color: Colors.grey),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person, color: Colors.grey[600], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Operarios',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_personal.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey[600], size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'No hay operarios disponibles',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             )
-          : Container(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _personal.length,
-                itemBuilder: (context, index) {
-                  final persona = _personal[index];
-                  final isSelected = _personalSeleccionado.contains(persona);
-                  return CheckboxListTile(
-                    title: Text(persona.nombre),
-                    subtitle: Text('DNI: ${persona.dni}'),
-                    value: isSelected,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _personalSeleccionado.add(persona);
-                        } else {
-                          _personalSeleccionado.remove(persona);
-                        }
-                      });
-                    },
-                  );
-                },
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _personal.map((persona) {
+                final isSelected = _personalSeleccionado.any((p) => p.id == persona.id);
+                return FilterChip(
+                  label: Text(
+                    persona.nombre,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  selected: isSelected,
+                  onSelected: (bool selected) {
+                    setState(() {
+                      if (selected) {
+                        _personalSeleccionado.add(PersonalConHectareas(
+                          id: persona.id!,
+                          nombre: persona.nombre,
+                          dni: persona.dni,
+                          hectareas: _campoSeleccionado?.superficieHa ?? 0.0,
+                        ));
+                      } else {
+                        _personalSeleccionado.removeWhere((p) => p.id == persona.id);
+                      }
+                    });
+                  },
+                  selectedColor: const Color(AppConstants.primaryColor).withValues(alpha: 0.2),
+                  checkmarkColor: const Color(AppConstants.primaryColor),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(
+                    color: isSelected 
+                        ? const Color(AppConstants.primaryColor)
+                        : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1,
+                  ),
+                );
+              }).toList(),
+            ),
+          if (_personalSeleccionado.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Hectáreas por operario:',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
             ),
+            const SizedBox(height: 8),
+            ..._personalSeleccionado.map((personal) => _buildHectareasInput(personal)),
+          ],
+        ],
+      ),
     );
   }
 
-  String _getMaquinaSubtitle(Maquina maquina) {
-    final partes = <String>[];
-    if (maquina.marca.isNotEmpty) {
-      partes.add(maquina.marca);
-    }
-    if (maquina.modelo.isNotEmpty) {
-      partes.add(maquina.modelo);
-    }
-    return partes.isEmpty ? 'Sin detalles' : partes.join(' ');
+  Widget _buildHectareasInput(PersonalConHectareas personal) {
+    final controller = TextEditingController(text: personal.hectareas.toStringAsFixed(1));
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  personal.nombre,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  'DNI: ${personal.dni}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 100,
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Ha',
+                labelStyle: TextStyle(fontSize: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              ),
+              style: const TextStyle(fontSize: 14),
+              onChanged: (value) {
+                final hectareas = double.tryParse(value) ?? 0.0;
+                final index = _personalSeleccionado.indexWhere((p) => p.id == personal.id);
+                if (index != -1) {
+                  setState(() {
+                    _personalSeleccionado[index] = personal.copyWith(hectareas: hectareas);
+                  });
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _submitForm() async {
@@ -833,8 +948,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
           'fecha_inicio': _fechaInicio?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'fecha_fin': _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'campo_id': _campoSeleccionado?.id ?? 1,
-          'maquina_ids': _maquinasSeleccionadas.map((m) => m.id).toList(),
-          'personal_ids': _personalSeleccionado.map((p) => p.id).toList(),
+          'maquina_ids': _maquinasSeleccionadas.map((m) => m.id).where((id) => id != null).cast<int>().toList(),
+          'personal_ids': _personalSeleccionado.map((p) => p.toJson()).toList(),
         };
 
         if (widget.trabajo == null) {
@@ -931,7 +1046,12 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
       // Recargar personal y seleccionar el nuevo
       await _loadDataForSelectors();
       setState(() {
-        _personalSeleccionado.add(result);
+        _personalSeleccionado.add(PersonalConHectareas(
+          id: result.id!,
+          nombre: result.nombre,
+          dni: result.dni,
+          hectareas: _campoSeleccionado?.superficieHa ?? 0.0,
+        ));
       });
     }
   }

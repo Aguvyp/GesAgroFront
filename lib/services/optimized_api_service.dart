@@ -658,4 +658,45 @@ class ApiService {
   Map<String, dynamic> getCacheStats() {
     return _httpClient.getCacheStats();
   }
+
+  /// ==================== MÉTODOS HTTP GENÉRICOS ====================
+  
+  /// GET genérico para endpoints personalizados
+  Future<dynamic> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
+    _logger.apiCall('GET', endpoint);
+    final response = await _httpClient.get(endpoint, queryParameters: queryParameters);
+    _logger.apiResponse(endpoint, response.statusCode!, data: response.data);
+    return response.data;
+  }
+
+  /// POST genérico para endpoints personalizados
+  Future<dynamic> post(String endpoint, {Map<String, dynamic>? data}) async {
+    _logger.apiCall('POST', endpoint, data: data);
+    final response = await _httpClient.post(endpoint, data: data);
+    _logger.apiResponse(endpoint, response.statusCode!, data: response.data);
+    return response.data;
+  }
+
+  /// PUT genérico para endpoints personalizados
+  Future<dynamic> put(String endpoint, {Map<String, dynamic>? data}) async {
+    _logger.apiCall('PUT', endpoint, data: data);
+    final response = await _httpClient.put(endpoint, data: data);
+    _logger.apiResponse(endpoint, response.statusCode!, data: response.data);
+    return response.data;
+  }
+
+  /// DELETE genérico para endpoints personalizados
+  Future<void> delete(String endpoint) async {
+    _logger.apiCall('DELETE', endpoint);
+    final response = await _httpClient.delete(endpoint);
+    _logger.apiResponse(endpoint, response.statusCode!);
+  }
+
+  /// PATCH genérico para endpoints personalizados (usando PUT)
+  Future<dynamic> patch(String endpoint, {Map<String, dynamic>? data}) async {
+    _logger.apiCall('PATCH', endpoint, data: data);
+    final response = await _httpClient.put(endpoint, data: data);
+    _logger.apiResponse(endpoint, response.statusCode!, data: response.data);
+    return response.data;
+  }
 }

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/trabajo.dart';
-import '../models/campo.dart';
+import '../models/trabajo_detalle.dart';
 import '../widgets/optimized_widgets.dart';
-import '../providers/optimized_providers.dart';
+import '../providers/trabajo_detalle_provider.dart';
 import '../utils/constants.dart';
 import 'forms/forms_screens.dart';
 
@@ -24,21 +24,17 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar el campo por ID al inicializar
+    // Cargar los detalles completos del trabajo usando el nuevo endpoint
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(campoByIdProvider.notifier).loadCampoById(widget.trabajo.idCampo);
+      if (widget.trabajo.id != null) {
+        ref.read(trabajoDetalleProvider.notifier).loadTrabajoDetalle(widget.trabajo.id!);
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final campoState = ref.watch(campoByIdProvider);
-    
-    // Obtener el campo del estado
-    Campo? campo;
-    if (campoState is LoadedState<dynamic>) {
-      campo = campoState.data as Campo?;
-    }
+    final trabajoDetalleState = ref.watch(trabajoDetalleProvider);
     
     return Scaffold(
       appBar: AppBar(
@@ -46,64 +42,36 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
         backgroundColor: const Color(AppConstants.primaryColor),
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Encabezado con título, fechas y estado
-            _buildHeader(campo),
-            const SizedBox(height: 32),
-
-            // Campo
-            _buildSection(
-              title: 'Campo',
-              content: Text(
-                '${campo?.nombre ?? 'Campo ID: ${widget.trabajo.idCampo}'} - ${campo?.superficieHa.toInt() ?? 0}ha',
-                style: const TextStyle(fontSize: 16),
+      body: trabajoDetalleState.when(
+        data: (trabajoDetalle) {
+          if (trabajoDetalle == null) {
+            return const Center(
+              child: Text('Trabajo no encontrado'),
+            );
+          }
+          return _buildTrabajoDetalleContent(trabajoDetalle);
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stackTrace) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Error: $error', textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  if (widget.trabajo.id != null) {
+                    ref.read(trabajoDetalleProvider.notifier).loadTrabajoDetalle(widget.trabajo.id!);
+                  }
+                },
+                child: const Text('Reintentar'),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // Cliente
-            _buildSection(
-              title: 'Cliente',
-              content: Text(
-                widget.trabajo.esTercero 
-                  ? 'Trabajo a Terceros | ${widget.trabajo.cliente ?? 'No especificado'}'
-                  : 'Trabajo Propio',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Personal y Máquinas
-            _buildSection(
-              title: 'Personal y Máquinas',
-              content: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Personal',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Máquina 1 - Máquina 2', // TODO: Implementar lista real de máquinas
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 100), // Espacio para los botones fijos
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: Container(
@@ -167,13 +135,212 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
     );
   }
 
-  Widget _buildHeader(Campo? campo) {
-    final fechaInicio = DateFormat('dd/MM/yyyy').format(widget.trabajo.fechaInicio);
-    final fechaFin = widget.trabajo.fechaFin != null 
-        ? DateFormat('dd/MM/yyyy').format(widget.trabajo.fechaFin!)
+  Widget _buildTrabajoDetalleContent(TrabajoDetalle trabajoDetalle) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Encabezado con título, fechas y estado
+          _buildHeader(trabajoDetalle),
+          const SizedBox(height: 32),
+
+          // Campo
+          _buildSection(
+            title: 'Campo',
+            content: Text(
+              trabajoDetalle.campoInfo,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Cliente
+          _buildSection(
+            title: 'Cliente',
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  trabajoDetalle.trabajoInfo,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                if (trabajoDetalle.clienteInfo != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'CUIT: ${trabajoDetalle.clienteInfo!.cuit}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    'Dirección: ${trabajoDetalle.clienteInfo!.direccion}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    'Teléfono: ${trabajoDetalle.clienteInfo!.telefono}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+                if (trabajoDetalle.montoCobrado != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Monto cobrado: \$${NumberFormat('#,##0.00').format(trabajoDetalle.montoCobrado)}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Personal
+          if (trabajoDetalle.personal.isNotEmpty) ...[
+            _buildSection(
+              title: 'Personal',
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${trabajoDetalle.totalPersonal} operario${trabajoDetalle.totalPersonal > 1 ? 's' : ''} - ${trabajoDetalle.totalHectareasPersonal.toStringAsFixed(1)} ha',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 12),
+                  ...trabajoDetalle.personal.map((personal) => _buildPersonalItem(personal)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // Máquinas
+          if (trabajoDetalle.maquinas.isNotEmpty) ...[
+            _buildSection(
+              title: 'Máquinas',
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${trabajoDetalle.totalMaquinas} máquina${trabajoDetalle.totalMaquinas > 1 ? 's' : ''}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 12),
+                  ...trabajoDetalle.maquinas.map((maquina) => _buildMaquinaItem(maquina)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // Observaciones
+          if (trabajoDetalle.observaciones?.isNotEmpty == true) ...[
+            _buildSection(
+              title: 'Observaciones',
+              content: Text(
+                trabajoDetalle.observaciones!,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          const SizedBox(height: 100), // Espacio para los botones fijos
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalItem(PersonalTrabajo personal) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.person, size: 20, color: Colors.blue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  personal.nombre,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'DNI: ${personal.dni}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                if (personal.rol != null)
+                  Text(
+                    'Rol: ${personal.rol}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '${personal.ha.toStringAsFixed(1)} ha',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMaquinaItem(MaquinaTrabajo maquina) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.green.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.build, size: 20, color: Colors.green),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  maquina.nombre,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '${maquina.marca} ${maquina.modelo}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(TrabajoDetalle trabajoDetalle) {
+    final fechaInicio = DateFormat('dd/MM/yyyy').format(trabajoDetalle.fechaInicio);
+    final fechaFin = trabajoDetalle.fechaFin != null 
+        ? DateFormat('dd/MM/yyyy').format(trabajoDetalle.fechaFin!)
         : 'En curso';
-    final duracion = widget.trabajo.durationDays > 0 
-        ? ' (${widget.trabajo.durationDays} días)'
+    final duracion = trabajoDetalle.durationDays > 0 
+        ? ' (${trabajoDetalle.durationDays} días)'
         : '';
     
     return Column(
@@ -181,7 +348,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
       children: [
         // Título principal
         Text(
-          '${widget.trabajo.tipo} - ${widget.trabajo.cultivo}',
+          '${trabajoDetalle.tipo} - ${trabajoDetalle.cultivo}',
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -203,10 +370,10 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
         
         // Estado
         Text(
-          widget.trabajo.estado ?? 'Pendiente',
+          trabajoDetalle.estado ?? 'Pendiente',
           style: TextStyle(
             fontSize: 16,
-            color: _getTrabajoColor(widget.trabajo.estado),
+            color: _getTrabajoColor(trabajoDetalle.estado),
             fontWeight: FontWeight.w600,
           ),
         ),

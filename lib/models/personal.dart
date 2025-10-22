@@ -3,12 +3,20 @@ class Personal {
   final String nombre;
   final String dni;
   final String? telefono;
+  final double? superficieTotalHa;
+  final double? horasTrabajadas;
+  final int? trabajosCompletados;
+  final String? ultimoTrabajo;
 
   Personal({
     this.id,
     required this.nombre,
     required this.dni,
     this.telefono,
+    this.superficieTotalHa,
+    this.horasTrabajadas,
+    this.trabajosCompletados,
+    this.ultimoTrabajo,
   });
 
   factory Personal.fromJson(Map<String, dynamic> json) {
@@ -17,6 +25,10 @@ class Personal {
       nombre: json['nombre'] ?? '',
       dni: json['dni'] ?? '',
       telefono: json['telefono'],
+      superficieTotalHa: json['superficie_total_ha']?.toDouble(),
+      horasTrabajadas: json['horas_trabajadas']?.toDouble(),
+      trabajosCompletados: json['trabajos_completados'],
+      ultimoTrabajo: json['ultimo_trabajo'],
     );
   }
 
@@ -26,6 +38,10 @@ class Personal {
       'nombre': nombre,
       'dni': dni,
       'telefono': telefono,
+      'superficie_total_ha': superficieTotalHa,
+      'horas_trabajadas': horasTrabajadas,
+      'trabajos_completados': trabajosCompletados,
+      'ultimo_trabajo': ultimoTrabajo,
     };
   }
 
@@ -34,12 +50,20 @@ class Personal {
     String? nombre,
     String? dni,
     String? telefono,
+    double? superficieTotalHa,
+    double? horasTrabajadas,
+    int? trabajosCompletados,
+    String? ultimoTrabajo,
   }) {
     return Personal(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       dni: dni ?? this.dni,
       telefono: telefono ?? this.telefono,
+      superficieTotalHa: superficieTotalHa ?? this.superficieTotalHa,
+      horasTrabajadas: horasTrabajadas ?? this.horasTrabajadas,
+      trabajosCompletados: trabajosCompletados ?? this.trabajosCompletados,
+      ultimoTrabajo: ultimoTrabajo ?? this.ultimoTrabajo,
     );
   }
 

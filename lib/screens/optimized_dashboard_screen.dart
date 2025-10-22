@@ -8,6 +8,7 @@ import '../models/personal.dart';
 import '../utils/constants.dart';
 import '../services/optimized_api_service.dart';
 import '../core/logger/app_logger.dart';
+import '../widgets/campo_info_widget.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -571,6 +572,24 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             ),
             const SizedBox(height: 4),
           ],
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(
+                Icons.landscape,
+                size: 16,
+                color: Colors.grey[600],
+              ),
+              const SizedBox(width: 4),
+              TrabajoCampoInfo(
+                campoId: trabajo.idCampo,
+                textStyle: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
           Row(
             children: [
               Icon(
@@ -740,12 +759,32 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                         fontSize: 14,
                       ),
                     ),
-                    Text(
-                      'Año: ${maquina.ano}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Año: ${maquina.ano}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${maquina.superficieTotalHa?.toStringAsFixed(1) ?? '0.0'} ha',
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -880,12 +919,32 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                         fontSize: 14,
                       ),
                     ),
-                    Text(
-                      'DNI: ${operario.dni}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'DNI: ${operario.dni}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${operario.superficieTotalHa?.toStringAsFixed(1) ?? '0.0'} ha',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     if (operario.telefono != null && operario.telefono!.isNotEmpty)
                       Text(

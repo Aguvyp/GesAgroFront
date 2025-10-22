@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
+import '../config/auth_config.dart';
 import '../logger/app_logger.dart';
 
 /// Cliente HTTP ultra optimizado con cache, retry y conexión persistente
@@ -15,7 +15,6 @@ class OptimizedHttpClient {
   final Dio _dio = Dio();
   final Connectivity _connectivity = Connectivity();
   final AppLogger _logger = AppLogger.instance;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   bool _isInitialized = false;
 
   /// Inicializar el cliente HTTP
@@ -24,6 +23,9 @@ class OptimizedHttpClient {
       _logger.debug('OptimizedHttpClient already initialized, skipping...');
       return;
     }
+    
+    // Inicializar token de autenticación
+    await AuthConfig.initializeToken();
     
     // Configurar opciones base
     _dio.options = BaseOptions(
@@ -79,7 +81,7 @@ class OptimizedHttpClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           // Agregar token de autenticación si está disponible
-          final token = await _secureStorage.read(key: 'access_token');
+          final token = await AuthConfig.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
             _logger.debug('🔐 Token agregado a la petición: ${options.path}');

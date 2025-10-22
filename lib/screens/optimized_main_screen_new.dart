@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'optimized_screens.dart';
 import 'optimized_dashboard_screen.dart';
 import 'optimized_finanzas_screens.dart';
+import 'optimized_mantenimientos_screen.dart';
+import 'optimized_reportes_screen.dart';
 import 'test_connection_screen.dart';
 import 'personal/personal_list_screen.dart';
 import 'forms/forms_screens.dart';
@@ -89,7 +91,6 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
       ),
       const OptimizedCamposListScreen(),
       const OptimizedTrabajosListScreen(),
-      const OptimizedMantenimientosScreen(),
       const OptimizedProfileScreen(),
     ];
   }

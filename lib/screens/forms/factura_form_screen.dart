@@ -1,44 +1,92 @@
 import 'package:flutter/material.dart';
-import '../../widgets/custom_app_bar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/factura.dart';
+import '../../services/optimized_api_service.dart';
 import '../../widgets/custom_text_field.dart';
-import '../../widgets/custom_button.dart';
+import '../../core/logger/app_logger.dart';
 import '../../utils/validators.dart';
 
 /// Pantalla completa para crear/editar facturas
-class FacturaFormScreen extends StatefulWidget {
-  final dynamic factura;
+class FacturaFormScreen extends ConsumerStatefulWidget {
+  final Factura? factura;
   
   const FacturaFormScreen({Key? key, this.factura}) : super(key: key);
 
   @override
-  State<FacturaFormScreen> createState() => _FacturaFormScreenState();
+  ConsumerState<FacturaFormScreen> createState() => _FacturaFormScreenState();
 }
 
-class _FacturaFormScreenState extends State<FacturaFormScreen> {
+class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+  final AppLogger _logger = AppLogger.instance;
+  
+  // Controladores de texto
   late TextEditingController _numeroController;
   late TextEditingController _clienteController;
   late TextEditingController _subtotalController;
   late TextEditingController _impuestosController;
   late TextEditingController _totalController;
+  late TextEditingController _fechaEmisionController;
+  late TextEditingController _fechaVencimientoController;
   
+  // Estados del formulario
   DateTime? _fechaEmision;
   DateTime? _fechaVencimiento;
   String? _estadoSeleccionado;
   bool _isSaving = false;
 
+  final List<String> _estados = [
+    'Borrador',
+    'Enviada',
+    'Pagada',
+    'Vencida',
+  ];
+
   @override
   void initState() {
     super.initState();
-    _numeroController = TextEditingController(text: widget.factura?.numero ?? '');
-    _clienteController = TextEditingController(text: widget.factura?.cliente ?? '');
-    _subtotalController = TextEditingController(text: widget.factura?.subtotal?.toString() ?? '');
-    _impuestosController = TextEditingController(text: widget.factura?.impuestos?.toString() ?? '');
-    _totalController = TextEditingController(text: widget.factura?.total?.toString() ?? '');
+    final f = widget.factura;
     
-    _fechaEmision = widget.factura?.fechaEmision ?? DateTime.now();
-    _fechaVencimiento = widget.factura?.fechaVencimiento ?? DateTime.now().add(const Duration(days: 30));
-    _estadoSeleccionado = widget.factura?.estado ?? 'Borrador';
+    // Inicializar controladores
+    _numeroController = TextEditingController(text: f?.numero ?? '');
+    _clienteController = TextEditingController(text: f?.clienteId.toString() ?? '');
+    _subtotalController = TextEditingController(text: f?.montoTotal.toString() ?? '');
+    _impuestosController = TextEditingController(text: '0.0');
+    _totalController = TextEditingController(text: f?.montoTotal.toString() ?? '');
+    _fechaEmisionController = TextEditingController();
+    _fechaVencimientoController = TextEditingController();
+    
+    // Inicializar estados
+    _fechaEmision = f?.fechaEmision ?? DateTime.now();
+    _fechaVencimiento = f?.fechaVencimiento;
+    _estadoSeleccionado = f?.estado ?? _estados.first;
+    
+    // Actualizar controladores de fecha
+    _updateFechaEmisionController();
+    _updateFechaVencimientoController();
+    
+    // Inicializar el servicio API
+    _initializeApiService();
+  }
+
+  /// Inicializar el servicio API
+  Future<void> _initializeApiService() async {
+    try {
+      await _apiService.initialize();
+      _logger.info('✅ ApiService inicializado correctamente');
+    } catch (e) {
+      _logger.error('❌ Error inicializando ApiService: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error inicializando servicio: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -48,7 +96,181 @@ class _FacturaFormScreenState extends State<FacturaFormScreen> {
     _subtotalController.dispose();
     _impuestosController.dispose();
     _totalController.dispose();
+    _fechaEmisionController.dispose();
+    _fechaVencimientoController.dispose();
     super.dispose();
+  }
+
+  /// Actualiza el controlador de fecha de emisión
+  void _updateFechaEmisionController() {
+    if (_fechaEmision != null) {
+      _fechaEmisionController.text = '${_fechaEmision!.day}/${_fechaEmision!.month}/${_fechaEmision!.year}';
+    }
+  }
+
+  /// Actualiza el controlador de fecha de vencimiento
+  void _updateFechaVencimientoController() {
+    if (_fechaVencimiento != null) {
+      _fechaVencimientoController.text = '${_fechaVencimiento!.day}/${_fechaVencimiento!.month}/${_fechaVencimiento!.year}';
+    }
+  }
+
+  /// Selecciona una fecha usando el date picker
+  Future<void> _selectDate(BuildContext context, DateTime? initialDate, Function(DateTime?) onDateSelected) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    
+    if (picked != null && picked != initialDate) {
+      onDateSelected(picked);
+      
+      // Actualizar el controlador correspondiente
+      if (initialDate == _fechaEmision) {
+        _updateFechaEmisionController();
+      } else if (initialDate == _fechaVencimiento) {
+        _updateFechaVencimientoController();
+      }
+    }
+  }
+
+  /// Construye una sección con título y línea vertical distintiva
+  Widget _buildSection({
+    required String title,
+    required Widget content,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título con línea vertical distintiva
+        Row(
+          children: [
+            Container(
+              height: 24,
+              width: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF7E57C2),
+                    const Color(0xFF7E57C2).withOpacity(0.7),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Contenido
+        content,
+      ],
+    );
+  }
+
+  /// Calcula el total automáticamente
+  void _calculateTotal() {
+    final subtotal = double.tryParse(_subtotalController.text) ?? 0.0;
+    final impuestos = double.tryParse(_impuestosController.text) ?? 0.0;
+    final total = subtotal + impuestos;
+    _totalController.text = total.toStringAsFixed(2);
+  }
+
+  /// Guarda la factura
+  Future<void> _saveFactura() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor complete todos los campos requeridos'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      // Verificar que el servicio esté inicializado
+      if (!_apiService.isInitialized) {
+        _logger.warning('⚠️ ApiService no está inicializado, inicializando...');
+        await _apiService.initialize();
+      }
+
+      _logger.info('📄 ${widget.factura == null ? 'Creando' : 'Actualizando'} factura...');
+
+      // Preparar datos de la factura
+      final facturaData = {
+        'numero': _numeroController.text.trim(),
+        'cliente_id': int.parse(_clienteController.text.trim()),
+        'monto_total': double.parse(_totalController.text.trim()),
+        'fecha_emision': _fechaEmision!.toIso8601String().split('T')[0],
+        'estado': _estadoSeleccionado ?? '',
+        if (_fechaVencimiento != null)
+          'fecha_vencimiento': _fechaVencimiento!.toIso8601String().split('T')[0],
+      };
+
+      if (widget.factura == null) {
+        // Crear nueva factura
+        await _apiService.createFactura(facturaData);
+        _logger.info('✅ Factura creada exitosamente');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Factura creada exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        // Actualizar factura existente
+        await _apiService.updateFactura(widget.factura!.id, facturaData);
+        _logger.info('✅ Factura actualizada exitosamente');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Factura actualizada exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      _logger.error('❌ Error ${widget.factura == null ? 'creando' : 'actualizando'} factura: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error ${widget.factura == null ? 'creando' : 'actualizando'} factura: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -56,290 +278,199 @@ class _FacturaFormScreenState extends State<FacturaFormScreen> {
     final isEditing = widget.factura != null;
     
     return Scaffold(
-      appBar: CustomAppBar(
-        title: isEditing ? 'Editar Factura' : 'Nueva Factura',
-        showBackButton: true,
-        onBackPressed: () => Navigator.pop(context),
+      appBar: AppBar(
+        title: const Text('Facturas'),
+        elevation: 0,
+        backgroundColor: const Color(0xFF7E57C2), // Color lila de finanzas
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información básica
-              _buildSectionHeader('Información Básica'),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _numeroController,
-                label: 'Número de Factura',
-                hint: 'FAC-001',
-                validator: (value) => Validators.validateRequired(value, 'Número de factura'),
-              ),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _clienteController,
-                label: 'Cliente',
-                hint: 'Nombre del cliente',
-                validator: (value) => Validators.validateRequired(value, 'Cliente'),
-              ),
-              const SizedBox(height: 24),
-              
-              // Fechas
-              _buildSectionHeader('Fechas'),
-              const SizedBox(height: 16),
-              
-              // Campo de fecha de emisión
-              InkWell(
-                onTap: _selectFechaEmision,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Fecha de Emisión',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _fechaEmision != null
-                                  ? '${_fechaEmision!.day}/${_fechaEmision!.month}/${_fechaEmision!.year}'
-                                  : 'Seleccionar fecha',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
+              _buildSection(
+                title: 'Información Básica',
+                content: Column(
+                  children: [
+                    // Número de factura
+                    CustomTextField(
+                      controller: _numeroController,
+                      label: 'Número de Factura',
+                      hint: 'Ingrese el número de factura',
+                      prefixIcon: const Icon(Icons.receipt_long),
+                      validator: (value) => Validators.validateRequired(value, 'Número de factura'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Cliente ID
+                    CustomTextField(
+                      controller: _clienteController,
+                      label: 'ID Cliente',
+                      hint: 'Ingrese el ID del cliente',
+                      prefixIcon: const Icon(Icons.person),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => Validators.validateRequired(value, 'ID Cliente'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Estado
+                    DropdownButtonFormField<String>(
+                      value: _estadoSeleccionado,
+                      decoration: const InputDecoration(
+                        labelText: 'Estado',
+                        prefixIcon: Icon(Icons.flag),
+                        border: OutlineInputBorder(),
                       ),
-                    ],
-                  ),
+                      items: _estados.map((String estado) {
+                        return DropdownMenuItem<String>(
+                          value: estado,
+                          child: Text(estado),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _estadoSeleccionado = newValue;
+                        });
+                      },
+                      validator: (value) => Validators.validateRequired(value, 'Estado'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
               
-              // Campo de fecha de vencimiento
-              InkWell(
-                onTap: _selectFechaVencimiento,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Fecha de Vencimiento',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _fechaVencimiento != null
-                                  ? '${_fechaVencimiento!.day}/${_fechaVencimiento!.month}/${_fechaVencimiento!.year}'
-                                  : 'Seleccionar fecha',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Montos
-              _buildSectionHeader('Montos'),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _subtotalController,
-                label: 'Subtotal',
-                hint: '0.00',
-                keyboardType: TextInputType.number,
-                validator: (value) => Validators.validateRequired(value, 'Subtotal'),
-              ),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _impuestosController,
-                label: 'Impuestos',
-                hint: '0.00',
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              
-              CustomTextField(
-                controller: _totalController,
-                label: 'Monto Total',
-                hint: '0.00',
-                keyboardType: TextInputType.number,
-                validator: (value) => Validators.validateRequired(value, 'Monto total'),
-              ),
-              const SizedBox(height: 24),
-              
-              // Estado
-              _buildSectionHeader('Estado'),
-              const SizedBox(height: 16),
-              
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Estado',
-                  border: OutlineInputBorder(),
-                ),
-                value: _estadoSeleccionado,
-                items: const [
-                  DropdownMenuItem(value: 'Borrador', child: Text('Borrador')),
-                  DropdownMenuItem(value: 'Enviada', child: Text('Enviada')),
-                  DropdownMenuItem(value: 'Pagada', child: Text('Pagada')),
-                  DropdownMenuItem(value: 'Vencida', child: Text('Vencida')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _estadoSeleccionado = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Seleccione un estado';
-                  }
-                  return null;
-                },
-              ),
               const SizedBox(height: 32),
               
-              // Botones de acción
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomButton(
-                      text: 'Cancelar',
-                      onPressed: () => Navigator.pop(context),
-                      isOutlined: true,
+              // Fechas
+              _buildSection(
+                title: 'Fechas',
+                content: Column(
+                  children: [
+                    // Fecha de emisión
+                    CustomTextField(
+                      controller: _fechaEmisionController,
+                      label: 'Fecha de Emisión',
+                      hint: 'Seleccione la fecha de emisión',
+                      prefixIcon: const Icon(Icons.calendar_today),
+                      readOnly: true,
+                      onTap: () => _selectDate(context, _fechaEmision, (date) {
+                        setState(() => _fechaEmision = date);
+                      }),
+                      validator: (value) => Validators.validateRequired(value, 'Fecha de emisión'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Fecha de vencimiento
+                    CustomTextField(
+                      controller: _fechaVencimientoController,
+                      label: 'Fecha de Vencimiento',
+                      hint: 'Seleccione la fecha de vencimiento',
+                      prefixIcon: const Icon(Icons.event),
+                      readOnly: true,
+                      onTap: () => _selectDate(context, _fechaVencimiento, (date) {
+                        setState(() => _fechaVencimiento = date);
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Montos
+              _buildSection(
+                title: 'Montos',
+                content: Column(
+                  children: [
+                    // Subtotal
+                    CustomTextField(
+                      controller: _subtotalController,
+                      label: 'Subtotal',
+                      hint: 'Ingrese el subtotal',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => _calculateTotal(),
+                      validator: (value) => Validators.validateRequired(value, 'Subtotal'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Impuestos
+                    CustomTextField(
+                      controller: _impuestosController,
+                      label: 'Impuestos',
+                      hint: 'Ingrese los impuestos',
+                      prefixIcon: const Icon(Icons.calculate),
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => _calculateTotal(),
+                      validator: (value) => Validators.validateRequired(value, 'Impuestos'),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Total (calculado automáticamente)
+                    CustomTextField(
+                      controller: _totalController,
+                      label: 'Total',
+                      hint: 'Total calculado automáticamente',
+                      prefixIcon: const Icon(Icons.account_balance_wallet),
+                      readOnly: true,
+                      enabled: false,
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Botón de guardar
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _saveFactura,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7E57C2),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomButton(
-                      text: isEditing ? 'Actualizar' : 'Crear',
-                      onPressed: _isSaving ? null : _saveFactura,
-                      isLoading: _isSaving,
-                    ),
-                  ),
-                ],
+                  child: _isSaving
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Text('Guardando...'),
+                          ],
+                        )
+                      : Text(
+                          isEditing ? 'Actualizar Factura' : 'Crear Factura',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: Theme.of(context).primaryColor,
-      ),
-    );
-  }
-
-  Future<void> _selectFechaEmision() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _fechaEmision ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    
-    if (date != null) {
-      setState(() {
-        _fechaEmision = date;
-      });
-    }
-  }
-
-  Future<void> _selectFechaVencimiento() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _fechaVencimiento ?? DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    
-    if (date != null) {
-      setState(() {
-        _fechaVencimiento = date;
-      });
-    }
-  }
-
-  Future<void> _saveFactura() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_fechaEmision == null || _fechaVencimiento == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Seleccione las fechas requeridas')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      // TODO: Implementar creación/actualización de factura usando el servicio correspondiente
-      // Por ahora solo mostramos un mensaje de éxito
-      
-      if (widget.factura != null) {
-        // Actualizar factura existente
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Factura actualizada exitosamente')),
-        );
-      } else {
-        // Crear nueva factura
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Factura creada exitosamente')),
-        );
-      }
-
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
-      setState(() {
-        _isSaving = false;
-      });
-    }
   }
 }

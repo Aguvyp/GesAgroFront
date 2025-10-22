@@ -7,6 +7,9 @@ class Maquina {
   final String? detalles;
   final double? anchoTrabajo;
   final String? estado;
+  final double? superficieTotalHa;
+  final double? horasTrabajadas;
+  final String? ultimoTrabajo;
 
   Maquina({
     this.id,
@@ -17,6 +20,9 @@ class Maquina {
     this.detalles,
     this.anchoTrabajo,
     this.estado,
+    this.superficieTotalHa,
+    this.horasTrabajadas,
+    this.ultimoTrabajo,
   });
 
   factory Maquina.fromJson(Map<String, dynamic> json) {
@@ -29,6 +35,9 @@ class Maquina {
       detalles: json['detalles'],
       anchoTrabajo: json['ancho_trabajo']?.toDouble(),
       estado: json['estado'],
+      superficieTotalHa: json['superficie_total_ha']?.toDouble(),
+      horasTrabajadas: json['horas_trabajadas']?.toDouble(),
+      ultimoTrabajo: json['ultimo_trabajo'],
     );
   }
 
@@ -42,6 +51,9 @@ class Maquina {
       'detalles': detalles,
       'ancho_trabajo': anchoTrabajo,
       'estado': estado,
+      'superficie_total_ha': superficieTotalHa,
+      'horas_trabajadas': horasTrabajadas,
+      'ultimo_trabajo': ultimoTrabajo,
     };
   }
 
@@ -54,6 +66,9 @@ class Maquina {
     String? detalles,
     double? anchoTrabajo,
     String? estado,
+    double? superficieTotalHa,
+    double? horasTrabajadas,
+    String? ultimoTrabajo,
   }) {
     return Maquina(
       id: id ?? this.id,
@@ -64,6 +79,9 @@ class Maquina {
       detalles: detalles ?? this.detalles,
       anchoTrabajo: anchoTrabajo ?? this.anchoTrabajo,
       estado: estado ?? this.estado,
+      superficieTotalHa: superficieTotalHa ?? this.superficieTotalHa,
+      horasTrabajadas: horasTrabajadas ?? this.horasTrabajadas,
+      ultimoTrabajo: ultimoTrabajo ?? this.ultimoTrabajo,
     );
   }
 
