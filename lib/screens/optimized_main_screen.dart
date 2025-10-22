@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/optimized_widgets.dart';
 import 'optimized_screens.dart';
+import 'auth_debug_screen.dart';
 
 class OptimizedSplashScreen extends ConsumerStatefulWidget {
   const OptimizedSplashScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedSplashScreen> createState() => _OptimizedSplashScreenState();
+  ConsumerState<OptimizedSplashScreen> createState() =>
+      _OptimizedSplashScreenState();
 }
 
 class _OptimizedSplashScreenState extends ConsumerState<OptimizedSplashScreen> {
@@ -43,9 +45,9 @@ class _OptimizedSplashScreenState extends ConsumerState<OptimizedSplashScreen> {
             Text(
               'GesAgro',
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 20),
             const CircularProgressIndicator(
@@ -62,7 +64,8 @@ class OptimizedLoginScreen extends ConsumerStatefulWidget {
   const OptimizedLoginScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedLoginScreen> createState() => _OptimizedLoginScreenState();
+  ConsumerState<OptimizedLoginScreen> createState() =>
+      _OptimizedLoginScreenState();
 }
 
 class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
@@ -91,9 +94,9 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
                 Text(
                   'GesAgro',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
                 ),
                 const SizedBox(height: 40),
                 OptimizedTextField(
@@ -128,14 +131,14 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     // Simular login
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const OptimizedMainScreen()),
@@ -148,7 +151,8 @@ class OptimizedMainScreen extends ConsumerStatefulWidget {
   const OptimizedMainScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedMainScreen> createState() => _OptimizedMainScreenState();
+  ConsumerState<OptimizedMainScreen> createState() =>
+      _OptimizedMainScreenState();
 }
 
 class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
@@ -165,6 +169,24 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('GesAgro'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AuthDebugScreen(),
+                ),
+              );
+            },
+            tooltip: 'Debug de Autenticación',
+          ),
+        ],
+      ),
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -224,15 +246,19 @@ class OptimizedDashboardScreen extends ConsumerWidget {
                   Text(
                     '¡Bienvenido!',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Gestión agrícola optimizada en tiempo real',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                    ),
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.7),
+                        ),
                   ),
                 ],
               ),
@@ -241,17 +267,21 @@ class OptimizedDashboardScreen extends ConsumerWidget {
             Text(
               'Métricas Principales',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             OptimizedAnimatedGrid(
               crossAxisCount: 2,
               children: [
-                _buildMetricCard(context, 'Campos', '5', Icons.landscape, Colors.green),
-                _buildMetricCard(context, 'Trabajos', '12', Icons.work, Colors.blue),
-                _buildMetricCard(context, 'Costos', '8', Icons.attach_money, Colors.orange),
-                _buildMetricCard(context, 'Personal', '3', Icons.person, Colors.purple),
+                _buildMetricCard(
+                    context, 'Campos', '5', Icons.landscape, Colors.green),
+                _buildMetricCard(
+                    context, 'Trabajos', '12', Icons.work, Colors.blue),
+                _buildMetricCard(
+                    context, 'Costos', '8', Icons.attach_money, Colors.orange),
+                _buildMetricCard(
+                    context, 'Personal', '3', Icons.person, Colors.purple),
               ],
             ),
           ],
@@ -260,7 +290,8 @@ class OptimizedDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetricCard(BuildContext context, String title, String value, IconData icon, Color color) {
+  Widget _buildMetricCard(BuildContext context, String title, String value,
+      IconData icon, Color color) {
     return OptimizedCard(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -270,15 +301,19 @@ class OptimizedDashboardScreen extends ConsumerWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
           ),
           Text(
             title,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-            ),
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withOpacity(0.7),
+                ),
           ),
         ],
       ),
