@@ -54,21 +54,60 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       // Inicializar el servicio API
       await _apiService.initialize();
       
-      // Cargar datos en paralelo
+      // Cargar datos usando los endpoints específicos del dashboard
       final results = await Future.wait([
         _apiService.getTrabajos(),
-        _apiService.getMaquinas(),
-        _apiService.getPersonal(),
+        _apiService.get('/dashboard/maquinas-superficies'),
+        _apiService.get('/dashboard/personal-rendimiento'),
       ]);
 
       setState(() {
         _trabajos = results[0] as List<Trabajo>;
-        _maquinas = results[1] as List<Maquina>;
-        _personal = results[2] as List<Personal>;
+        
+        // Procesar datos de máquinas desde el endpoint específico
+        final maquinasResponse = results[1] as Map<String, dynamic>;
+        final maquinasData = maquinasResponse['data'] as List<dynamic>;
+        _maquinas = maquinasData.map((json) => Maquina.fromJson(json)).toList();
+        
+        // Ordenar máquinas por hectáreas (mayor a menor)
+        _maquinas.sort((a, b) {
+          final haA = a.superficieTotalHa ?? 0.0;
+          final haB = b.superficieTotalHa ?? 0.0;
+          return haB.compareTo(haA); // Orden descendente
+        });
+        
+        // Procesar datos de personal desde el endpoint específico
+        final personalResponse = results[2] as Map<String, dynamic>;
+        final personalData = personalResponse['data'] as List<dynamic>;
+        _personal = personalData.map((json) => Personal.fromJson(json)).toList();
+        
+        // Ordenar personal por hectáreas (mayor a menor)
+        _personal.sort((a, b) {
+          final haA = a.superficieTotalHa ?? 0.0;
+          final haB = b.superficieTotalHa ?? 0.0;
+          return haB.compareTo(haA); // Orden descendente
+        });
+        
         _isLoading = false;
       });
 
       _logger.info('✅ Datos del dashboard cargados: ${_trabajos.length} trabajos, ${_maquinas.length} máquinas, ${_personal.length} personal');
+      
+      // Mostrar datos detallados de los endpoints específicos
+      _logger.info('📊 Datos de máquinas desde endpoint específico:');
+      for (int i = 0; i < _maquinas.length; i++) {
+        final maquina = _maquinas[i];
+        _logger.info('   Máquina $i: id=${maquina.id}, nombre=${maquina.nombre}, superficieTotalHa=${maquina.superficieTotalHa}, horasTrabajadas=${maquina.horasTrabajadas}');
+      }
+      
+      _logger.info('📊 Datos de personal desde endpoint específico:');
+      for (int i = 0; i < _personal.length; i++) {
+        final operario = _personal[i];
+        _logger.info('   Operario $i: id=${operario.id}, nombre=${operario.nombre}, superficieTotalHa=${operario.superficieTotalHa}, horasTrabajadas=${operario.horasTrabajadas}, trabajosCompletados=${operario.trabajosCompletados}');
+      }
+      
+      // Probar los nuevos endpoints específicos
+      await _testNewEndpoints();
       
     } catch (e) {
       _logger.error('❌ Error cargando datos del dashboard: $e');
@@ -76,6 +115,55 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
         _errorMessage = 'Error cargando datos: ${e.toString()}';
         _isLoading = false;
       });
+    }
+  }
+
+  /// Probar los nuevos endpoints específicos del dashboard
+  Future<void> _testNewEndpoints() async {
+    try {
+      _logger.info('🧪 Probando endpoint /dashboard/maquinas-superficies...');
+      
+      final maquinasResponse = await _apiService.get('/dashboard/maquinas-superficies');
+      _logger.info('📊 Respuesta de máquinas-superficies:');
+      _logger.info('   Tipo: ${maquinasResponse.runtimeType}');
+      _logger.info('   Contenido: $maquinasResponse');
+      
+      if (maquinasResponse is Map<String, dynamic>) {
+        final data = maquinasResponse['data'];
+        _logger.info('   Data field: $data');
+        if (data is List) {
+          _logger.info('   Cantidad de máquinas: ${data.length}');
+          for (int i = 0; i < data.length; i++) {
+            _logger.info('   Máquina $i: ${data[i]}');
+          }
+        }
+      }
+      
+    } catch (e) {
+      _logger.error('❌ Error en endpoint máquinas-superficies: $e');
+    }
+
+    try {
+      _logger.info('🧪 Probando endpoint /dashboard/personal-rendimiento...');
+      
+      final personalResponse = await _apiService.get('/dashboard/personal-rendimiento');
+      _logger.info('📊 Respuesta de personal-rendimiento:');
+      _logger.info('   Tipo: ${personalResponse.runtimeType}');
+      _logger.info('   Contenido: $personalResponse');
+      
+      if (personalResponse is Map<String, dynamic>) {
+        final data = personalResponse['data'];
+        _logger.info('   Data field: $data');
+        if (data is List) {
+          _logger.info('   Cantidad de personal: ${data.length}');
+          for (int i = 0; i < data.length; i++) {
+            _logger.info('   Personal $i: ${data[i]}');
+          }
+        }
+      }
+      
+    } catch (e) {
+      _logger.error('❌ Error en endpoint personal-rendimiento: $e');
     }
   }
 
