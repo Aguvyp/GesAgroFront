@@ -95,6 +95,20 @@ class AppConstants {
     'Otros'
   ];
 
+  // Estados de mantenimiento
+  static const List<String> estadosMantenimiento = [
+    'Completado',
+    'Pendiente',
+    'Atrasado',
+  ];
+
+  // Tipos de mantenimiento
+  static const List<String> tiposMantenimiento = [
+    'Preventivo',
+    'Correctivo',
+    'Predictivo',
+  ];
+
   // Work Status
   static const String pendingStatus = 'Pendiente';
   static const String inProgressStatus = 'En curso';

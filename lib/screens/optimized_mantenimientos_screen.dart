@@ -59,23 +59,21 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: _getTipoColor(mantenimiento.tipo).withOpacity(0.1),
-              child: Icon(_getTipoIcon(mantenimiento.tipo), color: _getTipoColor(mantenimiento.tipo)),
+              backgroundColor: _getEstadoColor(mantenimiento.estado).withOpacity(0.1),
+              child: Icon(_getEstadoIcon(mantenimiento.estado), color: _getEstadoColor(mantenimiento.estado)),
             ),
             title: Text(mantenimiento.descripcion),
-            subtitle: Text('${mantenimiento.tipo} • ${mantenimiento.estado}'),
+            subtitle: Text(mantenimiento.estado.toUpperCase()),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  mantenimiento.costo != null ? '\$${mantenimiento.costo!.toStringAsFixed(2)}' : 'Sin costo',
+                  mantenimiento.costoTotal != null ? '\$${mantenimiento.costoTotal!.toStringAsFixed(2)}' : 'Sin costo',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  mantenimiento.fechaProgramada != null 
-                    ? '${mantenimiento.fechaProgramada!.day}/${mantenimiento.fechaProgramada!.month}/${mantenimiento.fechaProgramada!.year}'
-                    : 'Sin fecha',
+                  '${mantenimiento.fecha.day}/${mantenimiento.fecha.month}/${mantenimiento.fecha.year}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -89,27 +87,27 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
     );
   }
 
-  Color _getTipoColor(String tipo) {
-    switch (tipo.toLowerCase()) {
-      case 'preventivo':
+  Color _getEstadoColor(String estado) {
+    switch (estado.toLowerCase()) {
+      case 'completado':
         return Colors.green;
-      case 'correctivo':
+      case 'pendiente':
+        return Colors.orange;
+      case 'atrasado':
         return Colors.red;
-      case 'predictivo':
-        return Colors.blue;
       default:
         return Colors.grey;
     }
   }
 
-  IconData _getTipoIcon(String tipo) {
-    switch (tipo.toLowerCase()) {
-      case 'preventivo':
-        return Icons.event_outlined;
-      case 'correctivo':
-        return Icons.build;
-      case 'predictivo':
-        return Icons.trending_up;
+  IconData _getEstadoIcon(String estado) {
+    switch (estado.toLowerCase()) {
+      case 'completado':
+        return Icons.check_circle;
+      case 'pendiente':
+        return Icons.schedule;
+      case 'atrasado':
+        return Icons.warning;
       default:
         return Icons.build;
     }

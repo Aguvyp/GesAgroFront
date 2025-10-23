@@ -276,7 +276,14 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
                         context,
                         'Mantenimientos',
                         Icons.build_rounded,
-                        3,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OptimizedMantenimientosScreen()),
+                          );
+                        },
                       ),
                       const SizedBox(height: 8),
                       _buildModernDrawerItem(
