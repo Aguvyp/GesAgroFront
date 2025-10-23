@@ -52,7 +52,7 @@ class Trabajo {
           ? (json['id_personal'] is List 
               ? List<int>.from(json['id_personal'])
               : [json['id_personal'] as int])
-          : [],
+          : [], // Si no hay id_personal, usar lista vacía
       idMaquinas: json['id_maquinas'] != null 
           ? (json['id_maquinas'] is List 
               ? List<int>.from(json['id_maquinas'])

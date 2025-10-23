@@ -58,10 +58,24 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByPersonal(int personalId) async {
     try {
+      print('🔍 TrabajoService: Obteniendo trabajos para personal ID: $personalId');
       final response = await ApiService.get('${AppConstants.trabajosEndpoint}personal/$personalId');
+      print('🔍 TrabajoService: Respuesta recibida: $response');
+      print('🔍 TrabajoService: Tipo de respuesta: ${response.runtimeType}');
+      
       final List<dynamic> trabajosData = response is List ? response : (response['data'] ?? []);
-      return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      print('🔍 TrabajoService: Datos procesados: ${trabajosData.length} elementos');
+      
+      if (trabajosData.isNotEmpty) {
+        print('🔍 TrabajoService: Primer trabajo: ${trabajosData[0]}');
+      }
+      
+      final trabajos = trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      print('🔍 TrabajoService: Trabajos parseados: ${trabajos.length}');
+      
+      return trabajos;
     } catch (e) {
+      print('❌ TrabajoService: Error: $e');
       throw Exception('Error al obtener trabajos del personal: $e');
     }
   }
