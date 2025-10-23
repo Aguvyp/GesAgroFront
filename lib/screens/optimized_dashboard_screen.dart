@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../models/trabajo.dart';
 import '../models/maquina.dart';
 import '../models/personal.dart';
@@ -963,92 +964,145 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       );
     }
 
-    return Column(
-      children: personal.take(3).map((operario) => 
-        Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    // Preparar datos para el gráfico (máximo 5 operadores)
+    final topOperadores = personal.take(5).toList();
+
+    return Container(
+      height: 280,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: const Color(AppConstants.primaryColor).withOpacity(0.1),
-                child: Text(
-                  operario.initials,
-                  style: const TextStyle(
-                    color: Color(AppConstants.primaryColor),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+        ],
+      ),
+      child: Column(
+        children: [
+          // Título del gráfico
+          
+          const SizedBox(height: 16),
+          
+          // Gráfico de torta
+          Expanded(
+            child: Row(
+              children: [
+                // Gráfico de torta
+                Expanded(
+                  flex: 2,
+                  child: PieChart(
+                    PieChartData(
+                      pieTouchData: PieTouchData(
+                        enabled: true,
+                        touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                          // Manejar toque en el gráfico
+                        },
+                      ),
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                      sections: topOperadores.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final operario = entry.value;
+                        final ha = operario.superficieTotalHa ?? 0.0;
+                        final totalHa = topOperadores.fold(0.0, (sum, p) => sum + (p.superficieTotalHa ?? 0.0));
+                        final percentage = totalHa > 0 ? (ha / totalHa) * 100 : 0.0;
+                        
+                        return PieChartSectionData(
+                          color: _getBarColor(index),
+                          value: ha,
+                          title: '${percentage.toStringAsFixed(1)}%',
+                          radius: 50,
+                          titleStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      operario.nombre,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          'DNI: ${operario.dni}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${operario.superficieTotalHa?.toStringAsFixed(1) ?? '0.0'} ha',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                
+                // Leyenda con nombres y valores
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: topOperadores.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final operario = entry.value;
+                      final ha = operario.superficieTotalHa ?? 0.0;
+                      
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: _getBarColor(index),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    operario.nombre,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    '${ha.toStringAsFixed(1)} ha',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    if (operario.telefono != null && operario.telefono!.isNotEmpty)
-                      Text(
-                        'Tel: ${operario.telefono}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ).toList(),
+        ],
+      ),
     );
+  }
+
+  Color _getBarColor(int index) {
+    final colors = [
+      const Color(AppConstants.primaryColor), // Color primario de la app
+      Colors.deepOrange,                      // Naranja intenso
+      Colors.teal,                           // Verde azulado
+      Colors.purple,                         // Púrpura
+      Colors.red,                            // Rojo
+      Colors.indigo,                         // Índigo
+      Colors.amber,                          // Ámbar
+      Colors.pink,                           // Rosa
+      Colors.cyan,                           // Cian
+      Colors.lime,                           // Lima
+    ];
+    return colors[index % colors.length];
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {

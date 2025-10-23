@@ -802,8 +802,18 @@ class MantenimientosNotifier extends StateNotifier<BaseState> {
       state = LoadedState<List<Mantenimiento>>(mantenimientos);
       _logger.info('Mantenimientos loaded successfully: ${mantenimientos.length} items');
     } catch (e) {
-      state = ErrorState('Error cargando mantenimientos: $e');
+      final errorMessage = 'Error cargando mantenimientos: $e';
+      state = ErrorState(errorMessage);
       _logger.error('Error loading mantenimientos', e);
+      
+      // Log adicional para debug
+      if (e.toString().contains('404')) {
+        _logger.error('Endpoint /mantenimientos/ not found (404)');
+      } else if (e.toString().contains('500')) {
+        _logger.error('Server error (500) for /mantenimientos/');
+      } else if (e.toString().contains('connection')) {
+        _logger.error('Connection error to /mantenimientos/');
+      }
     }
   }
 

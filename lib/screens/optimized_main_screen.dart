@@ -162,7 +162,6 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
     const OptimizedDashboardScreen(),
     const OptimizedCamposListScreen(),
     const OptimizedTrabajosListScreen(),
-    const Center(child: Text('Costos')),
     const Center(child: Text('Perfil')),
   ];
 
@@ -208,10 +207,6 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.work),
             label: 'Trabajos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Costos',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -278,8 +273,6 @@ class OptimizedDashboardScreen extends ConsumerWidget {
                     context, 'Campos', '5', Icons.landscape, Colors.green),
                 _buildMetricCard(
                     context, 'Trabajos', '12', Icons.work, Colors.blue),
-                _buildMetricCard(
-                    context, 'Costos', '8', Icons.attach_money, Colors.orange),
                 _buildMetricCard(
                     context, 'Personal', '3', Icons.person, Colors.purple),
               ],
