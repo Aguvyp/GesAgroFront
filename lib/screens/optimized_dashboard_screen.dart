@@ -458,9 +458,9 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             ),
             const SizedBox(width: 12),
             const Text(
-              'Calendario de Trabajos',
+              'Calendario de Trabajos y Mantenimientos',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
