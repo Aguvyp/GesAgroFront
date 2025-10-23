@@ -9,6 +9,8 @@ class Trabajo {
   final List<int> idPersonal; // Cambiado a lista
   final List<int> idMaquinas; // Cambiado a lista
   final int idCampo;
+  final String? campoNombre;
+  final double? campoHa;
   final String? estado;
   final String? observaciones;
   final bool esTercero;
@@ -26,6 +28,8 @@ class Trabajo {
     required this.idPersonal,
     required this.idMaquinas,
     required this.idCampo,
+    this.campoNombre,
+    this.campoHa,
     this.estado,
     this.observaciones,
     this.esTercero = false,
@@ -54,7 +58,9 @@ class Trabajo {
               ? List<int>.from(json['id_maquinas'])
               : [json['id_maquinas'] as int])
           : [],
-      idCampo: json['id_campo'] ?? 0,
+      idCampo: json['campo_id'] ?? json['id_campo'] ?? 0,
+      campoNombre: json['campo_nombre'],
+      campoHa: json['campo_ha'] != null ? (json['campo_ha'] as num).toDouble() : null,
       estado: json['estado'],
       observaciones: json['observaciones'],
       esTercero: _parseBoolean(json['a_terceros']),
@@ -101,7 +107,9 @@ class Trabajo {
       'fecha_fin': fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
       'id_personal': idPersonal,
       'id_maquinas': idMaquinas,
-      'id_campo': idCampo,
+      'campo_id': idCampo,
+      'campo_nombre': campoNombre,
+      'campo_ha': campoHa,
       'estado': estado,
       'observaciones': observaciones,
       'a_terceros': esTercero,
@@ -167,6 +175,17 @@ class Trabajo {
     }
     final end = DateFormat('dd/MM/yyyy').format(fechaFin!);
     return '$start - $end';
+  }
+
+  // Información del campo
+  String get campoInfo {
+    if (campoNombre != null && campoHa != null) {
+      return '$campoNombre - ${campoHa!.toStringAsFixed(1)} ha';
+    } else if (campoNombre != null) {
+      return campoNombre!;
+    } else {
+      return 'Campo $idCampo';
+    }
   }
 
   @override

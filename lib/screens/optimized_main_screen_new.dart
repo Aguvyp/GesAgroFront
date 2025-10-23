@@ -7,6 +7,7 @@ import 'optimized_mantenimientos_screen.dart';
 import 'optimized_reportes_screen.dart';
 import 'test_connection_screen.dart';
 import 'personal/personal_list_screen.dart';
+import 'maquinas/maquinas_list_screen.dart';
 import 'forms/forms_screens.dart';
 import '../providers/optimized_providers.dart';
 
@@ -270,6 +271,20 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
                         'Trabajos',
                         Icons.work_rounded,
                         2,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Máquinas',
+                        Icons.local_shipping_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OptimizedMaquinasListScreen()),
+                          );
+                        },
                       ),
                       const SizedBox(height: 8),
                       _buildModernDrawerItem(

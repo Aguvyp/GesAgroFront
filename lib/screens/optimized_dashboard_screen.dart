@@ -6,9 +6,13 @@ import 'package:fl_chart/fl_chart.dart';
 import '../models/trabajo.dart';
 import '../models/maquina.dart';
 import '../models/personal.dart';
+import '../models/mantenimiento.dart';
 import '../utils/constants.dart';
 import '../services/optimized_api_service.dart';
 import '../core/logger/app_logger.dart';
+import 'trabajo_detail_screen.dart';
+import 'forms/trabajo_form_screen.dart';
+import 'forms/mantenimiento_form_screen.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -30,8 +34,13 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   List<Trabajo> _trabajos = [];
   List<Maquina> _maquinas = [];
   List<Personal> _personal = [];
+  List<Mantenimiento> _mantenimientos = [];
   bool _isLoading = true;
   String? _errorMessage;
+  
+  // Mapas por fecha para el calendario
+  Map<DateTime, List<Trabajo>> _trabajosPorFecha = {};
+  Map<DateTime, List<Mantenimiento>> _mantenimientosPorFecha = {};
   
   final ApiService _apiService = ApiService();
   final AppLogger _logger = AppLogger.instance;
@@ -52,14 +61,17 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
 
       _logger.info('🔄 Cargando datos del dashboard...');
       
-      // Inicializar el servicio API
-      await _apiService.initialize();
+      // Inicializar el servicio API solo si no está inicializado
+      if (!_apiService.isInitialized) {
+        await _apiService.initialize();
+      }
       
       // Cargar datos usando los endpoints específicos del dashboard
       final results = await Future.wait([
         _apiService.getTrabajos(),
         _apiService.get('/dashboard/maquinas-superficies'),
         _apiService.get('/dashboard/personal-rendimiento'),
+        _apiService.get('/mantenimientos'), // Cargar mantenimientos
       ]);
 
       setState(() {
@@ -89,10 +101,21 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           return haB.compareTo(haA); // Orden descendente
         });
         
+        // Procesar datos de mantenimientos
+        final mantenimientosResponse = results[3];
+        if (mantenimientosResponse is List) {
+          _mantenimientos = mantenimientosResponse.map((json) => Mantenimiento.fromJson(json)).toList();
+        } else if (mantenimientosResponse is Map<String, dynamic> && mantenimientosResponse['data'] != null) {
+          final mantenimientosData = mantenimientosResponse['data'] as List<dynamic>;
+          _mantenimientos = mantenimientosData.map((json) => Mantenimiento.fromJson(json)).toList();
+        } else {
+          _mantenimientos = [];
+        }
+        
         _isLoading = false;
       });
 
-      _logger.info('✅ Datos del dashboard cargados: ${_trabajos.length} trabajos, ${_maquinas.length} máquinas, ${_personal.length} personal');
+      _logger.info('✅ Datos del dashboard cargados: ${_trabajos.length} trabajos, ${_maquinas.length} máquinas, ${_personal.length} personal, ${_mantenimientos.length} mantenimientos');
       
       // Mostrar datos detallados de los endpoints específicos
       _logger.info('📊 Datos de máquinas desde endpoint específico:');
@@ -247,15 +270,15 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Encabezado
-              _buildHeader(),
-              const SizedBox(height: 24),
+              // _buildHeader(),
+              // const SizedBox(height: 24),
 
               // Lista de trabajos por estado
               _buildTrabajosSection(_trabajos),
               const SizedBox(height: 24),
 
-              // Calendario de trabajos pendientes
-              _buildCalendarioTrabajos(_trabajos),
+              // Calendario de trabajos y mantenimientos
+              _buildCalendarioTrabajosYMantenimientos(_trabajos, _mantenimientos),
               const SizedBox(height: 24),
 
               // Superficies de máquinas
@@ -271,47 +294,6 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Dashboard GesAgro',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Resumen de actividades y estadísticas',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          height: 3,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color(AppConstants.primaryColor).withOpacity(0.3),
-                const Color(AppConstants.primaryColor),
-                const Color(AppConstants.primaryColor).withOpacity(0.3),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildTrabajosSection(List<Trabajo> trabajos) {
     return Column(
@@ -399,19 +381,60 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     );
   }
 
-  Widget _buildCalendarioTrabajos(List<Trabajo> trabajos) {
-    // Filtrar trabajos pendientes/programados
-    final trabajosPendientes = trabajos.where((t) => 
-      t.estado?.toLowerCase() == 'pendiente' || 
-      t.estado?.toLowerCase() == 'programado'
-    ).toList();
+  Widget _buildCalendarioTrabajosYMantenimientos(List<Trabajo> trabajos, List<Mantenimiento> mantenimientos) {
+    // Mostrar TODOS los trabajos sin importar el estado
+    final todosLosTrabajos = trabajos;
     
     // Crear mapa de fechas con trabajos
-    final Map<DateTime, List<Trabajo>> trabajosPorFecha = {};
-    for (final trabajo in trabajosPendientes) {
+    _trabajosPorFecha = {};
+    for (final trabajo in todosLosTrabajos) {
       final fecha = DateTime(trabajo.fechaInicio.year, trabajo.fechaInicio.month, trabajo.fechaInicio.day);
-      trabajosPorFecha[fecha] = [...(trabajosPorFecha[fecha] ?? []), trabajo];
+      _trabajosPorFecha[fecha] = [...(_trabajosPorFecha[fecha] ?? []), trabajo];
     }
+    
+    // Crear mapa de fechas con mantenimientos próximos (solo pendientes y próximos)
+    _mantenimientosPorFecha = {};
+    final hoy = DateTime.now();
+    final proximosDias = hoy.add(const Duration(days: 30)); // Próximos 30 días
+    
+    for (final mantenimiento in mantenimientos) {
+      // Solo mostrar mantenimientos pendientes que estén próximos (hasta 30 días)
+      if (mantenimiento.estado.toLowerCase() == 'pendiente' && 
+          mantenimiento.fecha.isAfter(hoy.subtract(const Duration(days: 1))) &&
+          mantenimiento.fecha.isBefore(proximosDias)) {
+        final fecha = DateTime(mantenimiento.fecha.year, mantenimiento.fecha.month, mantenimiento.fecha.day);
+        _mantenimientosPorFecha[fecha] = [...(_mantenimientosPorFecha[fecha] ?? []), mantenimiento];
+      }
+    }
+
+    _logger.info('📅 Calendario: ${todosLosTrabajos.length} trabajos totales');
+    _logger.info('📅 Calendario: ${_trabajosPorFecha.length} fechas con trabajos');
+    _logger.info('📅 Calendario: ${mantenimientos.length} mantenimientos totales');
+    _logger.info('📅 Calendario: ${_mantenimientosPorFecha.length} fechas con mantenimientos próximos');
+    
+    // Debug: mostrar algunos trabajos
+    for (int i = 0; i < todosLosTrabajos.length && i < 3; i++) {
+      final trabajo = todosLosTrabajos[i];
+      _logger.info('📅 Trabajo $i: ${trabajo.tipo} - ${trabajo.cultivo} - ${DateFormat('dd/MM/yyyy').format(trabajo.fechaInicio)} - Estado: ${trabajo.estado}');
+    }
+    
+    // Debug: mostrar fechas con trabajos
+    _logger.info('📅 Fechas con trabajos:');
+    _trabajosPorFecha.forEach((fecha, trabajos) {
+      _logger.info('📅   ${DateFormat('dd/MM/yyyy').format(fecha)}: ${trabajos.length} trabajos');
+    });
+    
+    // Debug: mostrar algunos mantenimientos
+    for (int i = 0; i < mantenimientos.length && i < 3; i++) {
+      final mantenimiento = mantenimientos[i];
+      _logger.info('📅 Mantenimiento $i: ${mantenimiento.descripcion} - ${DateFormat('dd/MM/yyyy').format(mantenimiento.fecha)} - Estado: ${mantenimiento.estado}');
+    }
+    
+    // Debug: mostrar fechas con mantenimientos
+    _logger.info('📅 Fechas con mantenimientos próximos:');
+    _mantenimientosPorFecha.forEach((fecha, mantenimientos) {
+      _logger.info('📅   ${DateFormat('dd/MM/yyyy').format(fecha)}: ${mantenimientos.length} mantenimientos');
+    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,7 +458,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             ),
             const SizedBox(width: 12),
             const Text(
-              'Calendario de Trabajos Pendientes',
+              'Calendario de Trabajos',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -444,6 +467,9 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             ),
           ],
         ),
+        const SizedBox(height: 16),
+        // Leyenda de colores
+        _buildLeyendaColores(),
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
@@ -462,47 +488,82 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             firstDay: DateTime.now().subtract(const Duration(days: 365)),
             lastDay: DateTime.now().add(const Duration(days: 365)),
             focusedDay: _focusedDay,
-            selectedDayPredicate: (day) {
-              return isSameDay(_selectedDay, day);
-            },
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             onDaySelected: (selectedDay, focusedDay) {
+              // Solo actualizar si es un día diferente
               if (!isSameDay(_selectedDay, selectedDay)) {
                 setState(() {
                   _selectedDay = selectedDay;
                   _focusedDay = focusedDay;
                 });
                 
-                // Mostrar detalles del trabajo si hay trabajos en esa fecha
-                final trabajosDelDia = trabajosPorFecha[selectedDay];
-                if (trabajosDelDia != null && trabajosDelDia.isNotEmpty) {
-                  _mostrarDetallesTrabajos(context, trabajosDelDia, selectedDay);
-                }
+                // Normalizar la fecha seleccionada para comparar correctamente
+                final fechaNormalizada = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+                final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
+                final mantenimientosDelDia = _mantenimientosPorFecha[fechaNormalizada] ?? [];
+                
+                _logger.info('📅 Clic en día: ${DateFormat('dd/MM/yyyy').format(selectedDay)}');
+                _logger.info('📅 Fecha normalizada: ${DateFormat('dd/MM/yyyy').format(fechaNormalizada)}');
+                _logger.info('📅 Trabajos encontrados: ${trabajosDelDia.length}');
+                _logger.info('📅 Mantenimientos encontrados: ${mantenimientosDelDia.length}');
+                
+                _mostrarDetallesTrabajosYMantenimientos(context, trabajosDelDia, mantenimientosDelDia, selectedDay);
               }
             },
             onPageChanged: (focusedDay) {
-              _focusedDay = focusedDay;
+              setState(() {
+                _focusedDay = focusedDay;
+              });
             },
             eventLoader: (day) {
-              return trabajosPorFecha[day] ?? [];
+              final fechaNormalizada = DateTime(day.year, day.month, day.day);
+              final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
+              if (trabajosDelDia.isNotEmpty) {
+                _logger.info('📅 EventLoader - Día ${DateFormat('dd/MM/yyyy').format(day)}: ${trabajosDelDia.length} trabajos');
+              }
+              return trabajosDelDia;
             },
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, day, focusedDay) {
+                return _buildDayCell(day, focusedDay);
+              },
+              selectedBuilder: (context, day, focusedDay) {
+                return _buildDayCell(day, focusedDay, isSelected: true);
+              },
+              todayBuilder: (context, day, focusedDay) {
+                return _buildDayCell(day, focusedDay, isToday: true);
+              },
+            ),
             calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
               weekendTextStyle: TextStyle(color: Colors.red[400]),
               holidayTextStyle: TextStyle(color: Colors.red[400]),
               defaultTextStyle: const TextStyle(color: Colors.black87),
               selectedDecoration: BoxDecoration(
-                color: const Color(AppConstants.primaryColor),
+                color: const Color(AppConstants.primaryColor).withOpacity(0.7),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(AppConstants.primaryColor),
+                  width: 2,
+                ),
+              ),
+              selectedTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
               ),
               todayDecoration: BoxDecoration(
-                color: const Color(AppConstants.primaryColor).withOpacity(0.3),
+                color: const Color(AppConstants.primaryColor).withOpacity(0.2),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(AppConstants.primaryColor).withOpacity(0.5),
+                  width: 1,
+                ),
               ),
-              markersMaxCount: 3,
-              markerDecoration: BoxDecoration(
-                color: const Color(AppConstants.primaryColor),
-                shape: BoxShape.circle,
+              todayTextStyle: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
               ),
+              markersMaxCount: 0, // Desactivar los marcadores
             ),
             headerStyle: HeaderStyle(
               formatButtonVisible: false,
@@ -537,7 +598,107 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     );
   }
 
-  void _mostrarDetallesTrabajos(BuildContext context, List<Trabajo> trabajos, DateTime fecha) {
+  /// Construye una celda del calendario con círculo de color según trabajos y mantenimientos
+  Widget _buildDayCell(DateTime day, DateTime focusedDay, {bool isSelected = false, bool isToday = false}) {
+    final fechaNormalizada = DateTime(day.year, day.month, day.day);
+    final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
+    final mantenimientosDelDia = _mantenimientosPorFecha[fechaNormalizada] ?? [];
+    
+    // Determinar el color del círculo según trabajos y mantenimientos
+    Color circleColor = Colors.transparent;
+    Color textColor = Colors.black87;
+    
+    if (mantenimientosDelDia.isNotEmpty) {
+      // Si hay mantenimientos próximos, usar color amarillo
+      circleColor = Colors.yellow[600]!;
+      textColor = Colors.black87;
+    } else if (trabajosDelDia.isNotEmpty) {
+      // Si hay trabajos, usar el color del estado predominante
+      final estadoPredominante = _getEstadoPredominante(trabajosDelDia);
+      circleColor = _getColorPorEstado(estadoPredominante);
+      textColor = Colors.white;
+    } else if (isSelected) {
+      circleColor = const Color(AppConstants.primaryColor).withOpacity(0.7);
+      textColor = Colors.white;
+    } else if (isToday) {
+      circleColor = const Color(AppConstants.primaryColor).withOpacity(0.2);
+      textColor = Colors.black87;
+    }
+    
+    return Container(
+      margin: const EdgeInsets.all(4),
+      child: Center(
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: circleColor,
+            shape: BoxShape.circle,
+            border: isSelected 
+                ? Border.all(
+                    color: const Color(AppConstants.primaryColor),
+                    width: 2,
+                  )
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                color: textColor,
+                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Obtiene el estado predominante de una lista de trabajos
+  String _getEstadoPredominante(List<Trabajo> trabajos) {
+    if (trabajos.isEmpty) return 'pendiente';
+    
+    // Contar estados
+    final Map<String, int> estadoCount = {};
+    for (final trabajo in trabajos) {
+      final estado = trabajo.estado?.toLowerCase() ?? 'pendiente';
+      estadoCount[estado] = (estadoCount[estado] ?? 0) + 1;
+    }
+    
+    // Encontrar el estado con más trabajos
+    String estadoPredominante = 'pendiente';
+    int maxCount = 0;
+    
+    estadoCount.forEach((estado, count) {
+      if (count > maxCount) {
+        maxCount = count;
+        estadoPredominante = estado;
+      }
+    });
+    
+    return estadoPredominante;
+  }
+
+  /// Obtiene el color correspondiente a un estado
+  Color _getColorPorEstado(String estado) {
+    switch (estado.toLowerCase()) {
+      case 'completado':
+      case 'finalizado':
+        return Colors.green;
+      case 'en curso':
+      case 'en_progreso':
+        return Colors.orange;
+      case 'pendiente':
+      case 'programado':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _mostrarDetallesTrabajosYMantenimientos(BuildContext context, List<Trabajo> trabajos, List<Mantenimiento> mantenimientos, DateTime fecha) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -564,15 +725,56 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '${trabajos.length} trabajo${trabajos.length > 1 ? 's' : ''} programado${trabajos.length > 1 ? 's' : ''}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+                if (trabajos.isEmpty && mantenimientos.isEmpty) ...[
+                  Icon(
+                    Icons.event_busy,
+                    size: 48,
+                    color: Colors.grey[400],
                   ),
-                ),
-                const SizedBox(height: 16),
-                ...trabajos.map((trabajo) => _buildTrabajoCard(trabajo)).toList(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No hay trabajos ni mantenimientos',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'programados para esta fecha',
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 14,
+                    ),
+                  ),
+                ] else ...[
+                  if (trabajos.isNotEmpty) ...[
+                    Text(
+                      '${trabajos.length} trabajo${trabajos.length > 1 ? 's' : ''} programado${trabajos.length > 1 ? 's' : ''}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...trabajos.map((trabajo) => _buildTrabajoCard(trabajo)).toList(),
+                  ],
+                  if (mantenimientos.isNotEmpty) ...[
+                    if (trabajos.isNotEmpty) const SizedBox(height: 16),
+                    Text(
+                      '${mantenimientos.length} mantenimiento${mantenimientos.length > 1 ? 's' : ''} próximo${mantenimientos.length > 1 ? 's' : ''}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...mantenimientos.map((mantenimiento) => _buildMantenimientoCard(mantenimiento)).toList(),
+                  ],
+                ],
               ],
             ),
           ),
@@ -581,23 +783,163 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cerrar'),
             ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cerrar el modal primero
+                _navegarAFormularioMantenimiento(fecha);
+              },
+              icon: const Icon(Icons.build, size: 18),
+              label: const Text('Agregar Mantenimiento'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.yellow[600],
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cerrar el modal primero
+                _navegarAFormularioTrabajo(fecha);
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Agregar Trabajo'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(AppConstants.primaryColor),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+            ),
           ],
         );
       },
     );
   }
 
-  Widget _buildTrabajoCard(Trabajo trabajo) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(AppConstants.primaryColor).withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(AppConstants.primaryColor).withOpacity(0.2),
+  Widget _buildMantenimientoCard(Mantenimiento mantenimiento) {
+    return InkWell(
+      onTap: () => _navegarADetallesMantenimiento(mantenimiento),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.yellow.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.yellow.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.build,
+              color: Colors.yellow[600],
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    mantenimiento.descripcion,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Estado: ${mantenimiento.estado}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  if (mantenimiento.costoTotal != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Costo: \$${mantenimiento.costoTotal!.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  void _navegarADetallesMantenimiento(Mantenimiento mantenimiento) {
+    // TODO: Implementar navegación a detalles de mantenimiento
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Detalles de mantenimiento: ${mantenimiento.descripcion}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Navega al formulario de mantenimientos con fecha preestablecida
+  void _navegarAFormularioMantenimiento(DateTime fecha) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MantenimientoFormScreen(fechaInicial: fecha),
+      ),
+    );
+  }
+
+  /// Navega al formulario de trabajos con fecha preestablecida
+  void _navegarAFormularioTrabajo(DateTime fecha) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrabajoFormScreen(fechaInicial: fecha),
+      ),
+    );
+  }
+
+  Widget _buildTrabajoCard(Trabajo trabajo) {
+    // Determinar color según el estado
+    Color cardColor = Colors.grey.withOpacity(0.05);
+    Color borderColor = Colors.grey.withOpacity(0.2);
+    Color iconColor = Colors.grey;
+    
+    final estado = trabajo.estado?.toLowerCase() ?? '';
+    if (estado == 'pendiente' || estado == 'programado') {
+      cardColor = Colors.blue.withOpacity(0.05);
+      borderColor = Colors.blue.withOpacity(0.2);
+      iconColor = Colors.blue;
+    } else if (estado == 'en curso' || estado == 'en_progreso') {
+      cardColor = Colors.orange.withOpacity(0.05);
+      borderColor = Colors.orange.withOpacity(0.2);
+      iconColor = Colors.orange;
+    } else if (estado == 'completado' || estado == 'finalizado') {
+      cardColor = Colors.green.withOpacity(0.05);
+      borderColor = Colors.green.withOpacity(0.2);
+      iconColor = Colors.green;
+    }
+    
+    return InkWell(
+      onTap: () => _navegarADetallesTrabajo(trabajo),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -605,7 +947,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             children: [
               Icon(
                 Icons.work,
-                color: const Color(AppConstants.primaryColor),
+                color: iconColor,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -726,7 +1068,81 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
               ),
             ),
           ],
+          // Estado del trabajo
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: iconColor,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Estado: ${trabajo.estado ?? 'Sin estado'}',
+                style: TextStyle(
+                  color: iconColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    ),
+    );
+  }
+
+  Widget _buildLeyendaColores() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildLeyendaItem(Colors.blue, 'Pendientes'),
+          _buildLeyendaItem(Colors.orange, 'En Curso'),
+          _buildLeyendaItem(Colors.green, 'Completados'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLeyendaItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _navegarADetallesTrabajo(Trabajo trabajo) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
       ),
     );
   }

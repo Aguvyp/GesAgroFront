@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../providers/optimized_providers.dart';
 import '../../providers/trabajo_detalle_provider.dart';
 import '../../models/campo.dart';
@@ -21,8 +22,9 @@ import 'cliente_form_screen.dart';
 /// Pantalla completa para crear/editar trabajos
 class TrabajoFormScreen extends ConsumerStatefulWidget {
   final dynamic trabajo;
+  final DateTime? fechaInicial;
   
-  const TrabajoFormScreen({Key? key, this.trabajo}) : super(key: key);
+  const TrabajoFormScreen({Key? key, this.trabajo, this.fechaInicial}) : super(key: key);
 
   @override
   ConsumerState<TrabajoFormScreen> createState() => _TrabajoFormScreenState();
@@ -83,8 +85,15 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     _fechaFinController = TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
     _clienteController = TextEditingController(text: widget.trabajo?.cliente ?? '');
     _montoCobradoController = TextEditingController(text: widget.trabajo?.montoCobrado?.toString() ?? '');
-    _fechaInicio = widget.trabajo?.fechaInicio ?? DateTime.now();
+    
+    // Usar fecha inicial si se proporciona, sino usar fecha del trabajo o fecha actual
+    _fechaInicio = widget.fechaInicial ?? widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
+    
+    // Actualizar el controlador de fecha inicio si se proporciona fecha inicial
+    if (widget.fechaInicial != null) {
+      _fechaInicioController.text = DateFormat('dd/MM/yyyy').format(widget.fechaInicial!);
+    }
     
     // Estados adicionales
     _estadoSeleccionado = widget.trabajo?.estado ?? 'Pendiente';

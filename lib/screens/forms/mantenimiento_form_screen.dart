@@ -11,8 +11,9 @@ import '../../utils/constants.dart';
 /// Pantalla completa para crear/editar mantenimientos
 class MantenimientoFormScreen extends ConsumerStatefulWidget {
   final Mantenimiento? mantenimiento;
+  final DateTime? fechaInicial;
   
-  const MantenimientoFormScreen({Key? key, this.mantenimiento}) : super(key: key);
+  const MantenimientoFormScreen({Key? key, this.mantenimiento, this.fechaInicial}) : super(key: key);
 
   @override
   ConsumerState<MantenimientoFormScreen> createState() => _MantenimientoFormScreenState();
@@ -40,7 +41,7 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
     super.initState();
     _descripcionController = TextEditingController(text: widget.mantenimiento?.descripcion ?? '');
     _costoTotalController = TextEditingController(text: widget.mantenimiento?.costoTotal?.toString() ?? '');
-    _fechaSeleccionada = widget.mantenimiento?.fecha ?? DateTime.now();
+    _fechaSeleccionada = widget.fechaInicial ?? widget.mantenimiento?.fecha ?? DateTime.now();
     _estadoSeleccionado = widget.mantenimiento?.estado ?? 'Pendiente';
     
     // Cargar datos necesarios para los selectores

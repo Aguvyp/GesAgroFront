@@ -255,18 +255,7 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
       return OptimizedAnimatedList(
         children: filteredTrabajos.map((trabajo) {
           return OptimizedCard(
-            child: ListTile(
-              leading: Icon(
-                Icons.work, 
-                color: _getTrabajoColor(trabajo.estado),
-              ),
-              title: Text('${trabajo.tipo} - ${trabajo.cultivo}'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${trabajo.formattedDateRange} • ${trabajo.estado ?? 'Pendiente'}'),
-                ],
-              ),
+            child: InkWell(
               onTap: () {
                 Navigator.push(
                   context,
@@ -275,36 +264,58 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
                   ),
                 );
               },
-              trailing: PopupMenuButton(
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 8),
-                        Text('Editar'),
+                        Icon(
+                          Icons.work, 
+                          color: _getTrabajoColor(trabajo.estado),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${trabajo.tipo} - ${trabajo.cultivo}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Campo: ${trabajo.campoInfo}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              Text(
+                                '${trabajo.formattedDateRange} • ${trabajo.estado ?? 'Pendiente'}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuButton(
+                          itemBuilder: (context) => _buildTrabajoMenuItems(trabajo),
+                          onSelected: (value) => _handleTrabajoMenuAction(value, trabajo),
+                        ),
                       ],
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 20),
-                        SizedBox(width: 8),
-                        Text('Eliminar'),
-                      ],
-                    ),
-                  ),
-                ],
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showTrabajoForm(context, trabajo: trabajo);
-                  } else if (value == 'delete') {
-                    _showDeleteConfirmation(context, trabajo);
-                  }
-                },
+                    const SizedBox(height: 8),
+                    _buildTrabajoActionButtons(trabajo),
+                  ],
+                ),
               ),
             ),
           );
@@ -354,11 +365,141 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
     );
   }
 
+  Widget _buildTrabajoActionButtons(dynamic trabajo) {
+    final estado = trabajo.estado?.toLowerCase() ?? 'pendiente';
+    
+    if (estado == 'pendiente') {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ElevatedButton.icon(
+            onPressed: () => _cambiarEstadoTrabajo(trabajo, 'En Curso'),
+            icon: const Icon(Icons.play_arrow, size: 12),
+            label: const Text('Iniciar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              textStyle: const TextStyle(fontSize: 10),
+              minimumSize: const Size(0, 28),
+            ),
+          ),
+          const SizedBox(width: 6),
+          ElevatedButton.icon(
+            onPressed: () => _cambiarEstadoTrabajo(trabajo, 'Completado'),
+            icon: const Icon(Icons.check_circle, size: 12),
+            label: const Text('Completar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              textStyle: const TextStyle(fontSize: 10),
+              minimumSize: const Size(0, 28),
+            ),
+          ),
+        ],
+      );
+    } else if (estado == 'en curso' || estado == 'en_progreso') {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ElevatedButton.icon(
+            onPressed: () => _cambiarEstadoTrabajo(trabajo, 'Completado'),
+            icon: const Icon(Icons.check_circle, size: 12),
+            label: const Text('Completar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              textStyle: const TextStyle(fontSize: 10),
+              minimumSize: const Size(0, 28),
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // Para trabajos completados, no mostrar botones
+    return const SizedBox.shrink();
+  }
+
+  List<PopupMenuEntry> _buildTrabajoMenuItems(dynamic trabajo) {
+    return [
+      const PopupMenuItem(
+        value: 'edit',
+        child: Row(
+          children: [
+            Icon(Icons.edit, size: 20),
+            SizedBox(width: 8),
+            Text('Editar'),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'delete',
+        child: Row(
+          children: [
+            Icon(Icons.delete, size: 20, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  void _handleTrabajoMenuAction(dynamic value, dynamic trabajo) {
+    switch (value) {
+      case 'edit':
+        _showTrabajoForm(context, trabajo: trabajo);
+        break;
+      case 'delete':
+        _showDeleteConfirmation(context, trabajo);
+        break;
+    }
+  }
+
+  void _cambiarEstadoTrabajo(dynamic trabajo, String nuevoEstado) async {
+    try {
+      // Preparar datos para actualizar
+      final Map<String, dynamic> updateData = {
+        'estado': nuevoEstado,
+      };
+
+      // Si se está completando el trabajo, agregar fecha de fin
+      if (nuevoEstado == 'Completado') {
+        updateData['fecha_fin'] = DateTime.now().toIso8601String().split('T')[0];
+      }
+
+      // Actualizar el trabajo usando el provider
+      await ref.read(trabajosProvider.notifier).updateTrabajo(trabajo.id, updateData);
+
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Estado cambiado a: $nuevoEstado'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cambiar estado: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   Color _getTrabajoColor(String? estado) {
     switch (estado?.toLowerCase()) {
       case 'completado':
         return Colors.green;
       case 'en curso':
+      case 'en_progreso':
         return Colors.orange;
       case 'pendiente':
         return Colors.blue;
