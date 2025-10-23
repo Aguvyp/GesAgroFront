@@ -44,6 +44,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   String? _estadoSeleccionado;
   bool _esTercero = false;
   bool _cobrado = false;
+  bool _servicioContratado = false;
   
   // Selectores
   Campo? _campoSeleccionado;
@@ -93,10 +94,12 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
       // Si hay un trabajo, usar sus valores reales
       _esTercero = widget.trabajo!.esTercero;
       _cobrado = widget.trabajo!.cobrado;
+      _servicioContratado = widget.trabajo!.servicioContratado;
     } else {
       // Si es un trabajo nuevo, valores por defecto
       _esTercero = false;
       _cobrado = false;
+      _servicioContratado = false;
     }
     
     // Cargar datos necesarios para los selectores
@@ -183,8 +186,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
       // Seleccionar elementos existentes del trabajo usando los detalles completos
       if (_trabajoDetalle != null) {
-        // Seleccionar cliente si es trabajo a terceros
-        if (_trabajoDetalle!.aTerceros && _trabajoDetalle!.clienteInfo != null) {
+        // Seleccionar cliente si es servicio contratado
+        if (_servicioContratado && _trabajoDetalle!.clienteInfo != null) {
           _clienteSeleccionado = _clientes.firstWhere(
             (cliente) => cliente.id == _trabajoDetalle!.clienteInfo!.id,
             orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
@@ -221,8 +224,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         }).toList();
       } else if (widget.trabajo != null) {
         // Fallback para trabajos sin detalles completos
-        // Seleccionar cliente si es trabajo a terceros
-        if (_esTercero && widget.trabajo!.cliente != null) {
+        // Seleccionar cliente si es servicio contratado
+        if (_servicioContratado && widget.trabajo!.cliente != null) {
           _clienteSeleccionado = _clientes.firstWhere(
             (cliente) => cliente.nombre == widget.trabajo!.cliente,
             orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
@@ -247,12 +250,12 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
   // Método para aplicar filtros de campos según el cliente seleccionado
   Future<void> _aplicarFiltrosCampos() async {
-    if (_esTercero && _clienteSeleccionado != null) {
-      // Si es trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
+    if (_servicioContratado && _clienteSeleccionado != null) {
+      // Si es servicio contratado y hay cliente seleccionado, cargar solo sus campos
       try {
         _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
       } catch (e) {
-        print('Error cargando campos del cliente: $e');
+        print('Error cargando campos del prestador: $e');
         _camposFiltrados = [];
       }
     } else {
@@ -322,6 +325,27 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Servicio Contratado
+                    SwitchListTile(
+                      title: const Text('Servicio contratado'),
+                      subtitle: const Text('Marcar si es un servicio contratado'),
+                      value: _servicioContratado,
+                      onChanged: (value) {
+                        setState(() {
+                          _servicioContratado = value;
+                          // Limpiar selecciones si se desactiva "servicio contratado"
+                          if (!value) {
+                            _clienteSeleccionado = null;
+                            _clienteController.clear();
+                            _campoSeleccionado = null;
+                          }
+                        });
+                        // Aplicar filtros de campos
+                        _aplicarFiltrosCampos();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     // Tercero?
                     SwitchListTile(
                       title: const Text('Trabajo a terceros'),
@@ -345,11 +369,11 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Selector de Cliente (solo visible si es a terceros)
-                    if (_esTercero) ...[
+                    // Selector de Cliente (solo visible si es servicio contratado)
+                    if (_servicioContratado) ...[
                       _buildExpandableSelector(
-                        title: 'Cliente',
-                        subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar cliente',
+                        title: 'Prestador de servicio',
+                        subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar prestador',
                         isExpanded: _clientesExpanded,
                         onToggle: () => setState(() => _clientesExpanded = !_clientesExpanded),
                         onAddPressed: () => _showClienteForm(),
@@ -473,7 +497,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                     // Cobrado
                     SwitchListTile(
                       title: const Text('Cobrado'),
-                      subtitle: const Text('Marcar si ya se cobró el trabajo'),
+                      subtitle: const Text('Marcar si ya se cobró o pagó el trabajo'),
                       value: _cobrado,
                       onChanged: (value) {
                         setState(() {
@@ -977,12 +1001,13 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
           'tipo': _tipoController.text,
           'cultivo': _cultivoController.text,
           'observaciones': _descripcionController.text,
-          'cliente': _esTercero && _clienteSeleccionado != null 
+          'cliente': _servicioContratado && _clienteSeleccionado != null 
               ? _clienteSeleccionado!.nombre 
-              : (_esTercero ? 'Cliente no seleccionado' : 'Trabajo propio'),
+              : (_servicioContratado ? 'Prestador no seleccionado' : 'Trabajo propio'),
           'estado': _estadoSeleccionado ?? 'Pendiente',
           'a_terceros': _esTercero,
           'cobrado': _cobrado,
+          'servicio_contratado': _servicioContratado,
           'monto_cobrado': _cobrado && _montoCobradoController.text.isNotEmpty 
               ? double.tryParse(_montoCobradoController.text) 
               : null,

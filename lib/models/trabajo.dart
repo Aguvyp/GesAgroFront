@@ -15,6 +15,7 @@ class Trabajo {
   final bool cobrado;
   final double? montoCobrado;
   final String? cliente;
+  final bool servicioContratado;
 
   Trabajo({
     this.id,
@@ -31,6 +32,7 @@ class Trabajo {
     this.cobrado = false,
     this.montoCobrado,
     this.cliente,
+    this.servicioContratado = false,
   });
 
   factory Trabajo.fromJson(Map<String, dynamic> json) {
@@ -61,6 +63,7 @@ class Trabajo {
           ? (json['monto_cobrado'] as num).toDouble()
           : (json['montoCobrado'] != null ? (json['montoCobrado'] as num).toDouble() : null),
       cliente: json['cliente'],
+      servicioContratado: _parseBoolean(json['servicio_contratado']),
     );
   }
 
@@ -105,6 +108,7 @@ class Trabajo {
       'cobrado': cobrado,
       'monto_cobrado': montoCobrado,
       'cliente': cliente,
+      'servicio_contratado': servicioContratado,
     };
   }
 
@@ -123,6 +127,7 @@ class Trabajo {
     bool? cobrado,
     double? montoCobrado,
     String? cliente,
+    bool? servicioContratado,
   }) {
     return Trabajo(
       id: id ?? this.id,
@@ -139,6 +144,7 @@ class Trabajo {
       cobrado: cobrado ?? this.cobrado,
       montoCobrado: montoCobrado ?? this.montoCobrado,
       cliente: cliente ?? this.cliente,
+      servicioContratado: servicioContratado ?? this.servicioContratado,
     );
   }
 

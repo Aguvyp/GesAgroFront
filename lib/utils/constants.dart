@@ -67,11 +67,12 @@ class AppConstants {
   static const List<String> workTypes = [
     'Siembra',
     'Cosecha',
-    'Fertilización',
+    'Laboreo',
     'Pulverización',
-    'Arado',
-    'Rastra',
-    'Otros'
+    'Fertilización',
+    'Rollos',
+    'Fardos',
+    'Picado',
   ];
 
   // Payment Methods

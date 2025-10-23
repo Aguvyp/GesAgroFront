@@ -36,6 +36,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   String? _estadoSeleccionado;
   bool _esTercero = false;
   bool _cobrado = false;
+  bool _servicioContratado = false;
   
   // Selectores
   Campo? _campoSeleccionado;
@@ -75,10 +76,12 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       // Si hay un trabajo, usar sus valores reales
       _esTercero = widget.trabajo!.esTercero;
       _cobrado = widget.trabajo!.cobrado;
+      _servicioContratado = widget.trabajo!.servicioContratado;
     } else {
       // Si es un trabajo nuevo, valores por defecto
       _esTercero = false;
       _cobrado = false;
+      _servicioContratado = false;
     }
     
     // Debug logs
@@ -158,8 +161,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
       // Seleccionar elementos existentes del trabajo
       if (widget.trabajo != null) {
-        // Seleccionar cliente si es trabajo a terceros
-        if (_esTercero && widget.trabajo!.cliente != null) {
+        // Seleccionar cliente si es servicio contratado
+        if (_servicioContratado && widget.trabajo!.cliente != null) {
           try {
             _clienteSeleccionado = _clientes.firstWhere(
               (cliente) => cliente.nombre == widget.trabajo!.cliente,
@@ -204,14 +207,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
   // Método para aplicar filtros de campos según el cliente seleccionado
   Future<void> _aplicarFiltrosCampos() async {
-    print('DEBUG: _aplicarFiltrosCampos - _esTercero: $_esTercero, _clienteSeleccionado: $_clienteSeleccionado');
+    print('DEBUG: _aplicarFiltrosCampos - _servicioContratado: $_servicioContratado, _clienteSeleccionado: $_clienteSeleccionado');
     
-    if (_esTercero && _clienteSeleccionado != null) {
-      // Si es trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
-      print('DEBUG: Cargando campos del cliente ${_clienteSeleccionado!.nombre}');
+    if (_servicioContratado && _clienteSeleccionado != null) {
+      // Si es servicio contratado y hay cliente seleccionado, cargar solo sus campos
+      print('DEBUG: Cargando campos del prestador ${_clienteSeleccionado!.nombre}');
       try {
         _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
-        print('DEBUG: Campos del cliente cargados: ${_camposFiltrados.length}');
+        print('DEBUG: Campos del prestador cargados: ${_camposFiltrados.length}');
       } catch (e) {
         print('Error cargando campos del cliente: $e');
         _camposFiltrados = [];
@@ -339,6 +342,29 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                 ),
                 const SizedBox(height: 16),
                 
+                // Toggle Servicio Contratado
+                Row(
+                  children: [
+                    const Text('Servicio contratado:'),
+                    const Spacer(),
+                    Switch(
+                      value: _servicioContratado,
+                      onChanged: (value) {
+                        setState(() {
+                          _servicioContratado = value;
+                          // Limpiar selecciones si se desactiva "servicio contratado"
+                          if (!value) {
+                            _clienteSeleccionado = null;
+                            _clienteController.clear();
+                            _campoSeleccionado = null;
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
                 // Toggle Es Tercero
                 Row(
                   children: [
@@ -411,16 +437,16 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                 ),
                 
-                if (_esTercero) ...[
+                if (_servicioContratado) ...[
                   // Selector de Cliente con dropdown
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<Cliente>(
-                          decoration: const InputDecoration(
-                            labelText: 'Cliente',
-                            border: OutlineInputBorder(),
-                            hintText: 'Seleccione un cliente',
+                          decoration: InputDecoration(
+                            labelText: _servicioContratado ? 'Prestador de servicio' : 'Cliente',
+                            border: const OutlineInputBorder(),
+                            hintText: _servicioContratado ? 'Seleccione un prestador' : 'Seleccione un cliente',
                           ),
                           value: _clienteSeleccionado != null && _clientes.any((c) => c.id == _clienteSeleccionado!.id) 
                               ? _clienteSeleccionado 
@@ -466,8 +492,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                             }
                           },
                           validator: (value) {
-                            if (_esTercero && value == null) {
-                              return 'El cliente es requerido para trabajos a terceros';
+                            if (_servicioContratado && value == null) {
+                              return 'El prestador de servicio es requerido';
                             }
                             return null;
                           },
@@ -784,6 +810,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
           'estado': _estadoSeleccionado ?? 'Pendiente',
           'a_terceros': _esTercero,
           'cobrado': _cobrado,
+          'servicio_contratado': _servicioContratado,
           'monto_cobrado': _cobrado && _montoCobradoController.text.isNotEmpty 
               ? double.tryParse(_montoCobradoController.text) 
               : null,
