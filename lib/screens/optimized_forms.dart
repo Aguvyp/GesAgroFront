@@ -6,6 +6,7 @@ import '../models/maquina.dart';
 import '../models/personal.dart';
 import '../models/cliente.dart';
 import '../services/cliente_service.dart';
+import '../utils/constants.dart';
 import 'additional_forms.dart';
 
 /// Formulario para crear/editar campos
@@ -527,8 +528,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
       // Seleccionar elementos existentes del trabajo
       if (widget.trabajo != null) {
-        // Seleccionar cliente si es servicio contratado
-        if (_servicioContratado && widget.trabajo!.cliente != null) {
+        // Seleccionar cliente si es servicio contratado o trabajo a terceros
+        if ((_servicioContratado || _esTercero) && widget.trabajo!.cliente != null) {
           _clienteSeleccionado = _clientes.firstWhere(
             (cliente) => cliente.nombre == widget.trabajo!.cliente,
             orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
@@ -563,14 +564,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
   // Método para aplicar filtros de campos según el cliente seleccionado
   Future<void> _aplicarFiltrosCampos() async {
-    print('DEBUG: _aplicarFiltrosCampos - _servicioContratado: $_servicioContratado, _clienteSeleccionado: $_clienteSeleccionado');
+    print('DEBUG: _aplicarFiltrosCampos - _servicioContratado: $_servicioContratado, _esTercero: $_esTercero, _clienteSeleccionado: $_clienteSeleccionado');
     
-    if (_servicioContratado && _clienteSeleccionado != null) {
-      // Si es servicio contratado y hay cliente seleccionado, cargar solo sus campos
-      print('DEBUG: Cargando campos del prestador ${_clienteSeleccionado!.nombre}');
+    if ((_servicioContratado || _esTercero) && _clienteSeleccionado != null) {
+      // Si es servicio contratado o trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
+      print('DEBUG: Cargando campos del cliente ${_clienteSeleccionado!.nombre}');
       try {
         _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
-        print('DEBUG: Campos del prestador cargados: ${_camposFiltrados.length}');
+        print('DEBUG: Campos del cliente cargados: ${_camposFiltrados.length}');
       } catch (e) {
         print('Error cargando campos del cliente: $e');
         _camposFiltrados = [];
@@ -618,15 +619,21 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: _tipoController,
+                DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
                     labelText: 'Tipo de Trabajo',
                     border: OutlineInputBorder(),
                   ),
+                  value: _getValidTipoValue(),
+                  items: _buildTipoItems(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      _tipoController.text = newValue;
+                    }
+                  },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'El tipo es requerido';
+                      return 'El tipo de trabajo es requerido';
                     }
                     return null;
                   },
@@ -666,6 +673,10 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       onChanged: (value) {
                         setState(() {
                           _servicioContratado = value;
+                          // Si se activa servicio contratado, desactivar trabajo a terceros
+                          if (value) {
+                            _esTercero = false;
+                          }
                           // Limpiar selecciones si se desactiva "servicio contratado"
                           if (!value) {
                             _clienteSeleccionado = null;
@@ -693,6 +704,11 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                         // Actualizar el estado ANTES del setState
                         _esTercero = value;
                         print('DEBUG: _esTercero actualizado a: $_esTercero');
+                        
+                        // Si se activa trabajo a terceros, desactivar servicio contratado
+                        if (value) {
+                          _servicioContratado = false;
+                        }
                         
                         // Limpiar selecciones si se desactiva "a terceros"
                         if (!value) {
@@ -740,6 +756,40 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
+                
+                // Selector de Cliente (solo visible si es trabajo a terceros)
+                if (_esTercero) ...[
+                  DropdownButtonFormField<Cliente>(
+                    decoration: const InputDecoration(
+                      labelText: 'Cliente',
+                      border: OutlineInputBorder(),
+                      hintText: 'Seleccione un cliente',
+                    ),
+                    value: _clienteSeleccionado,
+                    items: _clientes.map((cliente) {
+                      return DropdownMenuItem<Cliente>(
+                        value: cliente,
+                        child: Text(cliente.nombre),
+                      );
+                    }).toList(),
+                    onChanged: (Cliente? newValue) async {
+                      setState(() {
+                        _clienteSeleccionado = newValue;
+                        _clienteController.text = newValue?.nombre ?? '';
+                        _campoSeleccionado = null; // Limpiar campo seleccionado
+                      });
+                      // Aplicar filtros de campos para el cliente seleccionado
+                      await _aplicarFiltrosCampos();
+                    },
+                    validator: (value) {
+                      if (_esTercero && value == null) {
+                        return 'El cliente es requerido para trabajos a terceros';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 
                 if (_servicioContratado) ...[
                   DropdownButtonFormField<Cliente>(
@@ -1089,9 +1139,9 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
           'tipo': _tipoController.text,
           'cultivo': _cultivoController.text,
           'observaciones': _descripcionController.text,
-          'cliente': _servicioContratado && _clienteSeleccionado != null 
+          'cliente': (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
               ? _clienteSeleccionado!.nombre 
-              : (_servicioContratado ? 'Prestador no seleccionado' : 'Trabajo propio'),
+              : ((_servicioContratado || _esTercero) ? 'Cliente no seleccionado' : 'Trabajo propio'),
           'estado': _estadoSeleccionado ?? 'Pendiente',
           'a_terceros': _esTercero,
           'cobrado': _cobrado,
@@ -1173,6 +1223,43 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
         _personalSeleccionado.add(result);
       });
     }
+  }
+
+  // Helper methods para el dropdown de tipo de trabajo
+  String? _getValidTipoValue() {
+    final currentValue = _tipoController.text;
+    if (currentValue.isEmpty) return null;
+    
+    // Si el valor actual está en la lista válida, usarlo
+    if (AppConstants.workTypes.contains(currentValue)) {
+      return currentValue;
+    }
+    
+    // Si no está en la lista válida, retornar null para forzar selección
+    return null;
+  }
+
+  List<DropdownMenuItem<String>> _buildTipoItems() {
+    final items = <DropdownMenuItem<String>>[];
+    
+    // Agregar opciones válidas
+    for (final tipo in AppConstants.workTypes) {
+      items.add(DropdownMenuItem<String>(
+        value: tipo,
+        child: Text(tipo),
+      ));
+    }
+    
+    // Si hay un valor actual que no está en la lista válida, agregarlo como opción especial
+    final currentValue = _tipoController.text;
+    if (currentValue.isNotEmpty && !AppConstants.workTypes.contains(currentValue)) {
+      items.insert(0, DropdownMenuItem<String>(
+        value: currentValue,
+        child: Text('$currentValue (obsoleto)'),
+      ));
+    }
+    
+    return items;
   }
 
 }

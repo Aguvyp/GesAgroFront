@@ -186,8 +186,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
       // Seleccionar elementos existentes del trabajo usando los detalles completos
       if (_trabajoDetalle != null) {
-        // Seleccionar cliente si es servicio contratado
-        if (_servicioContratado && _trabajoDetalle!.clienteInfo != null) {
+        // Seleccionar cliente si es servicio contratado o trabajo a terceros
+        if ((_servicioContratado || _esTercero) && _trabajoDetalle!.clienteInfo != null) {
           _clienteSeleccionado = _clientes.firstWhere(
             (cliente) => cliente.id == _trabajoDetalle!.clienteInfo!.id,
             orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
@@ -224,8 +224,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         }).toList();
       } else if (widget.trabajo != null) {
         // Fallback para trabajos sin detalles completos
-        // Seleccionar cliente si es servicio contratado
-        if (_servicioContratado && widget.trabajo!.cliente != null) {
+        // Seleccionar cliente si es servicio contratado o trabajo a terceros
+        if ((_servicioContratado || _esTercero) && widget.trabajo!.cliente != null) {
           _clienteSeleccionado = _clientes.firstWhere(
             (cliente) => cliente.nombre == widget.trabajo!.cliente,
             orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
@@ -250,12 +250,12 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
   // Método para aplicar filtros de campos según el cliente seleccionado
   Future<void> _aplicarFiltrosCampos() async {
-    if (_servicioContratado && _clienteSeleccionado != null) {
-      // Si es servicio contratado y hay cliente seleccionado, cargar solo sus campos
+    if ((_servicioContratado || _esTercero) && _clienteSeleccionado != null) {
+      // Si es servicio contratado o trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
       try {
         _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
       } catch (e) {
-        print('Error cargando campos del prestador: $e');
+        print('Error cargando campos del cliente: $e');
         _camposFiltrados = [];
       }
     } else {
@@ -306,12 +306,25 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Tipo de trabajo
-                    CustomTextField(
-                      controller: _tipoController,
-                      label: 'Tipo de Trabajo',
-                      hint: 'Ej: Siembra, Cosecha, Pulverización',
-                      prefixIcon: const Icon(Icons.work),
-                      validator: (value) => Validators.validateRequired(value, 'Tipo de trabajo'),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de Trabajo',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.work),
+                      ),
+                      value: _getValidTipoValue(),
+                      items: _buildTipoItems(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          _tipoController.text = newValue;
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'El tipo de trabajo es requerido';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
@@ -333,6 +346,10 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                       onChanged: (value) {
                         setState(() {
                           _servicioContratado = value;
+                          // Si se activa servicio contratado, desactivar trabajo a terceros
+                          if (value) {
+                            _esTercero = false;
+                          }
                           // Limpiar selecciones si se desactiva "servicio contratado"
                           if (!value) {
                             _clienteSeleccionado = null;
@@ -354,20 +371,37 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                       onChanged: (value) async {
                         setState(() {
                           _esTercero = value;
+                          // Si se activa trabajo a terceros, desactivar servicio contratado
+                          if (value) {
+                            _servicioContratado = false;
+                          }
+                          // Limpiar selecciones si se desactiva "a terceros"
+                          if (!value) {
+                            _clienteSeleccionado = null;
+                            _clienteController.clear();
+                            _campoSeleccionado = null;
+                          }
                         });
-                        
-                        // Limpiar selecciones si se desactiva "a terceros"
-                        if (!value) {
-                          _clienteSeleccionado = null;
-                          _clienteController.clear();
-                          _campoSeleccionado = null;
-                        }
                         
                         // Aplicar filtros de campos
                         await _aplicarFiltrosCampos();
                       },
                     ),
                     const SizedBox(height: 16),
+
+                    // Selector de Cliente (solo visible si es trabajo a terceros)
+                    if (_esTercero) ...[
+                      _buildExpandableSelector(
+                        title: 'Cliente',
+                        subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar cliente',
+                        isExpanded: _clientesExpanded,
+                        onToggle: () => setState(() => _clientesExpanded = !_clientesExpanded),
+                        onAddPressed: () => _showClienteForm(),
+                        addButtonText: 'Nuevo',
+                        child: _buildClientesSelector(),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // Selector de Cliente (solo visible si es servicio contratado)
                     if (_servicioContratado) ...[
@@ -1001,9 +1035,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
           'tipo': _tipoController.text,
           'cultivo': _cultivoController.text,
           'observaciones': _descripcionController.text,
-          'cliente': _servicioContratado && _clienteSeleccionado != null 
+          'cliente': (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
               ? _clienteSeleccionado!.nombre 
-              : (_servicioContratado ? 'Prestador no seleccionado' : 'Trabajo propio'),
+              : ((_servicioContratado || _esTercero) ? 'Cliente no seleccionado' : 'Trabajo propio'),
           'estado': _estadoSeleccionado ?? 'Pendiente',
           'a_terceros': _esTercero,
           'cobrado': _cobrado,
@@ -1120,5 +1154,42 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         ));
       });
     }
+  }
+
+  // Helper methods para el dropdown de tipo de trabajo
+  String? _getValidTipoValue() {
+    final currentValue = _tipoController.text;
+    if (currentValue.isEmpty) return null;
+    
+    // Si el valor actual está en la lista válida, usarlo
+    if (AppConstants.workTypes.contains(currentValue)) {
+      return currentValue;
+    }
+    
+    // Si no está en la lista válida, retornar null para forzar selección
+    return null;
+  }
+
+  List<DropdownMenuItem<String>> _buildTipoItems() {
+    final items = <DropdownMenuItem<String>>[];
+    
+    // Agregar opciones válidas
+    for (final tipo in AppConstants.workTypes) {
+      items.add(DropdownMenuItem<String>(
+        value: tipo,
+        child: Text(tipo),
+      ));
+    }
+    
+    // Si hay un valor actual que no está en la lista válida, agregarlo como opción especial
+    final currentValue = _tipoController.text;
+    if (currentValue.isNotEmpty && !AppConstants.workTypes.contains(currentValue)) {
+      items.insert(0, DropdownMenuItem<String>(
+        value: currentValue,
+        child: Text('$currentValue (obsoleto)'),
+      ));
+    }
+    
+    return items;
   }
 }
