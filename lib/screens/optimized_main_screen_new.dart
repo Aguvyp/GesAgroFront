@@ -6,6 +6,7 @@ import 'finanzas/optimized_finanzas_screens.dart';
 import 'mantenimientos/optimized_mantenimientos_screen.dart';
 import 'reportes/optimized_reportes_screen.dart';
 import 'test_connection_screen.dart';
+import 'test_screen.dart';
 import 'personal/personal_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
 import 'forms/forms_screens.dart';
@@ -386,6 +387,20 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const TestConnectionScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Pruebas y Análisis',
+                        Icons.science_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const TestScreen()),
                           );
                         },
                       ),

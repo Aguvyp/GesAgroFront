@@ -13,10 +13,11 @@ class AppConfig {
   AppConfig._();
 
   // Storage instances
-  late final FlutterSecureStorage _secureStorage;
-  late final SharedPreferences _prefs;
-  late final Box _hiveBox;
-  late final Logger _logger;
+  FlutterSecureStorage? _secureStorage;
+  SharedPreferences? _prefs;
+  Box? _hiveBox;
+  Logger? _logger;
+  bool _isInitialized = false;
 
   // Configuration
   // Usar la URL de constants.dart para mantener una sola fuente de verdad
@@ -31,17 +32,41 @@ class AppConfig {
   Duration get cacheTimeout => _cacheTimeout;
   int get maxRetries => _maxRetries;
   Duration get retryDelay => _retryDelay;
-  Logger get logger => _logger;
-  FlutterSecureStorage get secureStorage => _secureStorage;
-  SharedPreferences get prefs => _prefs;
-  Box get hiveBox => _hiveBox;
+  Logger get logger => _logger!;
+  FlutterSecureStorage get secureStorage => _secureStorage!;
+  SharedPreferences get prefs => _prefs!;
+  Box get hiveBox => _hiveBox!;
+  bool get isInitialized => _isInitialized;
 
   /// Inicializar todas las dependencias de configuración
   Future<void> initialize() async {
+    // Si ya está inicializado, no hacer nada
+    if (_isInitialized) {
+      return;
+    }
+    
     try {
-      // Initialize Hive
-      await Hive.initFlutter();
-      _hiveBox = await Hive.openBox('gesagro_cache');
+      // Initialize Hive (solo si no está inicializado)
+      try {
+        await Hive.initFlutter();
+      } catch (e) {
+        // Hive ya está inicializado, continuar
+        if (!e.toString().contains('already initialized')) {
+          rethrow;
+        }
+      }
+      
+      // Abrir box solo si no está ya abierto
+      try {
+        if (!Hive.isBoxOpen('gesagro_cache')) {
+          _hiveBox = await Hive.openBox('gesagro_cache');
+        } else {
+          _hiveBox = Hive.box('gesagro_cache');
+        }
+      } catch (e) {
+        // Si el box ya está abierto, obtenerlo directamente
+        _hiveBox = Hive.box('gesagro_cache');
+      }
 
       // Initialize secure storage
       _secureStorage = const FlutterSecureStorage(
@@ -69,7 +94,8 @@ class AppConfig {
         level: kDebugMode ? Level.debug : Level.warning,
       );
 
-      _logger.i('AppConfig initialized successfully');
+      _logger!.i('AppConfig initialized successfully');
+      _isInitialized = true;
     } catch (e) {
       throw Exception('Failed to initialize AppConfig: $e');
     }
@@ -96,9 +122,13 @@ class AppConfig {
 
   /// Limpiar todos los datos de caché
   Future<void> clearCache() async {
-    await _hiveBox.clear();
-    await _prefs.clear();
-    _logger.i('Cache cleared successfully');
+    if (_hiveBox != null) {
+      await _hiveBox!.clear();
+    }
+    if (_prefs != null) {
+      await _prefs!.clear();
+    }
+    _logger?.i('Cache cleared successfully');
   }
 
   /// Obtener información del dispositivo
