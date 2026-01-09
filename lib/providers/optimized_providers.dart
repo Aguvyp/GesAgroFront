@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:equatable/equatable.dart';
 import '../core/logger/app_logger.dart';
@@ -184,8 +185,17 @@ class TrabajosNotifier extends StateNotifier<BaseState> {
 
   Future<void> createTrabajo(Map<String, dynamic> data) async {
     try {
+      // Log del request antes de enviarlo
+      print('🔵 TrabajosNotifier.createTrabajo - Data recibida:');
+      print(data);
+      debugPrint('🔵 TrabajosNotifier.createTrabajo - Data recibida (debugPrint):');
+      debugPrint(data.toString());
+      
       final apiService = ApiService();
       await apiService.initialize();
+      
+      // Log antes de llamar al servicio
+      print('🔵 Llamando a apiService.createTrabajo...');
       await apiService.createTrabajo(data);
       
       await loadTrabajos(); // Recargar lista
@@ -193,6 +203,9 @@ class TrabajosNotifier extends StateNotifier<BaseState> {
     } catch (e) {
       state = ErrorState('Error creando trabajo: $e');
       _logger.error('Error creating trabajo', e);
+      // Log adicional del error
+      print('🔴 Error en createTrabajo: $e');
+      debugPrint('🔴 Error en createTrabajo: $e');
     }
   }
 
@@ -387,10 +400,14 @@ class MaquinasNotifier extends StateNotifier<BaseState> {
     }
   }
 
-  Future<void> createMaquina(Map<String, dynamic> data) async {
+  Future<void> createMaquina(Maquina maquina) async {
     try {
       final apiService = ApiService();
       await apiService.initialize();
+      // Convertir el objeto Maquina a Map para enviarlo al API
+      final data = maquina.toJson();
+      // Remover el id si existe (no se envía al crear)
+      data.remove('id');
       await apiService.createMaquina(data);
       
       await loadMaquinas(); // Recargar lista

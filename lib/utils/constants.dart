@@ -1,6 +1,6 @@
 class AppConstants {
   // API Configuration
-  static const String apiBaseUrl = 'http://168.181.185.234:8080';
+  static const String apiBaseUrl = 'https://64e3c8c7e17b.ngrok-free.app';
   static const int apiTimeoutSeconds = 30;
   static const Map<String, String> headers = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -27,41 +27,41 @@ class AppConstants {
   static const String roleContable = 'Contable';
   static const String roleOperario = 'Operario';
 
-  // API Endpoints (lista)
-  static const String camposListEndpoint = '/flutter/campos/lista/';
-  static const String maquinasListEndpoint = '/flutter/maquinas/lista/';
-  static const String personalListEndpoint = '/flutter/personal/lista/';
-  static const String trabajosListEndpoint = '/flutter/trabajos/lista/';
-  static const String costosListEndpoint = '/flutter/costos/lista/';
+  // API Endpoints (lista) - Flutter optimizados
+  static const String camposListEndpoint = '/api/flutter/campos/lista/';
+  static const String maquinasListEndpoint = '/api/flutter/maquinas/lista/';
+  static const String personalListEndpoint = '/api/flutter/personal/lista/';
+  static const String trabajosListEndpoint = '/api/flutter/trabajos/lista/';
+  static const String costosListEndpoint = '/api/flutter/costos/lista/';
 
   // API Endpoints (CRUD base)
-  static const String camposEndpoint = '/flutter/campos/';
-  static const String maquinasEndpoint = '/maquinas/';
-  static const String personalEndpoint = '/personal/';
-  static const String trabajosEndpoint = '/trabajos/';
-  static const String costosEndpoint = '/costos/';
+  static const String camposEndpoint = '/api/campos/';
+  static const String maquinasEndpoint = '/api/maquinas/';
+  static const String personalEndpoint = '/api/personal/';
+  static const String trabajosEndpoint = '/api/trabajos/';
+  static const String costosEndpoint = '/api/costo/';
   
   // Nuevos endpoints v2.0
-  static const String clientesEndpoint = '/clientes/';
-  static const String facturasEndpoint = '/facturas/';
-  static const String pagosEndpoint = '/pagos/';
-  static const String creditosEndpoint = '/creditos/';
-  static const String cuotasCreditoEndpoint = '/cuotas-credito/';
-  static const String insumosEndpoint = '/insumos/';
-  static const String movimientosEndpoint = '/movimientos/';
-  static const String mantenimientosEndpoint = '/mantenimientos/';
-  static const String usuariosEndpoint = '/usuarios/';
+  static const String clientesEndpoint = '/api/clientes/';
+  static const String facturasEndpoint = '/api/facturas/';
+  static const String pagosEndpoint = '/api/pagos/';
+  static const String creditosEndpoint = '/api/creditos/';
+  static const String cuotasCreditoEndpoint = '/api/cuotas-credito/';
+  static const String insumosEndpoint = '/api/insumos/';
+  static const String movimientosEndpoint = '/api/movimientos/';
+  static const String mantenimientosEndpoint = '/api/mantenimientos/';
+  static const String usuariosEndpoint = '/api/usuarios/';
 
   // Mobile endpoints
-  static const String trabajosRecientesEndpoint = '/mobile/trabajos/recientes/';
-  static const String mantenimientosProximosEndpoint = '/mobile/mantenimientos/proximos/';
-  static const String insumosBajoStockEndpoint = '/mobile/insumos/bajo-stock/';
-  static const String finanzasResumenEndpoint = '/mobile/finanzas/resumen/';
-  static const String resumenMobileEndpoint = '/mobile/resumen/';
-  static const String estadisticasMobileEndpoint = '/mobile/estadisticas/';
+  static const String trabajosRecientesEndpoint = '/api/mobile/trabajos/recientes/';
+  static const String mantenimientosProximosEndpoint = '/api/mobile/mantenimientos/proximos/';
+  static const String insumosBajoStockEndpoint = '/api/mobile/insumos/bajo-stock/';
+  static const String finanzasResumenEndpoint = '/api/mobile/finanzas/resumen/';
+  static const String resumenMobileEndpoint = '/api/mobile/resumen/';
+  static const String estadisticasMobileEndpoint = '/api/mobile/estadisticas/';
 
   // Reportes endpoints
-  static const String reportesEndpoint = '/reportes/';
+  static const String reportesEndpoint = '/api/reportes/';
 
   // Work Types
   static const List<String> workTypes = [

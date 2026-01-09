@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/credito.dart';
-import '../services/credito_service.dart';
-import 'forms/forms_screens.dart';
+import '../../models/credito.dart';
+import '../../services/credito_service.dart';
+import '../forms/cuota_form_screen.dart';
 
 /// Pantalla para gestionar cuotas de un crédito específico
 class CuotasCreditoScreen extends ConsumerStatefulWidget {

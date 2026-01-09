@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/cliente.dart';
 import '../../services/cliente_service.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 
 /// Pantalla completa para crear/editar clientes
@@ -71,91 +71,91 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información básica
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Información Básica',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información Básica',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _nombreController,
-                        label: 'Nombre completo',
-                        hint: 'Ingresa el nombre completo del cliente',
-                        prefixIcon: const Icon(Icons.person),
-                        validator: (value) => Validators.validateRequired(value, 'Nombre'),
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _emailController,
-                        label: 'Email',
-                        hint: 'Ingresa el email del cliente',
-                        prefixIcon: const Icon(Icons.email),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) => Validators.validateEmail(value),
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _telefonoController,
-                        label: 'Teléfono',
-                        hint: 'Ingresa el número de teléfono',
-                        prefixIcon: const Icon(Icons.phone),
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _nombreController,
+                      label: 'Nombre completo',
+                      hint: 'Ingresa el nombre completo del cliente',
+                      prefixIcon: const Icon(Icons.person),
+                      validator: (value) => Validators.validateRequired(value, 'Nombre'),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _emailController,
+                      label: 'Email',
+                      hint: 'Ingresa el email del cliente',
+                      prefixIcon: const Icon(Icons.email),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) => Validators.validateEmail(value),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _telefonoController,
+                      label: 'Teléfono',
+                      hint: 'Ingresa el número de teléfono',
+                      prefixIcon: const Icon(Icons.phone),
+                      keyboardType: TextInputType.phone,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // Información adicional
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Información Adicional',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información Adicional',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _direccionController,
-                        label: 'Dirección',
-                        hint: 'Ingresa la dirección del cliente',
-                        prefixIcon: const Icon(Icons.location_on),
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _cuitController,
-                        label: 'CUIT',
-                        hint: 'Ingresa el CUIT del cliente',
-                        prefixIcon: const Icon(Icons.business),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _observacionesController,
-                        label: 'Observaciones',
-                        hint: 'Ingresa observaciones adicionales',
-                        prefixIcon: const Icon(Icons.note),
-                        maxLines: 3,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _direccionController,
+                      label: 'Dirección',
+                      hint: 'Ingresa la dirección del cliente',
+                      prefixIcon: const Icon(Icons.location_on),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _cuitController,
+                      label: 'CUIT',
+                      hint: 'Ingresa el CUIT del cliente',
+                      prefixIcon: const Icon(Icons.business),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _observacionesController,
+                      label: 'Observaciones',
+                      hint: 'Ingresa observaciones adicionales',
+                      prefixIcon: const Icon(Icons.note),
+                      maxLines: 3,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),

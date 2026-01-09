@@ -55,7 +55,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
                 const SizedBox(height: 40),
                 OptimizedTextField(
                   controller: _emailController,
-                  label: 'Email',
+                   label: 'Email',
                   hint: 'Ingresa tu email',
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(Icons.email_outlined),
@@ -90,9 +90,6 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa tu contraseña';
                     }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
-                    }
                     return null;
                   },
                 ),
@@ -102,17 +99,6 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
                   onPressed: authState is LoadingAuthState ? null : _handleLogin,
                   isLoading: authState is LoadingAuthState,
                   isFullWidth: true,
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const OptimizedRegisterScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('¿No tienes cuenta? Regístrate'),
                 ),
                 if (authState is ErrorAuthState) ...[
                   const SizedBox(height: 16),

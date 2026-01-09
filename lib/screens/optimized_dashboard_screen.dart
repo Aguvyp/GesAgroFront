@@ -10,9 +10,12 @@ import '../models/mantenimiento.dart';
 import '../utils/constants.dart';
 import '../services/optimized_api_service.dart';
 import '../core/logger/app_logger.dart';
-import 'trabajo_detail_screen.dart';
+import 'trabajos/trabajo_detail_screen.dart';
 import 'forms/trabajo_form_screen.dart';
 import 'forms/mantenimiento_form_screen.dart';
+import 'forms/maquina_form_screen.dart';
+import 'forms/campo_form_screen.dart';
+import 'forms/cliente_form_screen.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -66,21 +69,53 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
         await _apiService.initialize();
       }
       
-      // Cargar datos usando los endpoints específicos del dashboard
-      final results = await Future.wait([
-        _apiService.getTrabajos(),
-        _apiService.get('/dashboard/maquinas-superficies'),
-        _apiService.get('/dashboard/personal-rendimiento'),
-        _apiService.get('/mantenimientos'), // Cargar mantenimientos
-      ]);
+      // Cargar datos usando el endpoint del dashboard que contiene toda la información
+      // Usar manejo individual de errores para que si uno falla, los otros continúen
+      List<Trabajo> trabajos = [];
+      Map<String, dynamic> dashboardResponse = {};
+      List<Mantenimiento> mantenimientos = [];
+      
+      // Cargar trabajos
+      try {
+        trabajos = await _apiService.getTrabajos();
+        _logger.info('✅ Trabajos cargados: ${trabajos.length}');
+      } catch (e) {
+        _logger.error('❌ Error cargando trabajos: $e');
+        trabajos = [];
+      }
+      
+      // Cargar resumen del dashboard
+      try {
+        final response = await _apiService.get('/api/dashboard/resumen');
+        if (response is Map<String, dynamic>) {
+          dashboardResponse = response;
+        }
+        _logger.info('✅ Dashboard resumen cargado');
+      } catch (e) {
+        _logger.error('❌ Error cargando dashboard resumen: $e');
+        dashboardResponse = {};
+      }
+      
+      // Cargar mantenimientos (este puede fallar con 500, pero ya está manejado en el servicio)
+      try {
+        mantenimientos = await _apiService.getMantenimientos();
+        _logger.info('✅ Mantenimientos cargados: ${mantenimientos.length}');
+      } catch (e) {
+        _logger.error('❌ Error cargando mantenimientos: $e');
+        mantenimientos = [];
+      }
 
       setState(() {
-        _trabajos = results[0] as List<Trabajo>;
+        _trabajos = trabajos;
         
-        // Procesar datos de máquinas desde el endpoint específico
-        final maquinasResponse = results[1] as Map<String, dynamic>;
-        final maquinasData = maquinasResponse['data'] as List<dynamic>;
-        _maquinas = maquinasData.map((json) => Maquina.fromJson(json)).toList();
+        // Procesar datos del resumen del dashboard
+        // Extraer máquinas del resumen
+        if (dashboardResponse['maquinas'] != null) {
+          final maquinasData = dashboardResponse['maquinas'] as List<dynamic>;
+          _maquinas = maquinasData.map((json) => Maquina.fromJson(json)).toList();
+        } else {
+          _maquinas = [];
+        }
         
         // Ordenar máquinas por hectáreas (mayor a menor)
         _maquinas.sort((a, b) {
@@ -89,10 +124,13 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           return haB.compareTo(haA); // Orden descendente
         });
         
-        // Procesar datos de personal desde el endpoint específico
-        final personalResponse = results[2] as Map<String, dynamic>;
-        final personalData = personalResponse['data'] as List<dynamic>;
-        _personal = personalData.map((json) => Personal.fromJson(json)).toList();
+        // Extraer personal del resumen
+        if (dashboardResponse['personal'] != null) {
+          final personalData = dashboardResponse['personal'] as List<dynamic>;
+          _personal = personalData.map((json) => Personal.fromJson(json)).toList();
+        } else {
+          _personal = [];
+        }
         
         // Ordenar personal por hectáreas (mayor a menor)
         _personal.sort((a, b) {
@@ -101,16 +139,8 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           return haB.compareTo(haA); // Orden descendente
         });
         
-        // Procesar datos de mantenimientos
-        final mantenimientosResponse = results[3];
-        if (mantenimientosResponse is List) {
-          _mantenimientos = mantenimientosResponse.map((json) => Mantenimiento.fromJson(json)).toList();
-        } else if (mantenimientosResponse is Map<String, dynamic> && mantenimientosResponse['data'] != null) {
-          final mantenimientosData = mantenimientosResponse['data'] as List<dynamic>;
-          _mantenimientos = mantenimientosData.map((json) => Mantenimiento.fromJson(json)).toList();
-        } else {
-          _mantenimientos = [];
-        }
+        // Asignar mantenimientos (ya viene como List<Mantenimiento> del método getMantenimientos)
+        _mantenimientos = mantenimientos;
         
         _isLoading = false;
       });
@@ -142,52 +172,38 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     }
   }
 
-  /// Probar los nuevos endpoints específicos del dashboard
+  /// Probar el endpoint del dashboard
   Future<void> _testNewEndpoints() async {
     try {
-      _logger.info('🧪 Probando endpoint /dashboard/maquinas-superficies...');
+      _logger.info('🧪 Probando endpoint /api/dashboard/resumen...');
       
-      final maquinasResponse = await _apiService.get('/dashboard/maquinas-superficies');
-      _logger.info('📊 Respuesta de máquinas-superficies:');
-      _logger.info('   Tipo: ${maquinasResponse.runtimeType}');
-      _logger.info('   Contenido: $maquinasResponse');
+      final dashboardResponse = await _apiService.get('/api/dashboard/resumen');
+      _logger.info('📊 Respuesta del dashboard resumen:');
+      _logger.info('   Tipo: ${dashboardResponse.runtimeType}');
+      _logger.info('   Contenido: $dashboardResponse');
       
-      if (maquinasResponse is Map<String, dynamic>) {
-        final data = maquinasResponse['data'];
-        _logger.info('   Data field: $data');
-        if (data is List) {
-          _logger.info('   Cantidad de máquinas: ${data.length}');
-          for (int i = 0; i < data.length; i++) {
-            _logger.info('   Máquina $i: ${data[i]}');
+      if (dashboardResponse is Map<String, dynamic>) {
+        _logger.info('   Campos disponibles: ${dashboardResponse.keys.toList()}');
+        
+        if (dashboardResponse['maquinas'] != null) {
+          final maquinas = dashboardResponse['maquinas'];
+          _logger.info('   Máquinas: $maquinas');
+          if (maquinas is List) {
+            _logger.info('   Cantidad de máquinas: ${maquinas.length}');
+          }
+        }
+        
+        if (dashboardResponse['personal'] != null) {
+          final personal = dashboardResponse['personal'];
+          _logger.info('   Personal: $personal');
+          if (personal is List) {
+            _logger.info('   Cantidad de personal: ${personal.length}');
           }
         }
       }
       
     } catch (e) {
-      _logger.error('❌ Error en endpoint máquinas-superficies: $e');
-    }
-
-    try {
-      _logger.info('🧪 Probando endpoint /dashboard/personal-rendimiento...');
-      
-      final personalResponse = await _apiService.get('/dashboard/personal-rendimiento');
-      _logger.info('📊 Respuesta de personal-rendimiento:');
-      _logger.info('   Tipo: ${personalResponse.runtimeType}');
-      _logger.info('   Contenido: $personalResponse');
-      
-      if (personalResponse is Map<String, dynamic>) {
-        final data = personalResponse['data'];
-        _logger.info('   Data field: $data');
-        if (data is List) {
-          _logger.info('   Cantidad de personal: ${data.length}');
-          for (int i = 0; i < data.length; i++) {
-            _logger.info('   Personal $i: ${data[i]}');
-          }
-        }
-      }
-      
-    } catch (e) {
-      _logger.error('❌ Error en endpoint personal-rendimiento: $e');
+      _logger.error('❌ Error en endpoint dashboard/resumen: $e');
     }
   }
 
@@ -269,9 +285,9 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Encabezado
-              // _buildHeader(),
-              // const SizedBox(height: 24),
+              // Accesos rápidos
+              _buildAccesosRapidos(),
+              const SizedBox(height: 24),
 
               // Lista de trabajos por estado
               _buildTrabajosSection(_trabajos),
@@ -294,6 +310,161 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     );
   }
 
+
+  /// Construye la sección de accesos rápidos
+  Widget _buildAccesosRapidos() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              height: 24,
+              width: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(AppConstants.primaryColor),
+                    const Color(AppConstants.primaryColor).withOpacity(0.7),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Accesos Rápidos',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.5,
+          children: [
+            _buildAccesoRapidoCard(
+              'Trabajo',
+              Icons.work,
+              const Color(AppConstants.primaryColor),
+              () => _navegarAFormularioTrabajo(DateTime.now()),
+            ),
+            _buildAccesoRapidoCard(
+              'Máquina',
+              Icons.build,
+              Colors.deepOrange,
+              () => _navegarAFormularioMaquina(),
+            ),
+            _buildAccesoRapidoCard(
+              'Campo',
+              Icons.landscape,
+              Colors.green,
+              () => _navegarAFormularioCampo(),
+            ),
+            _buildAccesoRapidoCard(
+              'Cliente',
+              Icons.person,
+              Colors.blue,
+              () => _navegarAFormularioCliente(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Construye una tarjeta de acceso rápido
+  Widget _buildAccesoRapidoCard(
+    String titulo,
+    IconData icono,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icono,
+                color: color,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Navega al formulario de máquinas
+  void _navegarAFormularioMaquina() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MaquinaFormScreen(),
+      ),
+    );
+  }
+
+  /// Navega al formulario de campos
+  void _navegarAFormularioCampo() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CampoFormScreen(),
+      ),
+    );
+  }
+
+  /// Navega al formulario de clientes
+  void _navegarAFormularioCliente() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ClienteFormScreen(),
+      ),
+    );
+  }
 
   Widget _buildTrabajosSection(List<Trabajo> trabajos) {
     return Column(

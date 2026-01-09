@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/personal.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 
 /// Pantalla completa para crear/editar personal
@@ -63,58 +63,58 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información personal
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Información Personal',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información Personal',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _nombreController,
-                        label: 'Nombre completo',
-                        hint: 'Ingresa el nombre completo del operario',
-                        prefixIcon: const Icon(Icons.person),
-                        validator: (value) => Validators.validateRequired(value, 'Nombre'),
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _dniController,
-                        label: 'DNI',
-                        hint: 'Ingresa el número de DNI',
-                        prefixIcon: const Icon(Icons.badge),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'El DNI es requerido';
-                          }
-                          if (value.length < 7) {
-                            return 'El DNI debe tener al menos 7 dígitos';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _telefonoController,
-                        label: 'Teléfono (opcional)',
-                        hint: 'Ingresa el número de teléfono',
-                        prefixIcon: const Icon(Icons.phone),
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _nombreController,
+                      label: 'Nombre completo',
+                      hint: 'Ingresa el nombre completo del operario',
+                      prefixIcon: const Icon(Icons.person),
+                      validator: (value) => Validators.validateRequired(value, 'Nombre'),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _dniController,
+                      label: 'DNI',
+                      hint: 'Ingresa el número de DNI',
+                      prefixIcon: const Icon(Icons.badge),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'El DNI es requerido';
+                        }
+                        if (value.length < 7) {
+                          return 'El DNI debe tener al menos 7 dígitos';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _telefonoController,
+                      label: 'Teléfono (opcional)',
+                      hint: 'Ingresa el número de teléfono',
+                      prefixIcon: const Icon(Icons.phone),
+                      keyboardType: TextInputType.phone,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),

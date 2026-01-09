@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/maquina.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 
 /// Pantalla completa para crear/editar máquinas
@@ -23,6 +23,7 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
   late TextEditingController _modeloController;
   late TextEditingController _anioController;
   late TextEditingController _anchoTrabajoController;
+  late TextEditingController _horasTrabajadasController;
   late TextEditingController _detallesController;
   
   bool _isSaving = false;
@@ -35,6 +36,7 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
     _modeloController = TextEditingController(text: widget.maquina?.modelo ?? '');
     _anioController = TextEditingController(text: widget.maquina?.ano.toString() ?? '');
     _anchoTrabajoController = TextEditingController(text: widget.maquina?.anchoTrabajo?.toString() ?? '');
+    _horasTrabajadasController = TextEditingController(text: widget.maquina?.horasTrabajadas?.toString() ?? '');
     _detallesController = TextEditingController(text: widget.maquina?.detalles ?? '');
   }
 
@@ -45,6 +47,7 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
     _modeloController.dispose();
     _anioController.dispose();
     _anchoTrabajoController.dispose();
+    _horasTrabajadasController.dispose();
     _detallesController.dispose();
     super.dispose();
   }
@@ -72,105 +75,113 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información básica
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Información Básica',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información Básica',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _nombreController,
-                        label: 'Nombre',
-                        hint: 'Nombre identificativo de la máquina',
-                        prefixIcon: const Icon(Icons.build),
-                        validator: (value) => Validators.validateRequired(value, 'Nombre'),
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _marcaController,
-                        label: 'Marca',
-                        hint: 'Marca de la máquina',
-                        prefixIcon: const Icon(Icons.business),
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _modeloController,
-                        label: 'Modelo',
-                        hint: 'Modelo de la máquina',
-                        prefixIcon: const Icon(Icons.model_training),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _nombreController,
+                      label: 'Nombre',
+                      hint: 'Nombre identificativo de la máquina',
+                      prefixIcon: const Icon(Icons.build),
+                      validator: (value) => Validators.validateRequired(value, 'Nombre'),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _marcaController,
+                      label: 'Marca',
+                      hint: 'Marca de la máquina',
+                      prefixIcon: const Icon(Icons.business),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _modeloController,
+                      label: 'Modelo',
+                      hint: 'Modelo de la máquina',
+                      prefixIcon: const Icon(Icons.model_training),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // Especificaciones técnicas
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Especificaciones Técnicas',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Especificaciones Técnicas',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _anioController,
-                        label: 'Año',
-                        hint: 'Año de fabricación',
-                        prefixIcon: const Icon(Icons.calendar_today),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _anchoTrabajoController,
-                        label: 'Ancho de Trabajo (metros)',
-                        hint: 'Ancho de trabajo en metros',
-                        prefixIcon: const Icon(Icons.straighten),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _anioController,
+                      label: 'Año',
+                      hint: 'Año de fabricación',
+                      prefixIcon: const Icon(Icons.calendar_today),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _anchoTrabajoController,
+                      label: 'Ancho de Trabajo (metros)',
+                      hint: 'Ancho de trabajo en metros',
+                      prefixIcon: const Icon(Icons.straighten),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _horasTrabajadasController,
+                      label: 'Horas de Uso',
+                      hint: 'Horas totales trabajadas',
+                      prefixIcon: const Icon(Icons.access_time),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // Detalles adicionales
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Detalles Adicionales',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Detalles Adicionales',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _detallesController,
-                        label: 'Detalles',
-                        hint: 'Información adicional sobre la máquina',
-                        prefixIcon: const Icon(Icons.description),
-                        maxLines: 4,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _detallesController,
+                      label: 'Detalles (opcional)',
+                      hint: 'Información adicional sobre la máquina',
+                      prefixIcon: const Icon(Icons.note),
+                      maxLines: 4,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),
@@ -214,18 +225,23 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
       });
 
       try {
-        final data = {
-          'nombre': _nombreController.text,
-          'marca': _marcaController.text,
-          'modelo': _modeloController.text,
-          'anio': _anioController.text.isNotEmpty ? int.parse(_anioController.text) : null,
-          'ancho_trabajo': _anchoTrabajoController.text.isNotEmpty ? double.parse(_anchoTrabajoController.text) : null,
-          'detalles': _detallesController.text.isNotEmpty ? _detallesController.text : null,
-        };
+        // Crear objeto Maquina
+        final maquina = Maquina(
+          nombre: _nombreController.text,
+          marca: _marcaController.text,
+          modelo: _modeloController.text,
+          ano: _anioController.text.isNotEmpty ? int.parse(_anioController.text) : DateTime.now().year,
+          anchoTrabajo: _anchoTrabajoController.text.isNotEmpty ? double.parse(_anchoTrabajoController.text) : null,
+          horasTrabajadas: _horasTrabajadasController.text.isNotEmpty ? double.parse(_horasTrabajadasController.text) : null,
+          detalles: _detallesController.text.isNotEmpty ? _detallesController.text : null,
+        );
 
         if (widget.maquina == null) {
-          await ref.read(maquinasProvider.notifier).createMaquina(data);
+          await ref.read(maquinasProvider.notifier).createMaquina(maquina);
         } else {
+          // Para actualizar, convertir a Map (mantener compatibilidad con updateMaquina)
+          final data = maquina.toJson();
+          data.remove('id'); // No enviar el id en el update
           await ref.read(maquinasProvider.notifier).updateMaquina(widget.maquina!.id!, data);
         }
 

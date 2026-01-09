@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/campo.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 
 /// Pantalla completa para crear/editar campos
@@ -69,123 +69,123 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información básica
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Información Básica',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información Básica',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _nombreController,
-                        label: 'Nombre del Campo',
-                        hint: 'Ingresa el nombre del campo',
-                        prefixIcon: const Icon(Icons.landscape),
-                        validator: (value) => Validators.validateRequired(value, 'Nombre del campo'),
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _superficieController,
-                        label: 'Superficie (hectáreas)',
-                        hint: 'Ingresa la superficie en hectáreas',
-                        prefixIcon: const Icon(Icons.straighten),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'La superficie es requerida';
-                          }
-                          if (double.tryParse(value) == null) {
-                            return 'Ingrese un número válido';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _nombreController,
+                      label: 'Nombre del Campo',
+                      hint: 'Ingresa el nombre del campo',
+                      prefixIcon: const Icon(Icons.landscape),
+                      validator: (value) => Validators.validateRequired(value, 'Nombre del campo'),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _superficieController,
+                      label: 'Superficie (hectáreas)',
+                      hint: 'Ingresa la superficie en hectáreas',
+                      prefixIcon: const Icon(Icons.straighten),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'La superficie es requerida';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Ingrese un número válido';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // Ubicación
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Ubicación',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ubicación',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _latitudController,
-                              label: 'Latitud',
-                              hint: 'Ej: -34.6037',
-                              prefixIcon: const Icon(Icons.my_location),
-                              keyboardType: TextInputType.number,
-                            ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OptimizedTextField(
+                            controller: _latitudController,
+                            label: 'Latitud',
+                            hint: 'Ej: -34.6037',
+                            prefixIcon: const Icon(Icons.location_on),
+                            keyboardType: TextInputType.number,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _longitudController,
-                              label: 'Longitud',
-                              hint: 'Ej: -58.3816',
-                              prefixIcon: const Icon(Icons.my_location),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Las coordenadas son opcionales y se pueden obtener desde Google Maps',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
                         ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: OptimizedTextField(
+                            controller: _longitudController,
+                            label: 'Longitud',
+                            hint: 'Ej: -58.3816',
+                            prefixIcon: const Icon(Icons.location_on),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Las coordenadas son opcionales y se pueden obtener desde Google Maps',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // Detalles adicionales
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Detalles Adicionales',
-                        style: Theme.of(context).textTheme.titleLarge,
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Detalles Adicionales',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _detallesController,
-                        label: 'Detalles (opcional)',
-                        hint: 'Información adicional sobre el campo',
-                        prefixIcon: const Icon(Icons.description),
-                        maxLines: 4,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
+                      controller: _detallesController,
+                      label: 'Detalles (opcional)',
+                      hint: 'Información adicional sobre el campo',
+                      prefixIcon: const Icon(Icons.note),
+                      maxLines: 4,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),
@@ -231,7 +231,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
       try {
         final data = {
           'nombre': _nombreController.text,
-          'superficie_ha': double.parse(_superficieController.text),
+          'hectareas': double.parse(_superficieController.text),
           'latitud': _latitudController.text.isNotEmpty ? double.parse(_latitudController.text) : null,
           'longitud': _longitudController.text.isNotEmpty ? double.parse(_longitudController.text) : null,
           'detalles': _detallesController.text.isNotEmpty ? _detallesController.text : null,

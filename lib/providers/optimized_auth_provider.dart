@@ -100,12 +100,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await authService.initialize();
       final response = await authService.login(email, password);
       
+      // Extraer datos de la respuesta según la estructura de la API
       final token = response['access_token'] ?? '';
       final role = response['role'] ?? '';
+      final userId = response['user_id'];
+      final username = response['username'] ?? email;
+      
       final user = {
         'email': email,
-        'personal_id': response['personal_id'],
-        'usuario_id': response['usuario_id'],
+        'username': username,
+        'user_id': userId,
       };
       
       state = AuthenticatedState(
@@ -116,7 +120,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       _logger.auth('LOGIN_SUCCESS', userId: email, role: role);
     } catch (e) {
-      state = ErrorAuthState('Error al iniciar sesión: $e');
+      // Manejar errores específicos de la API
+      String errorMessage = 'Error al iniciar sesión';
+      
+      if (e.toString().contains('401')) {
+        errorMessage = 'Credenciales inválidas. Verifique su usuario y contraseña.';
+      } else if (e.toString().contains('403')) {
+        errorMessage = 'Usuario inactivo. Contacte al administrador.';
+      } else {
+        errorMessage = e.toString();
+      }
+      
+      state = ErrorAuthState(errorMessage);
       _logger.error('Login error', e);
       rethrow;
     }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/movimiento.dart';
 import '../../models/trabajo.dart';
 import '../../services/optimized_api_service.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../core/logger/app_logger.dart';
 import '../../utils/validators.dart';
 
@@ -231,52 +231,6 @@ class _MovimientoFormScreenState extends ConsumerState<MovimientoFormScreen> {
     }
   }
 
-  /// Construye una sección con título y línea vertical distintiva
-  Widget _buildSection({
-    required String title,
-    required Widget content,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Título con línea vertical distintiva
-        Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF7E57C2),
-                    const Color(0xFF7E57C2).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        
-        // Contenido
-        content,
-      ],
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -302,46 +256,43 @@ class _MovimientoFormScreenState extends ConsumerState<MovimientoFormScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información básica
-              _buildSection(
-                title: 'Información Básica',
-                content: Column(
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tipo de movimiento
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SwitchListTile(
-                            title: Text(_esCobro ? 'Cobro' : 'Pago'),
-                            subtitle: Text(_esCobro ? 'Dinero que recibes' : 'Dinero que pagas'),
-                            value: _esCobro,
-                            onChanged: (value) => setState(() => _esCobro = value),
-                            activeColor: const Color(0xFF7E57C2),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Información Básica',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Monto
-                    CustomTextField(
+                    const SizedBox(height: 24),
+                    SwitchListTile(
+                      title: Text(_esCobro ? 'Cobro' : 'Pago'),
+                      subtitle: Text(_esCobro ? 'Dinero que recibes' : 'Dinero que pagas'),
+                      value: _esCobro,
+                      onChanged: (value) => setState(() => _esCobro = value),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
                       controller: _montoController,
                       label: 'Monto',
-                      hint: '0.00',
+                      hint: 'Ingrese el monto',
                       prefixIcon: const Icon(Icons.attach_money),
                       keyboardType: TextInputType.number,
                       validator: (value) => Validators.validateRequired(value, 'Monto'),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Descripción
-                    CustomTextField(
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
                       controller: _descripcionController,
                       label: 'Descripción',
                       hint: 'Descripción del movimiento',
@@ -354,11 +305,18 @@ class _MovimientoFormScreenState extends ConsumerState<MovimientoFormScreen> {
               const SizedBox(height: 24),
               
               // Categorización
-              _buildSection(
-                title: 'Categorización',
-                content: Column(
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Categoría
+                    Text(
+                      'Categorización',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
                       value: _categoriaSeleccionada,
                       items: _categorias.map((categoria) => 
@@ -375,9 +333,7 @@ class _MovimientoFormScreenState extends ConsumerState<MovimientoFormScreen> {
                       ),
                       validator: (value) => Validators.validateRequired(value, 'Categoría'),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Forma de pago
+                    const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
                       value: _formaPagoSeleccionada,
                       items: _formasPago.map((forma) => 
@@ -400,41 +356,98 @@ class _MovimientoFormScreenState extends ConsumerState<MovimientoFormScreen> {
               const SizedBox(height: 24),
               
               // Fechas
-              _buildSection(
-                title: 'Fechas',
-                content: Column(
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Fecha del movimiento
-                    CustomTextField(
-                      controller: _fechaController,
-                      label: 'Fecha del Movimiento',
-                      hint: 'Seleccionar fecha',
-                      prefixIcon: const Icon(Icons.calendar_today),
-                      readOnly: true,
-                      onTap: () => _selectDate(context, _fecha, (date) => setState(() => _fecha = date)),
-                      validator: (value) => Validators.validateRequired(value, 'Fecha'),
+                    Text(
+                      'Fechas',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Fecha límite de pago
-                    CustomTextField(
-                      controller: _fechaPagoLimiteController,
-                      label: 'Fecha Límite de Pago',
-                      hint: 'Seleccionar fecha límite',
-                      prefixIcon: const Icon(Icons.schedule),
-                      readOnly: true,
-                      onTap: () => _selectDate(context, _fechaPagoLimite, (date) => setState(() => _fechaPagoLimite = date)),
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fecha del Movimiento',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _fechaController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha',
+                            suffixIcon: const Icon(Icons.calendar_today),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).cardColor,
+                          ),
+                          readOnly: true,
+                          onTap: () => _selectDate(context, _fecha, (date) => setState(() => _fecha = date)),
+                          validator: (value) => Validators.validateRequired(value, 'Fecha'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Fecha efectiva de pago
-                    CustomTextField(
-                      controller: _fechaPagoController,
-                      label: 'Fecha Efectiva de Pago',
-                      hint: 'Seleccionar fecha de pago',
-                      prefixIcon: const Icon(Icons.check_circle),
-                      readOnly: true,
-                      onTap: () => _selectDate(context, _fechaPago, (date) => setState(() => _fechaPago = date)),
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fecha Límite de Pago',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _fechaPagoLimiteController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha límite',
+                            suffixIcon: const Icon(Icons.schedule),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).cardColor,
+                          ),
+                          readOnly: true,
+                          onTap: () => _selectDate(context, _fechaPagoLimite, (date) => setState(() => _fechaPagoLimite = date)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fecha Efectiva de Pago',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _fechaPagoController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha de pago',
+                            suffixIcon: const Icon(Icons.check_circle),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).cardColor,
+                          ),
+                          readOnly: true,
+                          onTap: () => _selectDate(context, _fechaPago, (date) => setState(() => _fechaPago = date)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -442,20 +455,25 @@ class _MovimientoFormScreenState extends ConsumerState<MovimientoFormScreen> {
               const SizedBox(height: 24),
               
               // Información adicional
-              _buildSection(
-                title: 'Información Adicional',
-                content: Column(
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Destinatario
-                    CustomTextField(
+                    Text(
+                      'Información Adicional',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
                       controller: _destinatarioController,
                       label: _esCobro ? 'Cobrar a' : 'Destinatario',
                       hint: _esCobro ? 'Nombre del cliente' : 'Nombre del proveedor',
                       prefixIcon: _esCobro ? const Icon(Icons.person_add) : const Icon(Icons.person),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Trabajo relacionado
+                    const SizedBox(height: 24),
                     DropdownButtonFormField<int?>(
                       value: _idTrabajo,
                       items: [
@@ -484,15 +502,13 @@ class _MovimientoFormScreenState extends ConsumerState<MovimientoFormScreen> {
                           : null,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Estado de pago
+                    const SizedBox(height: 24),
                     SwitchListTile(
                       title: const Text('Pagado'),
                       subtitle: const Text('Marcar si ya fue pagado'),
                       value: _pagado,
                       onChanged: (value) => setState(() => _pagado = value),
-                      activeColor: const Color(0xFF7E57C2),
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ],
                 ),

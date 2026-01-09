@@ -4,7 +4,7 @@ import '../../providers/optimized_providers.dart';
 import '../../models/mantenimiento.dart';
 import '../../models/maquina.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 import '../../utils/constants.dart';
 
@@ -169,105 +169,143 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
       body: _isLoadingData
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Selector de Máquina
-                    DropdownButtonFormField<Maquina>(
-                      decoration: const InputDecoration(
-                        labelText: 'Máquina',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.build),
+                    // Información básica
+                    OptimizedCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Información Básica',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          DropdownButtonFormField<Maquina>(
+                            decoration: const InputDecoration(
+                              labelText: 'Máquina',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.build),
+                            ),
+                            value: _maquinaSeleccionada,
+                            items: _maquinas.map((Maquina maquina) {
+                              return DropdownMenuItem<Maquina>(
+                                value: maquina,
+                                child: Text('${maquina.nombre} - ${maquina.modelo}'),
+                              );
+                            }).toList(),
+                            onChanged: (Maquina? newValue) {
+                              setState(() {
+                                _maquinaSeleccionada = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'La máquina es requerida';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Fecha',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                decoration: InputDecoration(
+                                  hintText: 'Seleccione la fecha',
+                                  suffixIcon: const Icon(Icons.calendar_today),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  filled: true,
+                                  fillColor: Theme.of(context).cardColor,
+                                ),
+                                readOnly: true,
+                                controller: TextEditingController(
+                                  text: _fechaSeleccionada != null
+                                      ? '${_fechaSeleccionada!.day}/${_fechaSeleccionada!.month}/${_fechaSeleccionada!.year}'
+                                      : 'Seleccionar fecha',
+                                ),
+                                onTap: _selectDate,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      value: _maquinaSeleccionada,
-                      items: _maquinas.map((Maquina maquina) {
-                        return DropdownMenuItem<Maquina>(
-                          value: maquina,
-                          child: Text('${maquina.nombre} - ${maquina.modelo}'),
-                        );
-                      }).toList(),
-                      onChanged: (Maquina? newValue) {
-                        setState(() {
-                          _maquinaSeleccionada = newValue;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'La máquina es requerida';
-                        }
-                        return null;
-                      },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                    // Selector de Fecha
-                    InkWell(
-                      onTap: _selectDate,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Fecha',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.calendar_today),
-                        ),
-                        child: Text(
-                          _fechaSeleccionada != null
-                              ? '${_fechaSeleccionada!.day}/${_fechaSeleccionada!.month}/${_fechaSeleccionada!.year}'
-                              : 'Seleccionar fecha',
-                        ),
+                    // Detalles del mantenimiento
+                    OptimizedCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Detalles del Mantenimiento',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          OptimizedTextField(
+                            controller: _descripcionController,
+                            label: 'Descripción',
+                            hint: 'Descripción del mantenimiento',
+                            prefixIcon: const Icon(Icons.description),
+                            maxLines: 3,
+                            validator: (value) => Validators.validateRequired(value, 'Descripción'),
+                          ),
+                          const SizedBox(height: 24),
+                          OptimizedTextField(
+                            controller: _costoTotalController,
+                            label: 'Costo Total',
+                            hint: 'Ingrese el costo total',
+                            prefixIcon: const Icon(Icons.attach_money),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 24),
+                          DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Estado',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.check_circle),
+                            ),
+                            value: _estadoSeleccionado,
+                            items: AppConstants.estadosMantenimiento.map((String estado) {
+                              return DropdownMenuItem<String>(
+                                value: estado,
+                                child: Text(estado.toUpperCase()),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _estadoSeleccionado = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'El estado es requerido';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-
-                    // Campo Descripción
-                    CustomTextField(
-                      controller: _descripcionController,
-                      label: 'Descripción',
-                      hint: 'Descripción del mantenimiento',
-                      prefixIcon: const Icon(Icons.description),
-                      maxLines: 3,
-                      validator: (value) => Validators.validateRequired(value, 'Descripción'),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Campo Costo Total
-                    CustomTextField(
-                      controller: _costoTotalController,
-                      label: 'Costo Total',
-                      hint: 'Ingrese el costo total',
-                      prefixIcon: const Icon(Icons.attach_money),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Selector de Estado
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Estado',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.check_circle),
-                      ),
-                      value: _estadoSeleccionado,
-                      items: AppConstants.estadosMantenimiento.map((String estado) {
-                        return DropdownMenuItem<String>(
-                          value: estado,
-                          child: Text(estado.toUpperCase()),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _estadoSeleccionado = newValue;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'El estado es requerido';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 32),
 

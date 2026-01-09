@@ -17,7 +17,7 @@ class TrabajoDetalleService {
       await _ensureInitialized();
       
       // Usar el nuevo endpoint específico para detalles
-      final response = await _apiService.get('/trabajos/detalle/$trabajoId');
+      final response = await _apiService.get('/api/trabajos/detalle/$trabajoId');
       
       // El endpoint ya devuelve toda la información estructurada
       return TrabajoDetalle.fromJson(response);

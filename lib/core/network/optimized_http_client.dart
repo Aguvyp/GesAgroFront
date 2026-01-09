@@ -4,8 +4,9 @@ import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../config/auth_config.dart';
 import '../logger/app_logger.dart';
+import '../../services/optimized_auth_service.dart';
 
-/// Cliente HTTP ultra optimizado con cache, retry y conexión persistente
+/// Cliente HTTP optimizado con cache y conexión persistente
 class OptimizedHttpClient {
   static OptimizedHttpClient? _instance;
   static OptimizedHttpClient get instance => _instance ??= OptimizedHttpClient._();
@@ -27,19 +28,30 @@ class OptimizedHttpClient {
     // Inicializar token de autenticación
     await AuthConfig.initializeToken();
     
-    // Configurar opciones base
+    // Normalizar la URL base (eliminar barra final si existe)
+    String baseUrl = AppConfig.instance.apiBaseUrl.trim();
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+    
+    // Configurar opciones base con timeouts amplios para ngrok
     _dio.options = BaseOptions(
-      baseUrl: AppConfig.instance.apiBaseUrl,
-      connectTimeout: AppConfig.instance.apiTimeout,
-      receiveTimeout: AppConfig.instance.apiTimeout,
-      sendTimeout: AppConfig.instance.apiTimeout,
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 60), // Aumentado para ngrok
+      receiveTimeout: const Duration(seconds: 60), // Aumentado para ngrok
+      sendTimeout: const Duration(seconds: 60), // Aumentado para ngrok
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
     );
     
-    _logger.info('🌐 OptimizedHttpClient configured with baseUrl: ${AppConfig.instance.apiBaseUrl}');
+    _logger.info('🌐 OptimizedHttpClient configured');
+    _logger.info('   Base URL: $baseUrl');
+    _logger.info('   Connect Timeout: 60s');
+    _logger.info('   Receive Timeout: 60s');
+    _logger.info('   Send Timeout: 60s');
 
     // Configurar interceptores
     _setupInterceptors();
@@ -50,18 +62,7 @@ class OptimizedHttpClient {
 
   /// Configurar todos los interceptores
   void _setupInterceptors() {
-    // Retry interceptor
-    _dio.interceptors.add(
-      RetryInterceptor(
-        dio: _dio,
-        logPrint: _logger.debug,
-        retries: AppConfig.instance.maxRetries,
-        retryDelays: List.generate(
-          AppConfig.instance.maxRetries,
-          (index) => Duration(milliseconds: 1000 * (index + 1)),
-        ),
-      ),
-    );
+    // Retry interceptor removido - sin reintentos automáticos
 
     // Logging interceptor
     if (kDebugMode) {
@@ -80,11 +81,113 @@ class OptimizedHttpClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Agregar token de autenticación si está disponible
-          final token = await AuthConfig.getToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-            _logger.debug('🔐 Token agregado a la petición: ${options.path}');
+          // Normalizar el path (asegurar que empiece con / y termine con /)
+          final originalPath = options.path;
+          if (!options.path.startsWith('/')) {
+            options.path = '/${options.path}';
+          }
+          // Agregar barra final si no existe (todos los endpoints terminan con slash)
+          if (!options.path.endsWith('/') && options.path != '/') {
+            options.path = '${options.path}/';
+          }
+          
+          // Log de normalización para debugging
+          if (originalPath != options.path) {
+            _logger.info('🔧 Path normalizado en interceptor: "$originalPath" → "${options.path}"');
+          }
+          
+          // Construir URL completa para logging
+          final fullUrl = '${options.baseUrl}${options.path}';
+          
+          // Asegurar que el header de ngrok siempre esté presente
+          options.headers['ngrok-skip-browser-warning'] = 'true';
+          
+          // LOG DETALLADO ANTES DE CADA PETICIÓN
+          _logger.info('═══════════════════════════════════════════════════════════');
+          _logger.info('📤 REQUEST PREPARATION');
+          _logger.info('═══════════════════════════════════════════════════════════');
+          _logger.info('🌐 URL Completa: $fullUrl');
+          _logger.info('📡 Método: ${options.method}');
+          _logger.info('📋 Headers:');
+          options.headers.forEach((key, value) {
+            if (key == 'Authorization') {
+              final tokenValue = value.toString();
+              if (tokenValue.length > 20) {
+                _logger.info('   $key: Bearer ${tokenValue.substring(7, 27)}...');
+              } else {
+                _logger.info('   $key: $value');
+              }
+            } else {
+              _logger.info('   $key: $value');
+            }
+          });
+          if (options.data != null) {
+            _logger.info('📦 Body: ${options.data}');
+          }
+          if (options.queryParameters.isNotEmpty) {
+            _logger.info('🔍 Query Params: ${options.queryParameters}');
+          }
+          _logger.info('═══════════════════════════════════════════════════════════');
+          
+          // No agregar token a endpoints de autenticación y health check
+          final path = options.path.toLowerCase();
+          final isAuthEndpoint = path.contains('/api/auth/') || path.contains('/auth/');
+          final isHealthEndpoint = path.contains('/api/health/') || path.contains('/health/');
+          
+          if (!isAuthEndpoint && !isHealthEndpoint) {
+            // Agregar token de autenticación si está disponible
+            // Primero intentar obtener el token del AuthService (token del login)
+            try {
+              final authService = AuthService();
+              await authService.initialize();
+              String? token = await authService.getToken();
+              
+              // Si no hay token del login, usar el token fijo de AuthConfig como fallback
+              if (token == null || token.isEmpty) {
+                token = await AuthConfig.getToken();
+                _logger.info('🔐 Usando token fijo de AuthConfig para: ${options.path}');
+              } else {
+                _logger.info('🔐 Usando token del login para: ${options.path}');
+              }
+              
+              if (token != null && token.isNotEmpty) {
+                final authHeader = 'Bearer $token';
+                options.headers['Authorization'] = authHeader;
+                _logger.info('═══════════════════════════════════════════════════════════');
+                _logger.info('🔐 AUTENTICACIÓN - HEADER CONFIGURADO');
+                _logger.info('═══════════════════════════════════════════════════════════');
+                _logger.info('📡 Endpoint: ${options.path}');
+                _logger.info('🌐 URL completa: ${options.baseUrl}${options.path}');
+                _logger.info('🔑 Token completo: $token');
+                _logger.info('📏 Token length: ${token.length} caracteres');
+                _logger.info('🔐 Header Authorization completo: $authHeader');
+                _logger.info('📋 Todos los headers de la petición:');
+                options.headers.forEach((key, value) {
+                  if (key == 'Authorization') {
+                    _logger.info('   $key: Bearer ${value.toString().substring(7).length > 20 ? value.toString().substring(7, 27) + "..." : value}');
+                  } else {
+                    _logger.info('   $key: $value');
+                  }
+                });
+                _logger.info('═══════════════════════════════════════════════════════════');
+              } else {
+                _logger.warning('⚠️ ❌ No se encontró token para la petición: ${options.path}');
+              }
+            } catch (e) {
+              _logger.error('❌ Error obteniendo token: $e');
+              // Intentar con token fijo como último recurso
+              try {
+                final token = await AuthConfig.getToken();
+                if (token != null && token.isNotEmpty) {
+                  options.headers['Authorization'] = 'Bearer $token';
+                  _logger.warning('⚠️ Usando token fijo después de error: ${options.path}');
+                }
+              } catch (e2) {
+                _logger.error('❌ Error obteniendo token fijo: $e2');
+              }
+            }
+          } else {
+            _logger.debug('🔓 Endpoint sin autenticación: ${options.path}');
           }
           handler.next(options);
         },
@@ -152,6 +255,21 @@ class OptimizedHttpClient {
       await initialize();
     }
     
+    // Normalizar path (asegurar que empiece con / y termine con /)
+    final originalPath = path;
+    if (!path.startsWith('/')) {
+      path = '/$path';
+    }
+    // Agregar barra final si no existe (todos los endpoints terminan con slash)
+    if (!path.endsWith('/') && path != '/') {
+      path = '${path}/';
+    }
+    
+    // Log de normalización para debugging
+    if (originalPath != path) {
+      _logger.info('🔧 Path normalizado: "$originalPath" → "$path"');
+    }
+    
     final fullUrl = '${AppConfig.instance.apiBaseUrl}$path';
     _logger.info('🚀 GET Request: $fullUrl');
     
@@ -162,6 +280,10 @@ class OptimizedHttpClient {
     }
 
     try {
+      // El interceptor ya agregó el header Authorization antes de llegar aquí
+      // IMPORTANTE: El path ya está normalizado (sin slash final)
+      // El interceptor también normalizará el path nuevamente como medida de seguridad
+      _logger.info('📤 Enviando GET a Dio con path: "$path"');
       final response = await _dio.get<T>(
         path,
         queryParameters: queryParameters,
@@ -173,6 +295,30 @@ class OptimizedHttpClient {
       return response;
     } catch (e) {
       _logger.error('❌ GET Error: $e - $fullUrl');
+      if (e is DioException) {
+        _logger.error('   Error Type: ${e.type}');
+        _logger.error('   Status Code: ${e.response?.statusCode}');
+        _logger.error('   Message: ${e.message}');
+        if (e.response?.data != null) {
+          _logger.error('   Response Data: ${e.response?.data}');
+        }
+        // Si es timeout, dar sugerencias específicas
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
+          _logger.error('   ⏱️ TIMEOUT - Verificar:');
+          _logger.error('      - ¿La URL de ngrok es correcta?');
+          _logger.error('      - ¿El túnel ngrok está activo?');
+          _logger.error('      - ¿El backend Django está corriendo?');
+        }
+      }
+      // Si es un error 500, agregar información adicional sobre autenticación
+      if (e is DioException && e.response?.statusCode == 500) {
+        _logger.error('❌ Error 500 - Verificar en el servidor:');
+        _logger.error('   - ¿El token es válido?');
+        _logger.error('   - ¿El endpoint existe?');
+        _logger.error('   - ¿Hay un error en el servidor?');
+      }
       rethrow;
     }
   }
@@ -190,13 +336,41 @@ class OptimizedHttpClient {
       await initialize();
     }
     
-    return await _dio.post<T>(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-      cancelToken: cancelToken,
-    );
+    // Normalizar path (asegurar que empiece con / y termine con /)
+    if (!path.startsWith('/')) {
+      path = '/$path';
+    }
+    // Agregar barra final si no existe (todos los endpoints terminan con slash)
+    if (!path.endsWith('/') && path != '/') {
+      path = '${path}/';
+    }
+    
+    final fullUrl = '${AppConfig.instance.apiBaseUrl}$path';
+    _logger.info('🚀 POST Request: $fullUrl');
+    
+    try {
+      final response = await _dio.post<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+      
+      _logger.info('✅ POST Response: ${response.statusCode} - $fullUrl');
+      return response;
+    } catch (e) {
+      _logger.error('❌ POST Error: $e - $fullUrl');
+      if (e is DioException) {
+        _logger.error('   Error Type: ${e.type}');
+        _logger.error('   Status Code: ${e.response?.statusCode}');
+        _logger.error('   Message: ${e.message}');
+        if (e.response?.data != null) {
+          _logger.error('   Response Data: ${e.response?.data}');
+        }
+      }
+      rethrow;
+    }
   }
 
   /// PUT request optimizado
@@ -210,6 +384,15 @@ class OptimizedHttpClient {
     if (!_isInitialized) {
       _logger.warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
+    }
+    
+    // Normalizar path (asegurar que empiece con / y termine con /)
+    if (!path.startsWith('/')) {
+      path = '/$path';
+    }
+    // Agregar barra final si no existe (todos los endpoints terminan con slash)
+    if (!path.endsWith('/') && path != '/') {
+      path = '${path}/';
     }
     
     return await _dio.put<T>(
@@ -234,6 +417,15 @@ class OptimizedHttpClient {
       await initialize();
     }
     
+    // Normalizar path (asegurar que empiece con / y termine con /)
+    if (!path.startsWith('/')) {
+      path = '/$path';
+    }
+    // Agregar barra final si no existe (todos los endpoints terminan con slash)
+    if (!path.endsWith('/') && path != '/') {
+      path = '${path}/';
+    }
+    
     return await _dio.delete<T>(
       path,
       data: data,
@@ -254,57 +446,5 @@ class OptimizedHttpClient {
       'totalRequests': 0,
       'cachedRequests': 0,
     };
-  }
-}
-
-/// Interceptor personalizado para reintentos inteligentes
-class RetryInterceptor extends Interceptor {
-  final Dio dio;
-  final int retries;
-  final List<Duration> retryDelays;
-  final void Function(String)? logPrint;
-
-  RetryInterceptor({
-    required this.dio,
-    this.retries = 3,
-    this.retryDelays = const [
-      Duration(seconds: 1),
-      Duration(seconds: 2),
-      Duration(seconds: 4),
-    ],
-    this.logPrint,
-  });
-
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (_shouldRetry(err)) {
-      final retryCount = err.requestOptions.extra['retryCount'] ?? 0;
-      
-      if (retryCount < retries) {
-        logPrint?.call('Retrying request (${retryCount + 1}/$retries)');
-        
-        await Future.delayed(retryDelays[retryCount]);
-        
-        err.requestOptions.extra['retryCount'] = retryCount + 1;
-        
-        try {
-          final response = await dio.fetch(err.requestOptions);
-          handler.resolve(response);
-          return;
-        } catch (e) {
-          // Continue to next retry or fail
-        }
-      }
-    }
-    
-    handler.next(err);
-  }
-
-  bool _shouldRetry(DioException err) {
-    return err.type == DioExceptionType.connectionTimeout ||
-           err.type == DioExceptionType.sendTimeout ||
-           err.type == DioExceptionType.receiveTimeout ||
-           err.type == DioExceptionType.connectionError ||
-           (err.response?.statusCode != null && err.response!.statusCode! >= 500);
   }
 }

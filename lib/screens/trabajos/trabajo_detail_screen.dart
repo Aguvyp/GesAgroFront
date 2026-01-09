@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../models/trabajo.dart';
-import '../models/trabajo_detalle.dart';
-import '../widgets/optimized_widgets.dart';
-import '../providers/trabajo_detalle_provider.dart';
-import '../utils/constants.dart';
-import 'forms/forms_screens.dart';
+import '../../models/trabajo.dart';
+import '../../models/trabajo_detalle.dart';
+import '../../widgets/optimized_widgets.dart';
+import '../../providers/trabajo_detalle_provider.dart';
+import '../../utils/constants.dart';
+import '../forms/trabajo_form_screen.dart';
 
 class TrabajoDetailScreen extends ConsumerStatefulWidget {
   final Trabajo trabajo;

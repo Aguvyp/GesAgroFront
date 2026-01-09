@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import '../widgets/optimized_widgets.dart';
-import '../providers/optimized_providers.dart';
-import '../models/campo.dart';
+import '../../widgets/optimized_widgets.dart';
+import '../../providers/optimized_providers.dart';
+import '../../models/campo.dart';
 
 /// Pantalla de campos ultra optimizada
 class OptimizedCamposScreen extends ConsumerStatefulWidget {
@@ -63,6 +63,9 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
       ),
       body: Column(
         children: [
+          // Header verde "Campos"
+          _buildHeader(),
+          
           // Barra de búsqueda y filtros
           _buildSearchAndFilters(),
           
@@ -83,6 +86,45 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
           .animate()
           .scale(delay: 500.ms, duration: 300.ms)
           .fadeIn(delay: 500.ms, duration: 300.ms),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 24,
+            width: 4,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Campos',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -476,7 +518,7 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
         title: 'Editar Campo',
         initialData: {
           'nombre': campo.nombre,
-          'superficie_ha': campo.superficieHa,
+          'hectareas': campo.superficieHa,
           'latitud': campo.latitud,
           'longitud': campo.longitud,
           'detalles': campo.detalles,
@@ -509,16 +551,39 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
   void _showDeleteConfirmation(Campo campo) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Eliminar Campo'),
-        content: Text('¿Estás seguro de que quieres eliminar el campo "${campo.nombre}"?'),
+        content: Text('¿Estás seguro de que quieres eliminarasd el campo "${campo.nombre}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () async {
+              // Cerrar el diálogo primero
+              Navigator.pop(dialogContext);
+              
+              // Mostrar indicador de carga
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 16),
+                        Text('Eliminando campo...'),
+                      ],
+                    ),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+              
               try {
                 if (campo.id != null) {
                   await ref.read(camposProvider.notifier).deleteCampo(campo.id!);
@@ -528,7 +593,6 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
                     context,
                     message: 'Campo eliminado exitosamente',
                   );
-                  Navigator.pop(context);
                 }
               } catch (e) {
                 if (mounted) {
@@ -539,7 +603,7 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
                 }
               }
             },
-            child: const Text('Eliminar'),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -643,7 +707,7 @@ class _CampoDialogState extends State<_CampoDialog> {
   void initState() {
     super.initState();
     _nombreController = TextEditingController(text: widget.initialData?['nombre'] ?? '');
-    _superficieController = TextEditingController(text: widget.initialData?['superficie_ha']?.toString() ?? '');
+    _superficieController = TextEditingController(text: widget.initialData?['hectareas']?.toString() ?? widget.initialData?['superficie_ha']?.toString() ?? '');
     _latitudController = TextEditingController(text: widget.initialData?['latitud']?.toString() ?? '');
     _longitudController = TextEditingController(text: widget.initialData?['longitud']?.toString() ?? '');
     _detallesController = TextEditingController(text: widget.initialData?['detalles'] ?? '');
@@ -754,7 +818,7 @@ class _CampoDialogState extends State<_CampoDialog> {
     if (_formKey.currentState!.validate()) {
       final data = {
         'nombre': _nombreController.text,
-        'superficie_ha': double.parse(_superficieController.text),
+        'hectareas': double.parse(_superficieController.text),
         'latitud': _latitudController.text.isNotEmpty ? double.parse(_latitudController.text) : null,
         'longitud': _longitudController.text.isNotEmpty ? double.parse(_longitudController.text) : null,
         'detalles': _detallesController.text.isNotEmpty ? _detallesController.text : null,

@@ -1,47 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/personal.dart';
+import '../../models/mantenimiento.dart';
 import '../../providers/optimized_providers.dart';
 import '../../providers/optimized_auth_provider.dart';
-import '../../widgets/optimized_widgets.dart';
-import '../forms/forms_screens.dart';
+import '../forms/mantenimiento_form_screen.dart';
 import '../optimized_main_screen_new.dart';
 import '../optimized_screens.dart';
-import '../maquinas/maquinas_list_screen.dart';
-import '../mantenimientos/optimized_mantenimientos_screen.dart';
+import '../personal/personal_list_screen.dart';
 import '../finanzas/optimized_finanzas_screens.dart';
 import '../reportes/optimized_reportes_screen.dart';
-import 'personal_detail_screen.dart';
 
-class PersonalListScreen extends ConsumerStatefulWidget {
-  const PersonalListScreen({Key? key}) : super(key: key);
+/// Pantalla de mantenimientos
+class OptimizedMantenimientosScreen extends ConsumerStatefulWidget {
+  const OptimizedMantenimientosScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<PersonalListScreen> createState() => _PersonalListScreenState();
+  ConsumerState<OptimizedMantenimientosScreen> createState() => _OptimizedMantenimientosScreenState();
 }
 
-class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
+class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedMantenimientosScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(personalProvider.notifier).loadPersonal();
+      ref.read(mantenimientosProvider.notifier).loadMantenimientos();
     });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Future<void> _handleLogout(BuildContext context) async {
     try {
+      // Cerrar sesión usando el provider
       await ref.read(authProvider.notifier).logout();
+      
+      // Navegar a la pantalla de login
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
           '/login',
@@ -62,121 +55,73 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final personalState = ref.watch(personalProvider);
+    final mantenimientosState = ref.watch(mantenimientosProvider);
     
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: const Text('Personal'),
-        elevation: 0,
+        title: const Text('Mantenimientos'),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(personalProvider.notifier).loadPersonal();
-            },
-          ),
-        ],
       ),
       drawer: _buildDrawer(context),
-      body: Column(
-        children: [
-          // Barra de búsqueda
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar personal...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
-            ),
-          ),
-          
-          // Lista de personal
-          Expanded(
-            child: _buildPersonalList(personalState),
-          ),
-        ],
-      ),
+      body: _buildMantenimientosList(mantenimientosState),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddPersonalDialog(),
+        onPressed: () {
+          _showMantenimientoForm(context);
+        },
         backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildPersonalList(BaseState personalState) {
-    if (personalState is LoadingState) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Cargando personal...'),
-          ],
-        ),
-      );
+  Widget _buildMantenimientosList(BaseState state) {
+    if (state is LoadingState) {
+      return const Center(child: CircularProgressIndicator());
     }
-
-    if (personalState is ErrorState) {
+    if (state is ErrorState) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red[300],
+              color: Colors.red,
             ),
             const SizedBox(height: 16),
             Text(
-              'Error al cargar personal',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.red[700],
+              state.message.contains('404') 
+                  ? 'El endpoint de mantenimientos no está disponible en el servidor'
+                  : 'Error: ${state.message}',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              personalState.message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.red[600]),
             ),
             const SizedBox(height: 16),
+            if (state.message.contains('404')) ...[
+              const Text(
+                'Contacte al administrador para habilitar el módulo de mantenimientos',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+            ],
             ElevatedButton(
               onPressed: () {
-                ref.read(personalProvider.notifier).loadPersonal();
+                ref.read(mantenimientosProvider.notifier).loadMantenimientos();
               },
               child: const Text('Reintentar'),
             ),
@@ -184,236 +129,106 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
         ),
       );
     }
-
-    if (personalState is LoadedState<List<Personal>>) {
-      final personalList = personalState.data;
-      final filteredList = _searchQuery.isEmpty
-          ? personalList
-          : personalList.where((personal) {
-              return personal.nombre.toLowerCase().contains(_searchQuery) ||
-                     personal.dni.toLowerCase().contains(_searchQuery) ||
-                     (personal.telefono?.toLowerCase().contains(_searchQuery) ?? false);
-            }).toList();
-
-      if (filteredList.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _searchQuery.isEmpty ? Icons.people_outline : Icons.search_off,
-                size: 64,
-                color: Colors.grey[400],
+    
+    final mantenimientos = (state as LoadedState<List<Mantenimiento>>).data;
+    if (mantenimientos.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.build,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No hay mantenimientos',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(height: 16),
-              Text(
-                _searchQuery.isEmpty 
-                    ? 'No hay personal registrado'
-                    : 'No se encontraron resultados',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[600],
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Toca el botón + para crear el primero',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: mantenimientos.length,
+      itemBuilder: (context, index) {
+        final mantenimiento = mantenimientos[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: _getEstadoColor(mantenimiento.estado).withOpacity(0.1),
+              child: Icon(_getEstadoIcon(mantenimiento.estado), color: _getEstadoColor(mantenimiento.estado)),
+            ),
+            title: Text(mantenimiento.descripcion),
+            subtitle: Text(mantenimiento.estado.toUpperCase()),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  mantenimiento.costoTotal != null ? '\$${mantenimiento.costoTotal!.toStringAsFixed(2)}' : 'Sin costo',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _searchQuery.isEmpty 
-                    ? 'Toca el botón + para agregar personal'
-                    : 'Intenta con otros términos de búsqueda',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[500]),
-              ),
-            ],
+                Text(
+                  '${mantenimiento.fecha.day}/${mantenimiento.fecha.month}/${mantenimiento.fecha.year}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            onTap: () {
+              _showMantenimientoForm(context, mantenimiento: mantenimiento);
+            },
           ),
         );
-      }
-
-      return RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(personalProvider.notifier).loadPersonal();
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: filteredList.length,
-          itemBuilder: (context, index) {
-            final personal = filteredList[index];
-            return _buildPersonalCard(personal);
-          },
-        ),
-      );
-    }
-
-    return const Center(
-      child: Text('Estado desconocido'),
+      },
     );
   }
 
-  Widget _buildPersonalCard(Personal personal) {
-    return OptimizedCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: Text(
-            personal.initials,
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          personal.nombre,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text('DNI: ${personal.dni}'),
-            if (personal.telefono != null && personal.telefono!.isNotEmpty)
-              Text('Tel: ${personal.telefono}'),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value, personal),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'view',
-              child: Row(
-                children: [
-                  Icon(Icons.visibility),
-                  SizedBox(width: 8),
-                  Text('Ver detalles'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Editar'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Eliminar', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        onTap: () => _navigateToDetail(personal),
-      ),
-    );
-  }
-
-  void _handleMenuAction(String action, Personal personal) {
-    switch (action) {
-      case 'view':
-        _navigateToDetail(personal);
-        break;
-      case 'edit':
-        _showEditPersonalDialog(personal);
-        break;
-      case 'delete':
-        _showDeleteConfirmation(personal);
-        break;
+  Color _getEstadoColor(String estado) {
+    switch (estado.toLowerCase()) {
+      case 'completado':
+        return Colors.green;
+      case 'pendiente':
+        return Colors.orange;
+      case 'atrasado':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
-  void _navigateToDetail(Personal personal) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PersonalDetailScreen(personal: personal),
-      ),
-    );
-  }
-
-  void _showAddPersonalDialog() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PersonalFormScreen(),
-      ),
-    ).then((_) {
-      ref.read(personalProvider.notifier).loadPersonal();
-      OptimizedSnackBar.showSuccess(
-        context,
-        message: 'Personal agregado exitosamente',
-      );
-    });
-  }
-
-  void _showEditPersonalDialog(Personal personal) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PersonalFormScreen(personal: personal),
-      ),
-    ).then((_) {
-      ref.read(personalProvider.notifier).loadPersonal();
-      OptimizedSnackBar.showSuccess(
-        context,
-        message: 'Personal actualizado exitosamente',
-      );
-    });
-  }
-
-  void _showDeleteConfirmation(Personal personal) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar eliminación'),
-        content: Text('¿Estás seguro de que deseas eliminar a ${personal.nombre}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deletePersonal(personal);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _deletePersonal(Personal personal) async {
-    try {
-      await ref.read(personalProvider.notifier).deletePersonal(personal.id!);
-      OptimizedSnackBar.showSuccess(
-        context,
-        message: 'Personal eliminado exitosamente',
-      );
-    } catch (e) {
-      OptimizedSnackBar.showError(
-        context,
-        message: 'Error al eliminar personal: $e',
-      );
+  IconData _getEstadoIcon(String estado) {
+    switch (estado.toLowerCase()) {
+      case 'completado':
+        return Icons.check_circle;
+      case 'pendiente':
+        return Icons.schedule;
+      case 'atrasado':
+        return Icons.warning;
+      default:
+        return Icons.build;
     }
   }
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
-      width: 320,
+      width: 320, // Ancho más amplio para elementos flotantes
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
@@ -525,29 +340,12 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
                       const SizedBox(height: 8),
                       _buildModernDrawerItem(
                         context,
-                        'Máquinas',
-                        Icons.local_shipping_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedMaquinasListScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
                         'Mantenimientos',
                         Icons.build_rounded,
                         -1,
+                        isSelected: true,
                         onTap: () {
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedMantenimientosScreen()),
-                          );
                         },
                       ),
                       const SizedBox(height: 8),
@@ -556,7 +354,13 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
                         'Personal',
                         Icons.people_rounded,
                         -1,
-                        isSelected: true,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PersonalListScreen()),
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       
@@ -696,16 +500,22 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
                   child: Text(
                     title,
                     style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isDestructive 
                         ? Colors.red.shade600
                         : (isSelected 
                           ? Theme.of(context).primaryColor
                           : Colors.grey.shade700),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 16,
                     ),
                   ),
                 ),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: Theme.of(context).primaryColor,
+                  ),
               ],
             ),
           ),
@@ -713,4 +523,14 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
       ),
     );
   }
+
+  void _showMantenimientoForm(BuildContext context, {Mantenimiento? mantenimiento}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MantenimientoFormScreen(mantenimiento: mantenimiento),
+      ),
+    ).then((_) => ref.read(mantenimientosProvider.notifier).loadMantenimientos());
+  }
 }
+

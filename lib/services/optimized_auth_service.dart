@@ -101,25 +101,41 @@ class AuthService {
         return false;
       }
 
-      _logger.info('Token found, length: ${token.length}');
+      _logger.info('🔐 Token encontrado, length: ${token.length}');
+      _logger.info('🔐 Token (primeros 50 chars): ${token.length > 50 ? token.substring(0, 50) + "..." : token}');
 
       // Verificar si el token es válido haciendo una llamada al servidor
+      // Usamos un endpoint que requiere autenticación para validar el token
       final apiService = ApiService();
       await apiService.initialize();
-      final isValid = await apiService.checkHealth();
-
-      if (!isValid) {
-        _logger.warning('Token validation failed, logging out');
-        await logout();
+      
+      try {
+        // Intentar obtener los datos del usuario actual o un endpoint simple que requiera auth
+        await apiService.getUsuarios(limit: 1);
+        _logger.info('✅ Token válido - Autenticación exitosa');
+        return true;
+      } catch (e) {
+        // Si falla con 401/403, el token es inválido
+        if (e.toString().contains('401') || e.toString().contains('403')) {
+          _logger.warning('⚠️ Token inválido o expirado (401/403), haciendo logout');
+          await logout();
+          return false;
+        }
+        // Si es otro error (conexión, timeout, etc.), NO hacer logout
+        // Solo loguear el error pero mantener la sesión
+        _logger.warning('⚠️ Error de conexión al validar token, pero manteniendo sesión: $e');
+        return true; // Mantener sesión si hay problemas de conexión
+      }
+    } catch (e) {
+      _logger.error('❌ Error checking auth status: $e');
+      // NO hacer logout automático por errores de conexión
+      // Solo retornar false si realmente no hay token
+      final token = await getToken();
+      if (token == null || token.isEmpty) {
         return false;
       }
-
-      _logger.info('Token is valid');
+      // Si hay token pero hay error de conexión, mantener la sesión
       return true;
-    } catch (e) {
-      _logger.error('Error checking auth status', e);
-      await logout();
-      return false;
     }
   }
 
@@ -270,7 +286,28 @@ class AuthService {
   /// Guardar datos de autenticación
   Future<void> _saveAuthData(Map<String, dynamic> response) async {
     try {
-      await setToken(response['access_token'] ?? '');
+      final accessToken = response['access_token'] ?? '';
+      
+      _logger.info('═══════════════════════════════════════════════════════════');
+      _logger.info('🔐 LOGIN EXITOSO - TOKEN RECIBIDO');
+      _logger.info('═══════════════════════════════════════════════════════════');
+      _logger.info('💾 Token recibido del servidor:');
+      if (accessToken.isNotEmpty) {
+        _logger.info('   📝 Token completo: $accessToken');
+        _logger.info('   📏 Longitud: ${accessToken.length} caracteres');
+        _logger.info('   🔑 Primeros 50 chars: ${accessToken.length > 50 ? accessToken.substring(0, 50) + "..." : accessToken}');
+        _logger.info('   🔑 Últimos 20 chars: ${accessToken.length > 20 ? "..." + accessToken.substring(accessToken.length - 20) : accessToken}');
+      } else {
+        _logger.warning('   ⚠️ ATENCIÓN: Token recibido está VACÍO');
+      }
+      _logger.info('💾 Token Type: ${response['token_type'] ?? 'bearer'}');
+      _logger.info('💾 Role: ${response['role'] ?? 'N/A'}');
+      _logger.info('💾 User ID: ${response['user_id'] ?? response['usuario_id'] ?? 'N/A'}');
+      _logger.info('💾 Respuesta completa del login:');
+      _logger.info('   $response');
+      _logger.info('═══════════════════════════════════════════════════════════');
+      
+      await setToken(accessToken);
       await setTokenType(response['token_type'] ?? 'bearer');
 
       if (response['role'] != null) {

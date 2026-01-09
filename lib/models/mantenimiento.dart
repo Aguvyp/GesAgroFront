@@ -16,13 +16,34 @@ class Mantenimiento {
   });
 
   factory Mantenimiento.fromJson(Map<String, dynamic> json) {
+    // Función helper para convertir a double de forma segura
+    double? _toDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        if (value.isEmpty || value.trim().isEmpty) return null;
+        final cleaned = value.trim().replaceAll(',', '.');
+        return double.tryParse(cleaned);
+      }
+      try {
+        final stringValue = value.toString().trim();
+        if (stringValue.isEmpty) return null;
+        final cleaned = stringValue.replaceAll(',', '.');
+        return double.tryParse(cleaned);
+      } catch (e) {
+        return null;
+      }
+    }
+
     return Mantenimiento(
       id: json['id'],
       idMaquina: json['id_maquina'],
       fecha: DateTime.parse(json['fecha']),
       descripcion: json['descripcion'],
       estado: json['estado'] ?? 'Pendiente',
-      costoTotal: json['costo_total']?.toDouble(),
+      costoTotal: _toDouble(json['costo_total']),
     );
   }
 

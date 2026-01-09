@@ -87,8 +87,8 @@ class OptimizedGesAgroApp extends ConsumerWidget {
         );
       },
       
-      // Pantalla inicial optimizada
-      home: const OptimizedSplashScreen(),
+      // Pantalla inicial - Login
+      home: const OptimizedLoginScreen(),
       
       // Rutas optimizadas
       routes: {

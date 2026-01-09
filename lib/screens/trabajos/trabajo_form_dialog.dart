@@ -1,15 +1,17 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/optimized_providers.dart';
-import '../models/campo.dart';
-import '../models/maquina.dart';
-import '../models/personal.dart';
-import '../models/cliente.dart';
-import '../services/cliente_service.dart';
-import 'additional_forms.dart';
-import 'optimized_forms.dart';
-import '../utils/validators.dart';
-import '../utils/constants.dart';
+import '../../providers/optimized_providers.dart';
+import '../../models/campo.dart';
+import '../../models/maquina.dart';
+import '../../models/personal.dart';
+import '../../models/cliente.dart';
+import '../../models/tipo_trabajo.dart';
+import '../../services/cliente_service.dart';
+import '../../services/tipo_trabajo_service.dart';
+import '../additional_forms.dart';
+import '../optimized_forms.dart';
+import '../../utils/validators.dart';
 
 /// Formulario para crear/editar trabajos
 class TrabajoFormDialog extends ConsumerStatefulWidget {
@@ -23,13 +25,17 @@ class TrabajoFormDialog extends ConsumerStatefulWidget {
 
 class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _tipoController;
+  int? _tipoTrabajoSeleccionado; // ID del tipo de trabajo seleccionado
+  List<TipoTrabajo> _tiposTrabajo = [];
   late TextEditingController _cultivoController;
   late TextEditingController _descripcionController;
   late TextEditingController _fechaInicioController;
   late TextEditingController _fechaFinController;
   late TextEditingController _clienteController;
   late TextEditingController _montoCobradoController;
+  late TextEditingController _rindeCosechaController;
+  late TextEditingController _humedadCosechaController;
+  late TextEditingController _horasTrabajadasController;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
   
@@ -59,13 +65,18 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   @override
   void initState() {
     super.initState();
-    _tipoController = TextEditingController(text: widget.trabajo?.tipo ?? '');
+    // Si el trabajo tiene idTipoTrabajo, usarlo directamente
+    // Si no, intentar encontrarlo por el nombre del tipo (se hará después de cargar los tipos)
+    _tipoTrabajoSeleccionado = widget.trabajo?.idTipoTrabajo;
     _cultivoController = TextEditingController(text: widget.trabajo?.cultivo ?? '');
     _descripcionController = TextEditingController(text: widget.trabajo?.observaciones ?? '');
     _fechaInicioController = TextEditingController(text: widget.trabajo?.fechaInicio?.toString() ?? '');
     _fechaFinController = TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
     _clienteController = TextEditingController(text: widget.trabajo?.cliente ?? '');
     _montoCobradoController = TextEditingController(text: widget.trabajo?.montoCobrado?.toString() ?? '');
+    _rindeCosechaController = TextEditingController(text: widget.trabajo?.rindeCosecha?.toString() ?? '');
+    _humedadCosechaController = TextEditingController(text: widget.trabajo?.humedadCosecha?.toString() ?? '');
+    _horasTrabajadasController = TextEditingController(text: widget.trabajo?.horasTrabajadas?.toString() ?? '');
     _fechaInicio = widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
     
@@ -97,13 +108,15 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
   @override
   void dispose() {
-    _tipoController.dispose();
     _cultivoController.dispose();
     _descripcionController.dispose();
     _fechaInicioController.dispose();
     _fechaFinController.dispose();
     _clienteController.dispose();
     _montoCobradoController.dispose();
+    _rindeCosechaController.dispose();
+    _humedadCosechaController.dispose();
+    _horasTrabajadasController.dispose();
     super.dispose();
   }
 
@@ -113,6 +126,30 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     });
 
     try {
+      // Cargar tipos de trabajo
+      try {
+        _tiposTrabajo = await TipoTrabajoService.getTiposTrabajo();
+        print('Tipos de trabajo cargados: ${_tiposTrabajo.length}');
+        
+        // Si el trabajo tiene tipoTrabajoNombre pero no idTipoTrabajo, buscar el ID
+        if (widget.trabajo != null && 
+            widget.trabajo!.idTipoTrabajo == null && 
+            widget.trabajo!.tipoTrabajoNombre != null) {
+          final tipoEncontrado = _tiposTrabajo.firstWhere(
+            (tipo) => tipo.trabajo == widget.trabajo!.tipoTrabajoNombre,
+            orElse: () => _tiposTrabajo.isNotEmpty ? _tiposTrabajo.first : TipoTrabajo(id: 0, trabajo: ''),
+          );
+          if (tipoEncontrado.id != 0) {
+            setState(() {
+              _tipoTrabajoSeleccionado = tipoEncontrado.id;
+            });
+          }
+        }
+      } catch (e) {
+        print('Error cargando tipos de trabajo: $e');
+        _tiposTrabajo = [];
+      }
+
       // Cargar campos
       final camposState = ref.read(camposProvider);
       if (camposState is LoadedState<List<Campo>>) {
@@ -283,20 +320,25 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<String>(
+                DropdownButtonFormField<int>(
                   decoration: const InputDecoration(
                     labelText: 'Tipo de Trabajo',
                     border: OutlineInputBorder(),
                   ),
-                  value: _getValidTipoValue(),
-                  items: _buildTipoItems(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      _tipoController.text = newValue;
-                    }
+                  value: _tipoTrabajoSeleccionado,
+                  items: _tiposTrabajo.map((tipo) {
+                    return DropdownMenuItem<int>(
+                      value: tipo.id,
+                      child: Text(tipo.trabajo),
+                    );
+                  }).toList(),
+                  onChanged: (int? newValue) {
+                    setState(() {
+                      _tipoTrabajoSeleccionado = newValue;
+                    });
                   },
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null) {
                       return 'El tipo de trabajo es requerido';
                     }
                     return null;
@@ -850,6 +892,26 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                     }
                   },
                 ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _horasTrabajadasController,
+                  decoration: const InputDecoration(
+                    labelText: 'Horas Trabajadas',
+                    hintText: 'Total de horas trabajadas',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.access_time),
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final horas = double.tryParse(value);
+                      if (horas == null || horas < 0) {
+                        return 'Ingrese un número válido';
+                      }
+                    }
+                    return null;
+                  },
+                ),
               ],
             ),
           ),
@@ -869,28 +931,64 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   }
 
   void _submitForm() async {
+    print('🔵 _submitForm llamado (Dialog)');
     if (_formKey.currentState!.validate()) {
+      print('🔵 Validación del formulario exitosa (Dialog)');
       try {
-        final data = {
-          'tipo': _tipoController.text,
-          'cultivo': _cultivoController.text,
-          'observaciones': _descripcionController.text,
+        print('🔵 Iniciando construcción del request... (Dialog)');
+        // Construir el request según el formato requerido por el endpoint
+        final data = <String, dynamic>{
+          'id_tipo_trabajo': _tipoTrabajoSeleccionado,
           'cliente': (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
               ? _clienteSeleccionado!.nombre 
-              : ((_servicioContratado || _esTercero) ? 'Cliente no seleccionado' : 'Trabajo propio'),
-          'estado': _estadoSeleccionado ?? 'Pendiente',
-          'a_terceros': _esTercero,
-          'cobrado': _cobrado,
-          'servicio_contratado': _servicioContratado,
-          'monto_cobrado': _cobrado && _montoCobradoController.text.isNotEmpty 
-              ? double.tryParse(_montoCobradoController.text) 
               : null,
           'fecha_inicio': _fechaInicio?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'id_campo': _campoSeleccionado?.id,
+          'cultivo': _cultivoController.text,
+          'observaciones': _descripcionController.text.isNotEmpty 
+              ? _descripcionController.text 
+              : null,
+          'estado': _estadoSeleccionado ?? 'Pendiente',
+          'a_terceros': _esTercero,
+          'servicio_contratado': _servicioContratado,
           'fecha_fin': _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
-          'campo_id': _campoSeleccionado?.id ?? 0,
-          'maquina_ids': _maquinasSeleccionadas.map((m) => m.id).toList(),
-          'personal_ids': _personalSeleccionado.map((p) => p.id).toList(),
         };
+        
+        // Agregar campos de cosecha: si es cosecha (id = 1) usar valores ingresados, sino enviar 0
+        if (_tipoTrabajoSeleccionado == 1) {
+          // Para cosecha, usar valores ingresados (o null si están vacíos)
+          if (_rindeCosechaController.text.isNotEmpty) {
+            data['rinde_cosecha'] = double.tryParse(_rindeCosechaController.text);
+          }
+          if (_humedadCosechaController.text.isNotEmpty) {
+            data['humedad_cosecha'] = double.tryParse(_humedadCosechaController.text);
+          }
+        } else {
+          // Para otros tipos de trabajo, enviar 0 por defecto
+          data['rinde_cosecha'] = 0.0;
+          data['humedad_cosecha'] = 0.0;
+        }
+        
+        // Agregar horas trabajadas
+        if (_horasTrabajadasController.text.isNotEmpty) {
+          data['horas_trabajadas'] = double.tryParse(_horasTrabajadasController.text);
+        }
+
+        // Imprimir el body del request por consola
+        debugPrint('═══════════════════════════════════════════════════════════════');
+        debugPrint('📤 REQUEST BODY - ${widget.trabajo == null ? "CREAR" : "ACTUALIZAR"} TRABAJO (Dialog)');
+        debugPrint('═══════════════════════════════════════════════════════════════');
+        try {
+          final jsonString = JsonEncoder.withIndent('  ').convert(data);
+          debugPrint(jsonString);
+          print(jsonString); // También usar print normal
+        } catch (e) {
+          debugPrint('Error al convertir a JSON: $e');
+          debugPrint('Data raw: $data');
+          print('Error al convertir a JSON: $e');
+          print('Data raw: $data');
+        }
+        debugPrint('═══════════════════════════════════════════════════════════════');
 
         if (widget.trabajo == null) {
           await ref.read(trabajosProvider.notifier).createTrabajo(data);
@@ -961,42 +1059,6 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     }
   }
 
-  // Helper methods para el dropdown de tipo de trabajo
-  String? _getValidTipoValue() {
-    final currentValue = _tipoController.text;
-    if (currentValue.isEmpty) return null;
-    
-    // Si el valor actual está en la lista válida, usarlo
-    if (AppConstants.workTypes.contains(currentValue)) {
-      return currentValue;
-    }
-    
-    // Si no está en la lista válida, retornar null para forzar selección
-    return null;
-  }
-
-  List<DropdownMenuItem<String>> _buildTipoItems() {
-    final items = <DropdownMenuItem<String>>[];
-    
-    // Agregar opciones válidas
-    for (final tipo in AppConstants.workTypes) {
-      items.add(DropdownMenuItem<String>(
-        value: tipo,
-        child: Text(tipo),
-      ));
-    }
-    
-    // Si hay un valor actual que no está en la lista válida, agregarlo como opción especial
-    final currentValue = _tipoController.text;
-    if (currentValue.isNotEmpty && !AppConstants.workTypes.contains(currentValue)) {
-      items.insert(0, DropdownMenuItem<String>(
-        value: currentValue,
-        child: Text('$currentValue (obsoleto)'),
-      ));
-    }
-    
-    return items;
-  }
 }
 
 /// Formulario para crear/editar clientes

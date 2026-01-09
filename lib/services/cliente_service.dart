@@ -60,7 +60,7 @@ class ClienteService {
   static Future<List<Campo>> getCamposByCliente(int clienteId) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.get('/campos-cliente/?cliente_id=$clienteId');
+      final response = await _apiService.get('/api/campos-cliente/?cliente_id=$clienteId');
       final List<dynamic> camposData = response is List ? response : (response['data'] ?? []);
       return camposData.map((json) => Campo.fromJson(json)).toList();
     } catch (e) {
@@ -72,7 +72,7 @@ class ClienteService {
   static Future<List<Map<String, dynamic>>> getAsignaciones() async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.get('/campos-cliente/');
+      final response = await _apiService.get('/api/campos-cliente/');
       final List<dynamic> asignacionesData = response is List ? response : (response['data'] ?? []);
       return asignacionesData.cast<Map<String, dynamic>>();
     } catch (e) {
@@ -84,7 +84,7 @@ class ClienteService {
   static Future<Map<String, dynamic>> getAsignacion(int asignacionId) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.get('/campos-cliente/$asignacionId');
+      final response = await _apiService.get('/api/campos-cliente/$asignacionId');
       return response;
     } catch (e) {
       throw Exception('Error al obtener asignación: $e');
@@ -101,7 +101,7 @@ class ClienteService {
         'observaciones': observaciones,
         'activo': true,
       };
-      final response = await _apiService.post('/campos-cliente/', data: data);
+      final response = await _apiService.post('/api/campos-cliente/create', data: data);
       return response;
     } catch (e) {
       throw Exception('Error al asignar campo al cliente: $e');
@@ -112,7 +112,7 @@ class ClienteService {
   static Future<Map<String, dynamic>> actualizarAsignacion(int asignacionId, Map<String, dynamic> data) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.put('/campos-cliente/$asignacionId', data: data);
+      final response = await _apiService.put('/api/campos-cliente/$asignacionId/update', data: data);
       return response;
     } catch (e) {
       throw Exception('Error al actualizar asignación: $e');
@@ -123,7 +123,7 @@ class ClienteService {
   static Future<void> eliminarAsignacion(int asignacionId) async {
     try {
       await _ensureInitialized();
-      await _apiService.delete('/campos-cliente/$asignacionId');
+      await _apiService.delete('/api/campos-cliente/$asignacionId/delete');
     } catch (e) {
       throw Exception('Error al eliminar asignación: $e');
     }
@@ -133,7 +133,7 @@ class ClienteService {
   static Future<void> desactivarAsignacion(int asignacionId) async {
     try {
       await _ensureInitialized();
-      await _apiService.patch('/campos-cliente/$asignacionId/desactivar');
+      await _apiService.patch('/api/campos-cliente/$asignacionId/desactivar');
     } catch (e) {
       throw Exception('Error al desactivar asignación: $e');
     }

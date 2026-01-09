@@ -7,7 +7,7 @@ import '../../providers/optimized_providers.dart';
 import '../../services/trabajo_service.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/constants.dart';
-import '../trabajo_detail_screen.dart';
+import '../trabajos/trabajo_detail_screen.dart';
 import '../forms/forms_screens.dart';
 
 class PersonalDetailScreen extends ConsumerStatefulWidget {

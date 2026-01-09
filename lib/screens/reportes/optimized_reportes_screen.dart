@@ -1,209 +1,179 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/mantenimiento.dart';
-import '../providers/optimized_providers.dart';
-import 'forms/mantenimiento_form_screen.dart';
-import 'optimized_main_screen_new.dart';
-import 'optimized_screens.dart';
-import 'personal/personal_list_screen.dart';
-import 'optimized_finanzas_screens.dart';
-import 'optimized_reportes_screen.dart';
+import '../../providers/optimized_auth_provider.dart';
+import '../optimized_main_screen_new.dart';
+import '../optimized_screens.dart';
+import '../maquinas/maquinas_list_screen.dart';
+import '../mantenimientos/optimized_mantenimientos_screen.dart';
+import '../personal/personal_list_screen.dart';
+import '../finanzas/optimized_finanzas_screens.dart';
 
-/// Pantalla de mantenimientos
-class OptimizedMantenimientosScreen extends ConsumerStatefulWidget {
-  const OptimizedMantenimientosScreen({Key? key}) : super(key: key);
+/// Pantalla de reportes
+class OptimizedReportesScreen extends ConsumerStatefulWidget {
+  const OptimizedReportesScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedMantenimientosScreen> createState() => _OptimizedMantenimientosScreenState();
+  ConsumerState<OptimizedReportesScreen> createState() => _OptimizedReportesScreenState();
 }
 
-class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedMantenimientosScreen> {
+class _OptimizedReportesScreenState extends ConsumerState<OptimizedReportesScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(mantenimientosProvider.notifier).loadMantenimientos();
-    });
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await ref.read(authProvider.notifier).logout();
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cerrar sesión: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final mantenimientosState = ref.watch(mantenimientosProvider);
-    
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: const Text('Mantenimientos'),
+        title: const Text('Reportes'),
+        elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
-        elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
       drawer: _buildDrawer(context),
-      body: _buildMantenimientosList(mantenimientosState),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showMantenimientoForm(context);
-        },
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sección de reportes financieros
+            _buildReportSection(
+              title: 'Reportes Financieros',
+              icon: Icons.account_balance_wallet,
+              color: Colors.green,
+              reports: [
+                _buildReportItem('Resumen de Ingresos', 'Vista general de todos los ingresos', () {}),
+                _buildReportItem('Resumen de Gastos', 'Vista general de todos los gastos', () {}),
+                _buildReportItem('Flujo de Caja', 'Análisis del flujo de efectivo', () {}),
+                _buildReportItem('Estado de Cuentas', 'Estado actual de cuentas por cobrar y pagar', () {}),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Sección de reportes operativos
+            _buildReportSection(
+              title: 'Reportes Operativos',
+              icon: Icons.work,
+              color: Colors.blue,
+              reports: [
+                _buildReportItem('Resumen de Trabajos', 'Estado y progreso de trabajos', () {}),
+                _buildReportItem('Productividad por Campo', 'Análisis de productividad por campo', () {}),
+                _buildReportItem('Uso de Maquinaria', 'Reporte de utilización de maquinaria', () {}),
+                _buildReportItem('Mantenimientos', 'Historial y programación de mantenimientos', () {}),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Sección de reportes de personal
+            _buildReportSection(
+              title: 'Reportes de Personal',
+              icon: Icons.people,
+              color: Colors.orange,
+              reports: [
+                _buildReportItem('Horas Trabajadas', 'Resumen de horas trabajadas por personal', () {}),
+                _buildReportItem('Productividad Personal', 'Análisis de productividad del personal', () {}),
+                _buildReportItem('Asistencia', 'Reporte de asistencia y faltas', () {}),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Sección de reportes de inventario
+            _buildReportSection(
+              title: 'Reportes de Inventario',
+              icon: Icons.inventory,
+              color: Colors.purple,
+              reports: [
+                _buildReportItem('Stock de Insumos', 'Estado actual del inventario', () {}),
+                _buildReportItem('Consumo por Campo', 'Análisis de consumo por campo', () {}),
+                _buildReportItem('Compras', 'Historial de compras de insumos', () {}),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMantenimientosList(BaseState state) {
-    if (state is LoadingState) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (state is ErrorState) {
-      return Center(
+  Widget _buildReportSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Widget> reports,
+  }) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              state.message.contains('404') 
-                  ? 'El endpoint de mantenimientos no está disponible en el servidor'
-                  : 'Error: ${state.message}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.red,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            if (state.message.contains('404')) ...[
-              const Text(
-                'Contacte al administrador para habilitar el módulo de mantenimientos',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-            ],
-            ElevatedButton(
-              onPressed: () {
-                ref.read(mantenimientosProvider.notifier).loadMantenimientos();
-              },
-              child: const Text('Reintentar'),
-            ),
-          ],
-        ),
-      );
-    }
-    
-    final mantenimientos = (state as LoadedState<List<Mantenimiento>>).data;
-    if (mantenimientos.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.build,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'No hay mantenimientos',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Toca el botón + para crear el primero',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: mantenimientos.length,
-      itemBuilder: (context, index) {
-        final mantenimiento = mantenimientos[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _getEstadoColor(mantenimiento.estado).withOpacity(0.1),
-              child: Icon(_getEstadoIcon(mantenimiento.estado), color: _getEstadoColor(mantenimiento.estado)),
-            ),
-            title: Text(mantenimiento.descripcion),
-            subtitle: Text(mantenimiento.estado.toUpperCase()),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Row(
               children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(width: 12),
                 Text(
-                  mantenimiento.costoTotal != null ? '\$${mantenimiento.costoTotal!.toStringAsFixed(2)}' : 'Sin costo',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '${mantenimiento.fecha.day}/${mantenimiento.fecha.month}/${mantenimiento.fecha.year}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
-            onTap: () {
-              _showMantenimientoForm(context, mantenimiento: mantenimiento);
-            },
-          ),
-        );
-      },
+            const SizedBox(height: 16),
+            ...reports,
+          ],
+        ),
+      ),
     );
   }
 
-  Color _getEstadoColor(String estado) {
-    switch (estado.toLowerCase()) {
-      case 'completado':
-        return Colors.green;
-      case 'pendiente':
-        return Colors.orange;
-      case 'atrasado':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getEstadoIcon(String estado) {
-    switch (estado.toLowerCase()) {
-      case 'completado':
-        return Icons.check_circle;
-      case 'pendiente':
-        return Icons.schedule;
-      case 'atrasado':
-        return Icons.warning;
-      default:
-        return Icons.build;
-    }
+  Widget _buildReportItem(String title, String description, VoidCallback onTap) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(description),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
+      ),
+    );
   }
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
-      width: 320, // Ancho más amplio para elementos flotantes
+      width: 320,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
@@ -315,12 +285,29 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
                       const SizedBox(height: 8),
                       _buildModernDrawerItem(
                         context,
+                        'Máquinas',
+                        Icons.local_shipping_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OptimizedMaquinasListScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
                         'Mantenimientos',
                         Icons.build_rounded,
                         -1,
-                        isSelected: true,
                         onTap: () {
                           Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OptimizedMantenimientosScreen()),
+                          );
                         },
                       ),
                       const SizedBox(height: 8),
@@ -365,13 +352,7 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
                         'Reportes',
                         Icons.analytics_rounded,
                         -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedReportesScreen()),
-                          );
-                        },
+                        isSelected: true,
                       ),
                       const SizedBox(height: 16),
                       
@@ -413,9 +394,9 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
                         Icons.logout_rounded,
                         -1,
                         isDestructive: true,
-                        onTap: () {
+                        onTap: () async {
                           Navigator.pop(context);
-                          // TODO: Implementar logout
+                          await _handleLogout(context);
                         },
                       ),
                     ],
@@ -475,37 +456,22 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isDestructive 
                         ? Colors.red.shade600
                         : (isSelected 
                           ? Theme.of(context).primaryColor
                           : Colors.grey.shade700),
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 16,
                     ),
                   ),
                 ),
-                if (isSelected)
-                  Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: Theme.of(context).primaryColor,
-                  ),
               ],
             ),
           ),
         ),
       ),
     );
-  }
-
-  void _showMantenimientoForm(BuildContext context, {Mantenimiento? mantenimiento}) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MantenimientoFormScreen(mantenimiento: mantenimiento),
-      ),
-    ).then((_) => ref.read(mantenimientosProvider.notifier).loadMantenimientos());
   }
 }
 

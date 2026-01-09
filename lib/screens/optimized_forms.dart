@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/optimized_providers.dart';
@@ -5,8 +6,10 @@ import '../models/campo.dart';
 import '../models/maquina.dart';
 import '../models/personal.dart';
 import '../models/cliente.dart';
+import '../models/tipo_trabajo.dart';
 import '../services/cliente_service.dart';
-import '../utils/constants.dart';
+import '../services/tipo_trabajo_service.dart';
+import '../widgets/optimized_widgets.dart';
 import 'additional_forms.dart';
 
 /// Formulario para crear/editar campos
@@ -51,79 +54,120 @@ class _CampoFormDialogState extends ConsumerState<CampoFormDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.campo == null ? 'Nuevo Campo' : 'Editar Campo'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
+        width: MediaQuery.of(context).size.width * 0.85,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: _nombreController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre del Campo',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'El nombre es requerido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _superficieController,
-                  decoration: const InputDecoration(
-                    labelText: 'Superficie (hectáreas)',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'La superficie es requerida';
-                    }
-                    if (double.tryParse(value) == null) {
-                      return 'Ingrese un número válido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _latitudController,
-                        decoration: const InputDecoration(
-                          labelText: 'Latitud',
-                          border: OutlineInputBorder(),
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Información Básica',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        keyboardType: TextInputType.number,
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _longitudController,
-                        decoration: const InputDecoration(
-                          labelText: 'Longitud',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _nombreController,
+                        label: 'Nombre del Campo',
+                        hint: 'Ingrese el nombre del campo',
+                        prefixIcon: const Icon(Icons.landscape),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'El nombre es requerido';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _detallesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Detalles (opcional)',
-                    border: OutlineInputBorder(),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _superficieController,
+                        label: 'Superficie (hectáreas)',
+                        hint: 'Ingrese la superficie',
+                        keyboardType: TextInputType.number,
+                        prefixIcon: const Icon(Icons.straighten),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'La superficie es requerida';
+                          }
+                          if (double.tryParse(value) == null) {
+                            return 'Ingrese un número válido';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                   ),
-                  maxLines: 3,
+                ),
+                const SizedBox(height: 24),
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ubicación',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OptimizedTextField(
+                              controller: _latitudController,
+                              label: 'Latitud',
+                              hint: 'Ej: -34.6037',
+                              keyboardType: TextInputType.number,
+                              prefixIcon: const Icon(Icons.location_on),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: OptimizedTextField(
+                              controller: _longitudController,
+                              label: 'Longitud',
+                              hint: 'Ej: -58.3816',
+                              keyboardType: TextInputType.number,
+                              prefixIcon: const Icon(Icons.location_on),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Detalles Adicionales',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _detallesController,
+                        label: 'Detalles (opcional)',
+                        hint: 'Información adicional sobre el campo',
+                        maxLines: 3,
+                        prefixIcon: const Icon(Icons.note),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -197,6 +241,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
   late TextEditingController _categoriaController;
   late TextEditingController _fechaController;
   DateTime? _fecha;
+  String? _formaPago;
+  bool _pagado = false;
 
   @override
   void initState() {
@@ -206,6 +252,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
     _categoriaController = TextEditingController(text: widget.costo?.categoria ?? '');
     _fechaController = TextEditingController(text: widget.costo?.fecha?.toString() ?? '');
     _fecha = widget.costo?.fecha ?? DateTime.now();
+    _formaPago = widget.costo?.formaPago ?? 'Efectivo';
+    _pagado = widget.costo?.pagado ?? false;
   }
 
   @override
@@ -221,101 +269,152 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.costo == null ? 'Nuevo Costo' : 'Editar Costo'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
+        width: MediaQuery.of(context).size.width * 0.85,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: _descripcionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    border: OutlineInputBorder(),
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Información Básica',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _descripcionController,
+                        label: 'Descripción',
+                        hint: 'Ingrese la descripción del costo',
+                        prefixIcon: const Icon(Icons.description),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'La descripción es requerida';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _montoController,
+                        label: 'Monto',
+                        hint: 'Ingrese el monto',
+                        keyboardType: TextInputType.number,
+                        prefixIcon: const Icon(Icons.attach_money),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'El monto es requerido';
+                          }
+                          if (double.tryParse(value) == null) {
+                            return 'Ingrese un número válido';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _categoriaController,
+                        label: 'Categoría',
+                        hint: 'Ingrese la categoría',
+                        prefixIcon: const Icon(Icons.category),
+                      ),
+                      const SizedBox(height: 24),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fecha',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _fechaController,
+                            decoration: InputDecoration(
+                              hintText: 'Seleccione la fecha',
+                              suffixIcon: const Icon(Icons.calendar_today),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(context).cardColor,
+                            ),
+                            readOnly: true,
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: _fecha ?? DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime.now(),
+                              );
+                              if (date != null) {
+                                setState(() {
+                                  _fecha = date;
+                                  _fechaController.text = '${date.day}/${date.month}/${date.year}';
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'La descripción es requerida';
-                    }
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _montoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Monto',
-                    border: OutlineInputBorder(),
+                const SizedBox(height: 24),
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Información de Pago',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Forma de Pago',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.payment),
+                        ),
+                        value: _formaPago,
+                        items: const [
+                          DropdownMenuItem(value: 'Efectivo', child: Text('Efectivo')),
+                          DropdownMenuItem(value: 'Transferencia', child: Text('Transferencia')),
+                          DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
+                          DropdownMenuItem(value: 'Tarjeta', child: Text('Tarjeta')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _formaPago = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      SwitchListTile(
+                        title: const Text('Pagado'),
+                        subtitle: const Text('Marcar si el costo ya fue pagado'),
+                        value: _pagado,
+                        onChanged: (value) {
+                          setState(() {
+                            _pagado = value;
+                          });
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'El monto es requerido';
-                    }
-                    if (double.tryParse(value) == null) {
-                      return 'Ingrese un número válido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _categoriaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Categoría',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Forma de Pago',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Efectivo', child: Text('Efectivo')),
-                    DropdownMenuItem(value: 'Transferencia', child: Text('Transferencia')),
-                    DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
-                    DropdownMenuItem(value: 'Tarjeta', child: Text('Tarjeta')),
-                  ],
-                  onChanged: (value) {
-                    // TODO: Implementar selector de forma de pago
-                  },
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Pagado'),
-                  subtitle: const Text('Marcar si ya fue pagado'),
-                  value: false, // TODO: Implementar estado de pago
-                  onChanged: (value) {
-                    // TODO: Implementar toggle de pago
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _fechaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Fecha',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  readOnly: true,
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _fecha ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) {
-                      setState(() {
-                        _fecha = date;
-                        _fechaController.text = '${date.day}/${date.month}/${date.year}';
-                      });
-                    }
-                  },
                 ),
               ],
             ),
@@ -343,8 +442,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
           'monto': double.parse(_montoController.text),
           'fecha': _fecha?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'destinatario': _categoriaController.text,
-          'pagado': false,
-          'forma_pago': 'Efectivo',
+          'pagado': _pagado,
+          'forma_pago': _formaPago ?? 'Efectivo',
           'categoria': _categoriaController.text,
           'es_cobro': false,
           'cobrar_a': null,
@@ -390,13 +489,16 @@ class TrabajoFormDialog extends ConsumerStatefulWidget {
 
 class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _tipoController;
+  int? _tipoTrabajoSeleccionado; // ID del tipo de trabajo seleccionado
+  List<TipoTrabajo> _tiposTrabajo = [];
   late TextEditingController _cultivoController;
   late TextEditingController _descripcionController;
   late TextEditingController _fechaInicioController;
   late TextEditingController _fechaFinController;
   late TextEditingController _clienteController;
   late TextEditingController _montoCobradoController;
+  late TextEditingController _rindeCosechaController;
+  late TextEditingController _humedadCosechaController;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
   
@@ -424,38 +526,33 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   @override
   void initState() {
     super.initState();
-    _tipoController = TextEditingController(text: widget.trabajo?.tipo ?? '');
+    // Si el trabajo tiene idTipoTrabajo, usarlo directamente
+    // Si no, intentar encontrarlo por el nombre del tipo (se hará después de cargar los tipos)
+    _tipoTrabajoSeleccionado = widget.trabajo?.idTipoTrabajo;
     _cultivoController = TextEditingController(text: widget.trabajo?.cultivo ?? '');
     _descripcionController = TextEditingController(text: widget.trabajo?.observaciones ?? '');
     _fechaInicioController = TextEditingController(text: widget.trabajo?.fechaInicio?.toString() ?? '');
     _fechaFinController = TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
     _clienteController = TextEditingController(text: widget.trabajo?.cliente ?? '');
     _montoCobradoController = TextEditingController(text: widget.trabajo?.montoCobrado?.toString() ?? '');
+    _rindeCosechaController = TextEditingController(text: widget.trabajo?.rindeCosecha?.toString() ?? '');
+    _humedadCosechaController = TextEditingController(text: widget.trabajo?.humedadCosecha?.toString() ?? '');
     _fechaInicio = widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
     
     // Estados adicionales
     _estadoSeleccionado = widget.trabajo?.estado ?? 'Pendiente';
     
-    // FORZAR VALORES CORRECTOS PARA DEBUG
+    // Inicializar valores según el trabajo existente
     if (widget.trabajo != null) {
-      // Si hay un trabajo, usar sus valores reales
       _esTercero = widget.trabajo!.esTercero;
       _cobrado = widget.trabajo!.cobrado;
       _servicioContratado = widget.trabajo!.servicioContratado;
     } else {
-      // Si es un trabajo nuevo, valores por defecto
       _esTercero = false;
       _cobrado = false;
       _servicioContratado = false;
     }
-    
-    // Debug logs
-    print('DEBUG: Trabajo esTercero: ${widget.trabajo?.esTercero}');
-    print('DEBUG: _esTercero inicializado a: $_esTercero');
-    print('DEBUG: Trabajo cliente: ${widget.trabajo?.cliente}');
-    print('DEBUG: Trabajo completo: ${widget.trabajo?.toJson()}');
-    print('DEBUG: JSON original del trabajo: ${widget.trabajo?.toJson()}');
     
     // Cargar datos necesarios para los selectores
     Future.microtask(() => _loadDataForSelectors());
@@ -463,13 +560,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
   @override
   void dispose() {
-    _tipoController.dispose();
     _cultivoController.dispose();
     _descripcionController.dispose();
     _fechaInicioController.dispose();
     _fechaFinController.dispose();
     _clienteController.dispose();
     _montoCobradoController.dispose();
+    _rindeCosechaController.dispose();
+    _humedadCosechaController.dispose();
     super.dispose();
   }
 
@@ -479,6 +577,28 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     });
 
     try {
+      // Cargar tipos de trabajo
+      try {
+        _tiposTrabajo = await TipoTrabajoService.getTiposTrabajo();
+        
+        // Si el trabajo tiene tipoTrabajoNombre pero no idTipoTrabajo, buscar el ID
+        if (widget.trabajo != null && 
+            widget.trabajo!.idTipoTrabajo == null && 
+            widget.trabajo!.tipoTrabajoNombre != null) {
+          final tipoEncontrado = _tiposTrabajo.firstWhere(
+            (tipo) => tipo.trabajo == widget.trabajo!.tipoTrabajoNombre,
+            orElse: () => _tiposTrabajo.isNotEmpty ? _tiposTrabajo.first : TipoTrabajo(id: 0, trabajo: ''),
+          );
+          if (tipoEncontrado.id != 0) {
+            setState(() {
+              _tipoTrabajoSeleccionado = tipoEncontrado.id;
+            });
+          }
+        }
+      } catch (e) {
+        _tiposTrabajo = [];
+      }
+
       // Cargar campos
       final camposState = ref.read(camposProvider);
       if (camposState is LoadedState<List<Campo>>) {
@@ -495,7 +615,6 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       try {
         _clientes = await ClienteService.getClientes();
       } catch (e) {
-        print('Error cargando clientes: $e');
         _clientes = [];
       }
 
@@ -554,7 +673,6 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       }
     } catch (e) {
       // Manejar errores silenciosamente
-      print('Error cargando datos para selectores: $e');
     } finally {
       setState(() {
         _isLoadingData = false;
@@ -564,32 +682,21 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
   // Método para aplicar filtros de campos según el cliente seleccionado
   Future<void> _aplicarFiltrosCampos() async {
-    print('DEBUG: _aplicarFiltrosCampos - _servicioContratado: $_servicioContratado, _esTercero: $_esTercero, _clienteSeleccionado: $_clienteSeleccionado');
-    
     if ((_servicioContratado || _esTercero) && _clienteSeleccionado != null) {
       // Si es servicio contratado o trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
-      print('DEBUG: Cargando campos del cliente ${_clienteSeleccionado!.nombre}');
       try {
         _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
-        print('DEBUG: Campos del cliente cargados: ${_camposFiltrados.length}');
       } catch (e) {
-        print('Error cargando campos del cliente: $e');
         _camposFiltrados = [];
       }
     } else {
       // Si no es trabajo a terceros, mostrar todos los campos propios
-      print('DEBUG: Mostrando todos los campos propios');
       _camposFiltrados = List.from(_campos);
-      print('DEBUG: Campos propios cargados: ${_camposFiltrados.length}');
     }
-    
-    print('DEBUG: _aplicarFiltrosCampos completado. Campos filtrados: ${_camposFiltrados.length}');
   }
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: build() ejecutado - _esTercero: $_esTercero');
-    
     if (_isLoadingData) {
       return AlertDialog(
         title: Text(widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo'),
@@ -611,508 +718,600 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
     return AlertDialog(
       title: Text(widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
+        width: MediaQuery.of(context).size.width * 0.85,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo de Trabajo',
-                    border: OutlineInputBorder(),
-                  ),
-                  value: _getValidTipoValue(),
-                  items: _buildTipoItems(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      _tipoController.text = newValue;
-                    }
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'El tipo de trabajo es requerido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _cultivoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Cultivo',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'El cultivo es requerido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descripcionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                
-                // Toggle Servicio Contratado
-                Row(
-                  children: [
-                    const Text('Servicio contratado:'),
-                    const Spacer(),
-                    Switch(
-                      value: _servicioContratado,
-                      onChanged: (value) {
-                        setState(() {
-                          _servicioContratado = value;
-                          // Si se activa servicio contratado, desactivar trabajo a terceros
-                          if (value) {
-                            _esTercero = false;
-                          }
-                          // Limpiar selecciones si se desactiva "servicio contratado"
-                          if (!value) {
-                            _clienteSeleccionado = null;
-                            _clienteController.clear();
-                            _campoSeleccionado = null;
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Toggle Es Tercero
-                Row(
-                  children: [
-                    const Text('Trabajo a terceros:'),
-                    const Spacer(),
-                    Switch(
-                      value: _esTercero,
-                      onChanged: (value) async {
-                        print('DEBUG: Switch cambiado a: $value');
-                        print('DEBUG: _esTercero antes: $_esTercero');
-                        
-                        // Actualizar el estado ANTES del setState
-                        _esTercero = value;
-                        print('DEBUG: _esTercero actualizado a: $_esTercero');
-                        
-                        // Si se activa trabajo a terceros, desactivar servicio contratado
-                        if (value) {
-                          _servicioContratado = false;
-                        }
-                        
-                        // Limpiar selecciones si se desactiva "a terceros"
-                        if (!value) {
-                          print('DEBUG: Limpiando selecciones porque esTercero = false');
-                          _clienteSeleccionado = null;
-                          _clienteController.clear();
-                          _campoSeleccionado = null;
-                        }
-                        
-                        // Forzar rebuild del widget
-                        setState(() {
-                          print('DEBUG: setState ejecutado');
-                          // El estado ya se actualizó arriba
-                        });
-                        
-                        print('DEBUG: setState completado');
-                        
-                        print('DEBUG: Aplicando filtros de campos...');
-                        // Aplicar filtros de campos
-                        await _aplicarFiltrosCampos();
-                        print('DEBUG: Filtros aplicados. _esTercero final: $_esTercero');
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Selector de Cliente (solo visible si es a terceros)
-                // Debug log
-                Builder(builder: (context) {
-                  print('DEBUG: Renderizando formulario - _esTercero: $_esTercero');
-                  return Container();
-                }),
-                
-                // TEST: Mostrar estado actual
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.yellow[100],
-                    border: Border.all(color: Colors.orange),
-                  ),
-                  child: Text(
-                    'DEBUG: _esTercero = $_esTercero, Cliente visible: ${_esTercero ? "SÍ" : "NO"}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                
-                // Selector de Cliente (solo visible si es trabajo a terceros)
-                if (_esTercero) ...[
-                  DropdownButtonFormField<Cliente>(
-                    decoration: const InputDecoration(
-                      labelText: 'Cliente',
-                      border: OutlineInputBorder(),
-                      hintText: 'Seleccione un cliente',
-                    ),
-                    value: _clienteSeleccionado,
-                    items: _clientes.map((cliente) {
-                      return DropdownMenuItem<Cliente>(
-                        value: cliente,
-                        child: Text(cliente.nombre),
-                      );
-                    }).toList(),
-                    onChanged: (Cliente? newValue) async {
-                      setState(() {
-                        _clienteSeleccionado = newValue;
-                        _clienteController.text = newValue?.nombre ?? '';
-                        _campoSeleccionado = null; // Limpiar campo seleccionado
-                      });
-                      // Aplicar filtros de campos para el cliente seleccionado
-                      await _aplicarFiltrosCampos();
-                    },
-                    validator: (value) {
-                      if (_esTercero && value == null) {
-                        return 'El cliente es requerido para trabajos a terceros';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                
-                if (_servicioContratado) ...[
-                  DropdownButtonFormField<Cliente>(
-                    decoration: InputDecoration(
-                      labelText: _servicioContratado ? 'Prestador de servicio' : 'Cliente',
-                      border: const OutlineInputBorder(),
-                      hintText: _servicioContratado ? 'Seleccione un prestador' : 'Seleccione un cliente',
-                    ),
-                    value: _clienteSeleccionado,
-                    items: _clientes.map((cliente) {
-                      return DropdownMenuItem<Cliente>(
-                        value: cliente,
-                        child: Text(cliente.nombre),
-                      );
-                    }).toList(),
-                    onChanged: (Cliente? cliente) async {
-                      setState(() {
-                        _clienteSeleccionado = cliente;
-                        _clienteController.text = cliente?.nombre ?? '';
-                        _campoSeleccionado = null; // Limpiar campo seleccionado
-                      });
-                      // Aplicar filtros de campos para el cliente seleccionado
-                      await _aplicarFiltrosCampos();
-                    },
-                    validator: (value) {
-                      if (_servicioContratado && value == null) {
-                        return 'El prestador de servicio es requerido';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                
-                // Selector de Estado
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Estado',
-                    border: OutlineInputBorder(),
-                  ),
-                  value: _estadoSeleccionado,
-                  items: const [
-                    DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
-                    DropdownMenuItem(value: 'En progreso', child: Text('En progreso')),
-                    DropdownMenuItem(value: 'Completado', child: Text('Completado')),
-                    DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _estadoSeleccionado = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Toggle Cobrado
-                Row(
-                  children: [
-                    const Text('Cobrado:'),
-                    const Spacer(),
-                    Switch(
-                      value: _cobrado,
-                      onChanged: (value) {
-                        setState(() {
-                          _cobrado = value;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Campo Monto Cobrado (solo si está cobrado)
-                if (_cobrado) ...[
-                  TextFormField(
-                    controller: _montoCobradoController,
-                    decoration: const InputDecoration(
-                      labelText: 'Monto Cobrado',
-                      border: OutlineInputBorder(),
-                      prefixText: '\$ ',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (_cobrado && (value == null || value.isEmpty)) {
-                        return 'El monto es requerido si está cobrado';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                
-                // Selector de Campo
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<Campo>(
-                        decoration: const InputDecoration(
-                          labelText: 'Campo',
-                          border: OutlineInputBorder(),
+                // Sección: Información General
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Información General',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        value: _campoSeleccionado,
-                        items: _camposFiltrados.map((campo) {
-                          return DropdownMenuItem<Campo>(
-                            value: campo,
-                            child: Text(campo.nombre),
+                      ),
+                      const SizedBox(height: 24),
+                      DropdownButtonFormField<int>(
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de Trabajo',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.work),
+                        ),
+                        value: _tipoTrabajoSeleccionado,
+                        items: _tiposTrabajo.map((tipo) {
+                          return DropdownMenuItem<int>(
+                            value: tipo.id,
+                            child: Text(tipo.trabajo),
                           );
                         }).toList(),
-                        onChanged: (Campo? value) {
+                        onChanged: (int? newValue) {
                           setState(() {
-                            _campoSeleccionado = value;
+                            _tipoTrabajoSeleccionado = newValue;
                           });
                         },
                         validator: (value) {
                           if (value == null) {
-                            return 'Seleccione un campo';
+                            return 'El tipo de trabajo es requerido';
                           }
                           return null;
                         },
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () => _showCampoForm(),
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Nuevo'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _cultivoController,
+                        label: 'Cultivo',
+                        hint: 'Ingrese el tipo de cultivo',
+                        prefixIcon: const Icon(Icons.eco),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'El cultivo es requerido';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Selector de Máquinas (múltiple)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Máquinas (${_maquinasSeleccionadas.length} seleccionadas)',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () => _showMaquinaForm(),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Nueva'),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _descripcionController,
+                        label: 'Descripción',
+                        hint: 'Observaciones adicionales',
+                        maxLines: 3,
+                        prefixIcon: const Icon(Icons.description),
+                      ),
+                      // Campos específicos para cosecha (tipo de trabajo id = 1)
+                      if (_tipoTrabajoSeleccionado == 1) ...[
+                        const SizedBox(height: 24),
+                        OptimizedTextField(
+                          controller: _rindeCosechaController,
+                          label: 'Rinde Cosecha (kg/ha)',
+                          hint: 'Ingrese el rinde de la cosecha',
+                          prefixIcon: const Icon(Icons.trending_up),
+                          keyboardType: TextInputType.number,
                         ),
-                        const SizedBox(height: 8),
-                        if (_isLoadingData)
-                          const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: CircularProgressIndicator(),
+                        const SizedBox(height: 24),
+                        OptimizedTextField(
+                          controller: _humedadCosechaController,
+                          label: 'Humedad Cosecha (%)',
+                          hint: 'Ingrese el porcentaje de humedad',
+                          prefixIcon: const Icon(Icons.water_drop),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Sección: Configuración
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Configuración',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SwitchListTile(
+                        title: const Text('Servicio Contratado'),
+                        subtitle: const Text('Trabajo realizado por un prestador externo'),
+                        value: _servicioContratado,
+                        onChanged: (value) {
+                          setState(() {
+                            _servicioContratado = value;
+                            if (value) {
+                              _esTercero = false;
+                            }
+                            if (!value) {
+                              _clienteSeleccionado = null;
+                              _clienteController.clear();
+                              _campoSeleccionado = null;
+                            }
+                          });
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      const Divider(),
+                      SwitchListTile(
+                        title: const Text('Trabajo a Terceros'),
+                        subtitle: const Text('Trabajo realizado para un cliente'),
+                        value: _esTercero,
+                        onChanged: (value) async {
+                          setState(() {
+                            _esTercero = value;
+                            if (value) {
+                              _servicioContratado = false;
+                            }
+                            if (!value) {
+                              _clienteSeleccionado = null;
+                              _clienteController.clear();
+                              _campoSeleccionado = null;
+                            }
+                          });
+                          await _aplicarFiltrosCampos();
+                          if (mounted) {
+                            setState(() {});
+                          }
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      const Divider(),
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Estado',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.info),
+                        ),
+                        value: _estadoSeleccionado,
+                        items: const [
+                          DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
+                          DropdownMenuItem(value: 'En progreso', child: Text('En progreso')),
+                          DropdownMenuItem(value: 'Completado', child: Text('Completado')),
+                          DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _estadoSeleccionado = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text('Cobrado'),
+                        subtitle: const Text('Marcar si el trabajo ya fue cobrado'),
+                        value: _cobrado,
+                        onChanged: (value) {
+                          setState(() {
+                            _cobrado = value;
+                          });
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      if (_cobrado) ...[
+                        const SizedBox(height: 16),
+                        OptimizedTextField(
+                          controller: _montoCobradoController,
+                          label: 'Monto Cobrado',
+                          hint: 'Ingrese el monto',
+                          keyboardType: TextInputType.number,
+                          prefixIcon: const Icon(Icons.attach_money),
+                          validator: (value) {
+                            if (_cobrado && (value == null || value.isEmpty)) {
+                              return 'El monto es requerido si está cobrado';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Sección: Cliente y Campo
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Cliente y Campo',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      if (_esTercero) ...[
+                        DropdownButtonFormField<Cliente>(
+                          decoration: const InputDecoration(
+                            labelText: 'Cliente',
+                            border: OutlineInputBorder(),
+                            hintText: 'Seleccione un cliente',
+                            prefixIcon: Icon(Icons.person),
+                          ),
+                          value: _clienteSeleccionado,
+                          items: _clientes.map((cliente) {
+                            return DropdownMenuItem<Cliente>(
+                              value: cliente,
+                              child: Text(cliente.nombre),
+                            );
+                          }).toList(),
+                          onChanged: (Cliente? newValue) async {
+                            setState(() {
+                              _clienteSeleccionado = newValue;
+                              _clienteController.text = newValue?.nombre ?? '';
+                              _campoSeleccionado = null;
+                            });
+                            await _aplicarFiltrosCampos();
+                            if (mounted) {
+                              setState(() {});
+                            }
+                          },
+                          validator: (value) {
+                            if (_esTercero && value == null) {
+                              return 'El cliente es requerido para trabajos a terceros';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      if (_servicioContratado) ...[
+                        DropdownButtonFormField<Cliente>(
+                          decoration: const InputDecoration(
+                            labelText: 'Prestador de Servicio',
+                            border: OutlineInputBorder(),
+                            hintText: 'Seleccione un prestador',
+                            prefixIcon: Icon(Icons.business),
+                          ),
+                          value: _clienteSeleccionado,
+                          items: _clientes.map((cliente) {
+                            return DropdownMenuItem<Cliente>(
+                              value: cliente,
+                              child: Text(cliente.nombre),
+                            );
+                          }).toList(),
+                          onChanged: (Cliente? cliente) async {
+                            setState(() {
+                              _clienteSeleccionado = cliente;
+                              _clienteController.text = cliente?.nombre ?? '';
+                              _campoSeleccionado = null;
+                            });
+                            await _aplicarFiltrosCampos();
+                            if (mounted) {
+                              setState(() {});
+                            }
+                          },
+                          validator: (value) {
+                            if (_servicioContratado && value == null) {
+                              return 'El prestador de servicio es requerido';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<Campo>(
+                              decoration: const InputDecoration(
+                                labelText: 'Campo',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.landscape),
+                              ),
+                              value: _campoSeleccionado,
+                              items: _camposFiltrados.map((campo) {
+                                return DropdownMenuItem<Campo>(
+                                  value: campo,
+                                  child: Text(campo.nombre),
+                                );
+                              }).toList(),
+                              onChanged: (Campo? value) {
+                                setState(() {
+                                  _campoSeleccionado = value;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Seleccione un campo';
+                                }
+                                return null;
+                              },
                             ),
-                          )
-                        else if (_maquinas.isEmpty)
-                          const Text(
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: () => _showCampoForm(),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Nuevo'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Sección: Recursos
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recursos',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Máquinas
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Máquinas',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${_maquinasSeleccionadas.length} seleccionadas',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: () => _showMaquinaForm(),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Nueva'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (_isLoadingData)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_maquinas.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
                             'No hay máquinas disponibles',
-                            style: TextStyle(color: Colors.grey),
-                          )
-                        else
-                          Container(
-                            constraints: const BoxConstraints(maxHeight: 120),
-                            child: SingleChildScrollView(
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _maquinas.map((maquina) {
-                                  final isSelected = _maquinasSeleccionadas.contains(maquina);
-                                  return FilterChip(
-                                    label: Text(maquina.nombre),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _maquinasSeleccionadas.add(maquina);
-                                        } else {
-                                          _maquinasSeleccionadas.remove(maquina);
-                                        }
-                                      });
-                                    },
-                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                    checkmarkColor: Theme.of(context).primaryColor,
-                                  );
-                                }).toList(),
-                              ),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Selector de Personal (múltiple)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Operarios (${_personalSeleccionado.length} seleccionados)',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
+                        )
+                      else
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 150),
+                          child: SingleChildScrollView(
+                            child: Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: _maquinas.map((maquina) {
+                                final isSelected = _maquinasSeleccionadas.any((m) => m.id == maquina.id);
+                                return FilterChip(
+                                  label: Text(maquina.nombre),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _maquinasSeleccionadas.add(maquina);
+                                      } else {
+                                        _maquinasSeleccionadas.removeWhere((m) => m.id == maquina.id);
+                                      }
+                                    });
+                                  },
+                                  selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                                  checkmarkColor: Theme.of(context).primaryColor,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                );
+                              }).toList(),
                             ),
-                            ElevatedButton.icon(
-                              onPressed: () => _showPersonalForm(),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Nuevo'),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        if (_isLoadingData)
-                          const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: CircularProgressIndicator(),
-                            ),
-                          )
-                        else if (_personal.isEmpty)
-                          const Text(
-                            'No hay operarios disponibles',
-                            style: TextStyle(color: Colors.grey),
-                          )
-                        else
-                          Container(
-                            constraints: const BoxConstraints(maxHeight: 120),
-                            child: SingleChildScrollView(
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _personal.map((persona) {
-                                  final isSelected = _personalSeleccionado.contains(persona);
-                                  return FilterChip(
-                                    label: Text(persona.nombre),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _personalSeleccionado.add(persona);
-                                        } else {
-                                          _personalSeleccionado.remove(persona);
-                                        }
-                                      });
-                                    },
-                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                    checkmarkColor: Theme.of(context).primaryColor,
-                                  );
-                                }).toList(),
+                      const SizedBox(height: 32),
+                      const Divider(),
+                      const SizedBox(height: 16),
+                      // Personal
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Operarios',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                      ],
-                    ),
+                          Text(
+                            '${_personalSeleccionado.length} seleccionados',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: () => _showPersonalForm(),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Nuevo'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (_isLoadingData)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_personal.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            'No hay operarios disponibles',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 150),
+                          child: SingleChildScrollView(
+                            child: Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: _personal.map((persona) {
+                                final isSelected = _personalSeleccionado.any((p) => p.id == persona.id);
+                                return FilterChip(
+                                  label: Text(persona.nombre),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _personalSeleccionado.add(persona);
+                                      } else {
+                                        _personalSeleccionado.removeWhere((p) => p.id == persona.id);
+                                      }
+                                    });
+                                  },
+                                  selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                                  checkmarkColor: Theme.of(context).primaryColor,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _fechaInicioController,
-                  decoration: const InputDecoration(
-                    labelText: 'Fecha de Inicio',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+                const SizedBox(height: 24),
+                
+                // Sección: Fechas
+                OptimizedCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Fechas',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fecha de Inicio',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _fechaInicioController,
+                            decoration: InputDecoration(
+                              hintText: 'Seleccione la fecha de inicio',
+                              suffixIcon: const Icon(Icons.calendar_today),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(context).cardColor,
+                            ),
+                            readOnly: true,
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: _fechaInicio ?? DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime.now(),
+                              );
+                              if (date != null) {
+                                setState(() {
+                                  _fechaInicio = date;
+                                  _fechaInicioController.text = '${date.day}/${date.month}/${date.year}';
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fecha de Fin',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _fechaFinController,
+                            decoration: InputDecoration(
+                              hintText: 'Seleccione la fecha de fin',
+                              suffixIcon: const Icon(Icons.calendar_today),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(context).cardColor,
+                            ),
+                            readOnly: true,
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: _fechaFin ?? DateTime.now(),
+                                firstDate: _fechaInicio ?? DateTime(2020),
+                                lastDate: DateTime.now(),
+                              );
+                              if (date != null) {
+                                setState(() {
+                                  _fechaFin = date;
+                                  _fechaFinController.text = '${date.day}/${date.month}/${date.year}';
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  readOnly: true,
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _fechaInicio ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) {
-                      setState(() {
-                        _fechaInicio = date;
-                        _fechaInicioController.text = '${date.day}/${date.month}/${date.year}';
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _fechaFinController,
-                  decoration: const InputDecoration(
-                    labelText: 'Fecha de Fin',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  readOnly: true,
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _fechaFin ?? DateTime.now(),
-                      firstDate: _fechaInicio ?? DateTime(2020),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) {
-                      setState(() {
-                        _fechaFin = date;
-                        _fechaFinController.text = '${date.day}/${date.month}/${date.year}';
-                      });
-                    }
-                  },
                 ),
               ],
             ),
@@ -1133,28 +1332,59 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   }
 
   void _submitForm() async {
+    print('🔵 _submitForm llamado (Dialog)');
     if (_formKey.currentState!.validate()) {
+      print('🔵 Validación del formulario exitosa (Dialog)');
       try {
-        final data = {
-          'tipo': _tipoController.text,
-          'cultivo': _cultivoController.text,
-          'observaciones': _descripcionController.text,
+        print('🔵 Iniciando construcción del request... (Dialog)');
+        // Construir el request según el formato requerido por el endpoint
+        final data = <String, dynamic>{
+          'id_tipo_trabajo': _tipoTrabajoSeleccionado,
           'cliente': (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
               ? _clienteSeleccionado!.nombre 
-              : ((_servicioContratado || _esTercero) ? 'Cliente no seleccionado' : 'Trabajo propio'),
-          'estado': _estadoSeleccionado ?? 'Pendiente',
-          'a_terceros': _esTercero,
-          'cobrado': _cobrado,
-          'servicio_contratado': _servicioContratado,
-          'monto_cobrado': _cobrado && _montoCobradoController.text.isNotEmpty 
-              ? double.tryParse(_montoCobradoController.text) 
               : null,
           'fecha_inicio': _fechaInicio?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'id_campo': _campoSeleccionado?.id,
+          'cultivo': _cultivoController.text,
+          'observaciones': _descripcionController.text.isNotEmpty 
+              ? _descripcionController.text 
+              : null,
+          'estado': _estadoSeleccionado ?? 'Pendiente',
+          'a_terceros': _esTercero,
+          'servicio_contratado': _servicioContratado,
           'fecha_fin': _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
-          'campo_id': _campoSeleccionado?.id ?? 1,
-          'maquina_ids': _maquinasSeleccionadas.map((m) => m.id).toList(),
-          'personal_ids': _personalSeleccionado.map((p) => p.id).toList(),
         };
+        
+        // Agregar campos de cosecha: si es cosecha (id = 1) usar valores ingresados, sino enviar 0
+        if (_tipoTrabajoSeleccionado == 1) {
+          // Para cosecha, usar valores ingresados (o null si están vacíos)
+          if (_rindeCosechaController.text.isNotEmpty) {
+            data['rinde_cosecha'] = double.tryParse(_rindeCosechaController.text);
+          }
+          if (_humedadCosechaController.text.isNotEmpty) {
+            data['humedad_cosecha'] = double.tryParse(_humedadCosechaController.text);
+          }
+        } else {
+          // Para otros tipos de trabajo, enviar 0 por defecto
+          data['rinde_cosecha'] = 0.0;
+          data['humedad_cosecha'] = 0.0;
+        }
+
+        // Imprimir el body del request por consola
+        debugPrint('═══════════════════════════════════════════════════════════════');
+        debugPrint('📤 REQUEST BODY - ${widget.trabajo == null ? "CREAR" : "ACTUALIZAR"} TRABAJO');
+        debugPrint('═══════════════════════════════════════════════════════════════');
+        try {
+          final jsonString = JsonEncoder.withIndent('  ').convert(data);
+          debugPrint(jsonString);
+          print(jsonString); // También usar print normal
+        } catch (e) {
+          debugPrint('Error al convertir a JSON: $e');
+          debugPrint('Data raw: $data');
+          print('Error al convertir a JSON: $e');
+          print('Data raw: $data');
+        }
+        debugPrint('═══════════════════════════════════════════════════════════════');
 
         if (widget.trabajo == null) {
           await ref.read(trabajosProvider.notifier).createTrabajo(data);
@@ -1225,41 +1455,5 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     }
   }
 
-  // Helper methods para el dropdown de tipo de trabajo
-  String? _getValidTipoValue() {
-    final currentValue = _tipoController.text;
-    if (currentValue.isEmpty) return null;
-    
-    // Si el valor actual está en la lista válida, usarlo
-    if (AppConstants.workTypes.contains(currentValue)) {
-      return currentValue;
-    }
-    
-    // Si no está en la lista válida, retornar null para forzar selección
-    return null;
-  }
-
-  List<DropdownMenuItem<String>> _buildTipoItems() {
-    final items = <DropdownMenuItem<String>>[];
-    
-    // Agregar opciones válidas
-    for (final tipo in AppConstants.workTypes) {
-      items.add(DropdownMenuItem<String>(
-        value: tipo,
-        child: Text(tipo),
-      ));
-    }
-    
-    // Si hay un valor actual que no está en la lista válida, agregarlo como opción especial
-    final currentValue = _tipoController.text;
-    if (currentValue.isNotEmpty && !AppConstants.workTypes.contains(currentValue)) {
-      items.insert(0, DropdownMenuItem<String>(
-        value: currentValue,
-        child: Text('$currentValue (obsoleto)'),
-      ));
-    }
-    
-    return items;
-  }
 
 }

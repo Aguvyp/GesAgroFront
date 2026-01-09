@@ -20,13 +20,33 @@ class Personal {
   });
 
   factory Personal.fromJson(Map<String, dynamic> json) {
+    // Función helper para convertir a double de forma segura
+    double? _toDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) {
+        if (value.isEmpty || value.trim().isEmpty) return null;
+        final cleaned = value.trim().replaceAll(',', '.');
+        return double.tryParse(cleaned);
+      }
+      try {
+        final stringValue = value.toString().trim();
+        if (stringValue.isEmpty) return null;
+        final cleaned = stringValue.replaceAll(',', '.');
+        return double.tryParse(cleaned);
+      } catch (e) {
+        return null;
+      }
+    }
+
     return Personal(
       id: json['id'],
       nombre: json['nombre'] ?? '',
       dni: json['dni'] ?? '',
       telefono: json['telefono'],
-      superficieTotalHa: json['superficie_total_ha']?.toDouble(),
-      horasTrabajadas: json['horas_trabajadas']?.toDouble(),
+      superficieTotalHa: _toDouble(json['superficie_total_ha']),
+      horasTrabajadas: _toDouble(json['horas_trabajadas']),
       trabajosCompletados: json['trabajos_completados'],
       ultimoTrabajo: json['ultimo_trabajo'],
     );

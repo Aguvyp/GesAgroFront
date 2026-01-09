@@ -31,9 +31,30 @@ class Costo {
   });
 
   factory Costo.fromJson(Map<String, dynamic> json) {
+    // Función helper para convertir a double de forma segura
+    double _toDouble(dynamic value, [double defaultValue = 0.0]) {
+      if (value == null) return defaultValue;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        if (value.isEmpty || value.trim().isEmpty) return defaultValue;
+        final cleaned = value.trim().replaceAll(',', '.');
+        return double.tryParse(cleaned) ?? defaultValue;
+      }
+      try {
+        final stringValue = value.toString().trim();
+        if (stringValue.isEmpty) return defaultValue;
+        final cleaned = stringValue.replaceAll(',', '.');
+        return double.tryParse(cleaned) ?? defaultValue;
+      } catch (e) {
+        return defaultValue;
+      }
+    }
+
     return Costo(
       id: json['id'],
-      monto: (json['monto'] ?? 0.0).toDouble(),
+      monto: _toDouble(json['monto'], 0.0),
       fecha: DateTime.parse(json['fecha']),
       destinatario: json['destinatario'] ?? '',
       pagado: json['pagado'] ?? false,

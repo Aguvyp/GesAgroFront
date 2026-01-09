@@ -16,14 +16,58 @@ class Campo {
   });
 
   factory Campo.fromJson(Map<String, dynamic> json) {
-    return Campo(
-      id: json['id'],
-      nombre: json['nombre'] ?? '',
-      superficieHa: (json['hectareas'] ?? json['superficie_ha'] ?? 0.0).toDouble(),
-      latitud: json['latitud']?.toDouble(),
-      longitud: json['longitud']?.toDouble(),
-      detalles: json['detalles'],
-    );
+    // Función helper para convertir a double de forma segura
+    // Maneja String, int, double, y otros tipos
+    double? _toDouble(dynamic value) {
+      if (value == null) return null;
+      
+      // Si ya es double, retornarlo directamente
+      if (value is double) return value;
+      
+      // Si es int, convertir a double
+      if (value is int) return value.toDouble();
+      
+      // Si es String, parsearlo
+      if (value is String) {
+        if (value.isEmpty || value.trim().isEmpty) return null;
+        // Limpiar el string (remover espacios, comas, etc.)
+        final cleaned = value.trim().replaceAll(',', '.');
+        final parsed = double.tryParse(cleaned);
+        return parsed;
+      }
+      
+      // Para cualquier otro tipo, intentar convertir a String y luego parsear
+      try {
+        final stringValue = value.toString().trim();
+        if (stringValue.isEmpty) return null;
+        final cleaned = stringValue.replaceAll(',', '.');
+        return double.tryParse(cleaned);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    try {
+      // Obtener el valor de hectáreas de diferentes posibles campos
+      final hectareasValue = json['hectareas'] ?? 
+                             json['superficie_ha'] ?? 
+                             json['superficieHa'] ?? 
+                             json['superficie'];
+      
+      return Campo(
+        id: json['id'] is int 
+            ? json['id'] 
+            : (json['id'] != null ? int.tryParse(json['id'].toString()) : null),
+        nombre: json['nombre']?.toString() ?? '',
+        superficieHa: _toDouble(hectareasValue) ?? 0.0,
+        latitud: _toDouble(json['latitud']),
+        longitud: _toDouble(json['longitud']),
+        detalles: json['detalles']?.toString(),
+      );
+    } catch (e) {
+      // Si hay un error al crear el Campo, lanzar una excepción más descriptiva
+      throw Exception('Error parsing Campo from JSON: $json. Error: $e');
+    }
   }
 
   Map<String, dynamic> toJson() {

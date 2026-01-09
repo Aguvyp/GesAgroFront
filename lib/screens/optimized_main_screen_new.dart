@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'optimized_screens.dart';
 import 'optimized_dashboard_screen.dart';
-import 'optimized_finanzas_screens.dart';
-import 'optimized_mantenimientos_screen.dart';
-import 'optimized_reportes_screen.dart';
+import 'finanzas/optimized_finanzas_screens.dart';
+import 'mantenimientos/optimized_mantenimientos_screen.dart';
+import 'reportes/optimized_reportes_screen.dart';
 import 'test_connection_screen.dart';
 import 'personal/personal_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
 import 'forms/forms_screens.dart';
 import '../providers/optimized_providers.dart';
+import '../providers/optimized_auth_provider.dart';
 
 class OptimizedSplashScreen extends ConsumerStatefulWidget {
   const OptimizedSplashScreen({Key? key}) : super(key: key);
@@ -94,6 +95,30 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
       const OptimizedTrabajosListScreen(),
       const OptimizedProfileScreen(),
     ];
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      // Cerrar sesión usando el provider
+      await ref.read(authProvider.notifier).logout();
+      
+      // Navegar a la pantalla de login
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cerrar sesión: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -397,9 +422,9 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
                         Icons.logout_rounded,
                         -1,
                         isDestructive: true,
-                        onTap: () {
+                        onTap: () async {
                           Navigator.pop(context);
-                          // TODO: Implementar logout
+                          await _handleLogout(context);
                         },
                       ),
                     ],

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/optimized_widgets.dart';
 import '../providers/optimized_providers.dart';
-import 'campo_detail_screen.dart';
-import 'trabajo_detail_screen.dart';
+import 'campos/campo_detail_screen.dart';
+import 'trabajos/trabajo_detail_screen.dart';
 import 'forms/forms_screens.dart';
 
 /// ==================== CAMPOS LIST SCREEN OPTIMIZADA ====================
@@ -161,12 +161,14 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              // Implementar eliminación
-              OptimizedSnackBar.showSuccess(
-                context,
-                message: 'Campo eliminado exitosamente',
-              );
+              ref.read(camposProvider.notifier).deleteCampo(campo.id);
+              if (mounted) {
+                Navigator.of(context).pop();
+                OptimizedSnackBar.showSuccess(
+                  context,
+                  message: 'Campo eliminado exitosamente',
+                );
+              }
             },
             child: const Text('Eliminar'),
           ),

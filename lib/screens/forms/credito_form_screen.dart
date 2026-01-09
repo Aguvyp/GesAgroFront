@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/credito.dart';
 import '../../services/optimized_api_service.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/optimized_widgets.dart';
 import '../../core/logger/app_logger.dart';
 import '../../utils/validators.dart';
 
@@ -118,52 +118,6 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
     }
   }
 
-  /// Construye una sección con título y línea vertical distintiva
-  Widget _buildSection({
-    required String title,
-    required Widget content,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Título con línea vertical distintiva
-        Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF7E57C2),
-                    const Color(0xFF7E57C2).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        
-        // Contenido
-        content,
-      ],
-    );
-  }
 
   /// Guarda el crédito
   Future<void> _saveCredito() async {
@@ -263,28 +217,33 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información básica
-              _buildSection(
-                title: 'Información Básica',
-                content: Column(
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Entidad
-                    CustomTextField(
+                    Text(
+                      'Información Básica',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
                       controller: _entidadController,
                       label: 'Entidad Financiera',
                       hint: 'Ingrese el nombre de la entidad',
                       prefixIcon: const Icon(Icons.account_balance),
                       validator: (value) => Validators.validateRequired(value, 'Entidad financiera'),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Estado
+                    const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
                       value: _estadoSeleccionado,
                       decoration: const InputDecoration(
@@ -309,15 +268,22 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                 ),
               ),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               
               // Montos y términos
-              _buildSection(
-                title: 'Montos y Términos',
-                content: Column(
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Monto otorgado
-                    CustomTextField(
+                    Text(
+                      'Montos y Términos',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
                       controller: _montoOtorgadoController,
                       label: 'Monto Otorgado',
                       hint: 'Ingrese el monto del crédito',
@@ -325,10 +291,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                       keyboardType: TextInputType.number,
                       validator: (value) => Validators.validateRequired(value, 'Monto otorgado'),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Tasa de interés
-                    CustomTextField(
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
                       controller: _tasaInteresController,
                       label: 'Tasa de Interés (%)',
                       hint: 'Ingrese la tasa de interés',
@@ -336,10 +300,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                       keyboardType: TextInputType.number,
                       validator: (value) => Validators.validateRequired(value, 'Tasa de interés'),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Plazo en meses
-                    CustomTextField(
+                    const SizedBox(height: 24),
+                    OptimizedTextField(
                       controller: _plazoMesesController,
                       label: 'Plazo (Meses)',
                       hint: 'Ingrese el plazo en meses',
@@ -351,24 +313,49 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                 ),
               ),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               
               // Fechas
-              _buildSection(
-                title: 'Fechas',
-                content: Column(
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Fecha de desembolso
-                    CustomTextField(
-                      controller: _fechaDesembolsoController,
-                      label: 'Fecha de Desembolso',
-                      hint: 'Seleccione la fecha de desembolso',
-                      prefixIcon: const Icon(Icons.calendar_today),
-                      readOnly: true,
-                      onTap: () => _selectDate(context, _fechaDesembolso, (date) {
-                        setState(() => _fechaDesembolso = date);
-                      }),
-                      validator: (value) => Validators.validateRequired(value, 'Fecha de desembolso'),
+                    Text(
+                      'Fechas',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fecha de Desembolso',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _fechaDesembolsoController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha de desembolso',
+                            suffixIcon: const Icon(Icons.calendar_today),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).cardColor,
+                          ),
+                          readOnly: true,
+                          onTap: () => _selectDate(context, _fechaDesembolso, (date) {
+                            setState(() => _fechaDesembolso = date);
+                          }),
+                          validator: (value) => Validators.validateRequired(value, 'Fecha de desembolso'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

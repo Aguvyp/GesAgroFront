@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/optimized_providers.dart';
-import '../models/credito.dart';
-import '../models/movimiento.dart';
-import 'forms/movimiento_form_screen.dart';
-import 'forms/factura_form_screen.dart';
-import 'forms/credito_form_screen.dart';
+import '../../providers/optimized_providers.dart';
+import '../../models/credito.dart';
+import '../../models/movimiento.dart';
+import '../forms/movimiento_form_screen.dart';
+import '../forms/factura_form_screen.dart';
+import '../forms/credito_form_screen.dart';
 
 /// Pantalla principal de finanzas con menú
 class OptimizedFinanzasMainScreen extends ConsumerStatefulWidget {
@@ -16,6 +16,8 @@ class OptimizedFinanzasMainScreen extends ConsumerStatefulWidget {
 }
 
 class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasMainScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -28,13 +30,14 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Dashboard Financiero'),
         elevation: 0,
         backgroundColor: const Color(0xFF7E57C2),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.menu),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
           IconButton(

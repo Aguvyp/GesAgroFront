@@ -6,9 +6,9 @@ import '../forms/maquina_form_screen.dart';
 import '../optimized_main_screen_new.dart';
 import '../optimized_screens.dart';
 import '../personal/personal_list_screen.dart';
-import '../optimized_finanzas_screens.dart';
-import '../optimized_reportes_screen.dart';
-import '../optimized_mantenimientos_screen.dart';
+import '../finanzas/optimized_finanzas_screens.dart';
+import '../reportes/optimized_reportes_screen.dart';
+import '../mantenimientos/optimized_mantenimientos_screen.dart';
 import 'maquina_detail_screen.dart';
 
 /// Pantalla de lista de máquinas

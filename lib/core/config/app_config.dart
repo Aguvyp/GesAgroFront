@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logger/logger.dart';
+import '../../utils/constants.dart';
 
 /// Configuración centralizada de la aplicación
 class AppConfig {
@@ -18,14 +19,14 @@ class AppConfig {
   late final Logger _logger;
 
   // Configuration
-  static const String _apiBaseUrl = 'http://168.181.185.234:8080';
-  static const Duration _apiTimeout = Duration(seconds: 30);
+  // Usar la URL de constants.dart para mantener una sola fuente de verdad
+  String get apiBaseUrl => AppConstants.apiBaseUrl;
+  static const Duration _apiTimeout = Duration(seconds: 60); // Aumentado para ngrok
   static const Duration _cacheTimeout = Duration(hours: 1);
   static const int _maxRetries = 3;
   static const Duration _retryDelay = Duration(seconds: 2);
 
   // Getters
-  String get apiBaseUrl => _apiBaseUrl;
   Duration get apiTimeout => _apiTimeout;
   Duration get cacheTimeout => _cacheTimeout;
   int get maxRetries => _maxRetries;

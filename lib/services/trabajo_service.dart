@@ -1,26 +1,28 @@
 import '../models/trabajo.dart';
-import '../utils/constants.dart';
-import 'api_service.dart';
+import 'optimized_api_service.dart';
 
 class TrabajoService {
+  static final ApiService _apiService = ApiService();
+  
+  static Future<void> _ensureInitialized() async {
+    if (!_apiService.isInitialized) {
+      await _apiService.initialize();
+    }
+  }
+
   static Future<List<Trabajo>> getTrabajos() async {
     try {
-      print('TrabajoService: Haciendo request a ${AppConstants.trabajosListEndpoint}');
-      final response = await ApiService.get('${AppConstants.trabajosListEndpoint}');
-      print('TrabajoService: Respuesta recibida: $response');
-      final List<dynamic> trabajosData = response is List ? response : (response['data'] ?? []);
-      print('TrabajoService: Datos procesados: ${trabajosData.length} elementos');
-      return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      await _ensureInitialized();
+      return await _apiService.getTrabajos();
     } catch (e) {
-      print('TrabajoService: Error: $e');
       throw Exception('Error al obtener trabajos: $e');
     }
   }
 
   static Future<Trabajo> getTrabajo(int id) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}$id');
-      return Trabajo.fromJson(response);
+      await _ensureInitialized();
+      return await _apiService.getTrabajo(id);
     } catch (e) {
       throw Exception('Error al obtener trabajo: $e');
     }
@@ -28,11 +30,8 @@ class TrabajoService {
 
   static Future<Trabajo> createTrabajo(Trabajo trabajo) async {
     try {
-      final response = await ApiService.post('${AppConstants.trabajosEndpoint}', trabajo.toJson());
-      if (response is Map<String, dynamic>) {
-        return Trabajo.fromJson(response);
-      }
-      throw Exception('Respuesta inesperada al crear trabajo');
+      await _ensureInitialized();
+      return await _apiService.createTrabajo(trabajo.toJson());
     } catch (e) {
       throw Exception('Error al crear trabajo: $e');
     }
@@ -40,8 +39,8 @@ class TrabajoService {
 
   static Future<Trabajo> updateTrabajo(Trabajo trabajo) async {
     try {
-      final response = await ApiService.put('${AppConstants.trabajosEndpoint}${trabajo.id}', trabajo.toJson());
-      return Trabajo.fromJson(response);
+      await _ensureInitialized();
+      return await _apiService.updateTrabajo(trabajo.id!, trabajo.toJson());
     } catch (e) {
       throw Exception('Error al actualizar trabajo: $e');
     }
@@ -49,8 +48,8 @@ class TrabajoService {
 
   static Future<Trabajo> updateTrabajoEstado(int trabajoId, String estado) async {
     try {
-      final response = await ApiService.put('${AppConstants.trabajosEndpoint}$trabajoId/estado', {'estado': estado});
-      return Trabajo.fromJson(response);
+      await _ensureInitialized();
+      return await _apiService.updateTrabajo(trabajoId, {'estado': estado});
     } catch (e) {
       throw Exception('Error al actualizar estado del trabajo: $e');
     }
@@ -58,31 +57,18 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByPersonal(int personalId) async {
     try {
-      print('🔍 TrabajoService: Obteniendo trabajos para personal ID: $personalId');
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}personal/$personalId');
-      print('🔍 TrabajoService: Respuesta recibida: $response');
-      print('🔍 TrabajoService: Tipo de respuesta: ${response.runtimeType}');
-      
-      final List<dynamic> trabajosData = response is List ? response : (response['data'] ?? []);
-      print('🔍 TrabajoService: Datos procesados: ${trabajosData.length} elementos');
-      
-      if (trabajosData.isNotEmpty) {
-        print('🔍 TrabajoService: Primer trabajo: ${trabajosData[0]}');
-      }
-      
-      final trabajos = trabajosData.map((json) => Trabajo.fromJson(json)).toList();
-      print('🔍 TrabajoService: Trabajos parseados: ${trabajos.length}');
-      
-      return trabajos;
+      await _ensureInitialized();
+      final trabajos = await _apiService.getTrabajos();
+      return trabajos.where((t) => t.idPersonal.contains(personalId)).toList();
     } catch (e) {
-      print('❌ TrabajoService: Error: $e');
       throw Exception('Error al obtener trabajos del personal: $e');
     }
   }
 
   static Future<void> deleteTrabajo(int id) async {
     try {
-      await ApiService.delete('${AppConstants.trabajosEndpoint}$id');
+      await _ensureInitialized();
+      await _apiService.deleteTrabajo(id);
     } catch (e) {
       throw Exception('Error al eliminar trabajo: $e');
     }
@@ -90,9 +76,9 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByCampo(int campoId) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}campo/$campoId');
-      final List<dynamic> trabajosData = response['data'] ?? response;
-      return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      await _ensureInitialized();
+      final trabajos = await _apiService.getTrabajos();
+      return trabajos.where((t) => t.idCampo == campoId).toList();
     } catch (e) {
       throw Exception('Error al obtener trabajos del campo: $e');
     }
@@ -100,9 +86,9 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByMaquina(int maquinaId) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}maquina/$maquinaId');
-      final List<dynamic> trabajosData = response['data'] ?? response;
-      return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      await _ensureInitialized();
+      final trabajos = await _apiService.getTrabajos();
+      return trabajos.where((t) => t.idMaquinas.contains(maquinaId)).toList();
     } catch (e) {
       throw Exception('Error al obtener trabajos de la máquina: $e');
     }
@@ -110,9 +96,9 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosByEstado(String estado) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}estado/$estado');
-      final List<dynamic> trabajosData = response['data'] ?? response;
-      return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      await _ensureInitialized();
+      final trabajos = await _apiService.getTrabajos();
+      return trabajos.where((t) => t.estado == estado).toList();
     } catch (e) {
       throw Exception('Error al obtener trabajos por estado: $e');
     }
@@ -120,9 +106,10 @@ class TrabajoService {
 
   static Future<List<Trabajo>> getTrabajosRecientes({int limit = 5}) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosRecientesEndpoint}?limit=$limit');
-      final List<dynamic> trabajosData = response['data'] ?? response;
-      return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      await _ensureInitialized();
+      final trabajos = await _apiService.getTrabajos();
+      trabajos.sort((a, b) => b.fechaInicio.compareTo(a.fechaInicio));
+      return trabajos.take(limit).toList();
     } catch (e) {
       throw Exception('Error al obtener trabajos recientes: $e');
     }
@@ -130,9 +117,14 @@ class TrabajoService {
 
   static Future<List<Trabajo>> searchTrabajos(String query) async {
     try {
-      final response = await ApiService.get('${AppConstants.trabajosEndpoint}search?q=$query');
-      final List<dynamic> trabajosData = response['data'] ?? response;
-      return trabajosData.map((json) => Trabajo.fromJson(json)).toList();
+      await _ensureInitialized();
+      final trabajos = await _apiService.getTrabajos();
+      final queryLower = query.toLowerCase();
+      return trabajos.where((t) => 
+        (t.tipoTrabajoNombre?.toLowerCase().contains(queryLower) ?? false) ||
+        (t.cliente?.toLowerCase().contains(queryLower) ?? false) ||
+        t.cultivo.toLowerCase().contains(queryLower)
+      ).toList();
     } catch (e) {
       throw Exception('Error al buscar trabajos: $e');
     }

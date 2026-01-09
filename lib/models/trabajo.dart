@@ -2,7 +2,8 @@ import 'package:intl/intl.dart';
 
 class Trabajo {
   final int? id;
-  final String tipo;
+  final int? idTipoTrabajo; // ID del tipo de trabajo (puede ser null si solo viene el nombre)
+  final String? tipoTrabajoNombre; // Nombre del tipo de trabajo para mostrar
   final String cultivo;
   final DateTime fechaInicio;
   final DateTime? fechaFin;
@@ -21,7 +22,8 @@ class Trabajo {
 
   Trabajo({
     this.id,
-    required this.tipo,
+    this.idTipoTrabajo,
+    this.tipoTrabajoNombre,
     required this.cultivo,
     required this.fechaInicio,
     this.fechaFin,
@@ -40,9 +42,31 @@ class Trabajo {
   });
 
   factory Trabajo.fromJson(Map<String, dynamic> json) {
+    // Manejar id_tipo_trabajo: puede venir como int directamente, o necesitamos parsearlo
+    // NOTA: El backend puede no enviar id_tipo_trabajo en las respuestas, solo el nombre en "tipo"
+    int? idTipoTrabajo;
+    if (json['id_tipo_trabajo'] != null) {
+      idTipoTrabajo = json['id_tipo_trabajo'] is int 
+          ? json['id_tipo_trabajo'] 
+          : int.tryParse(json['id_tipo_trabajo'].toString());
+    }
+    
+    // Obtener el nombre del tipo de trabajo
+    // El backend devuelve el nombre en el campo "tipo" en las respuestas
+    String? tipoTrabajoNombre;
+    if (json['tipo'] != null) {
+      // El backend devuelve el nombre del tipo en el campo "tipo"
+      tipoTrabajoNombre = json['tipo'].toString();
+    } else if (json['tipo_trabajo_nombre'] != null) {
+      tipoTrabajoNombre = json['tipo_trabajo_nombre'].toString();
+    } else if (json['tipo_trabajo'] != null && json['tipo_trabajo'] is Map) {
+      tipoTrabajoNombre = json['tipo_trabajo']?['trabajo']?.toString();
+    }
+    
     return Trabajo(
       id: json['id'],
-      tipo: json['tipo'] ?? '',
+      idTipoTrabajo: idTipoTrabajo, // Puede ser null si el backend solo devuelve el nombre
+      tipoTrabajoNombre: tipoTrabajoNombre,
       cultivo: json['cultivo'] ?? '',
       fechaInicio: json['fecha_inicio'] != null 
           ? DateTime.parse(json['fecha_inicio'])
@@ -60,17 +84,36 @@ class Trabajo {
           : [],
       idCampo: json['campo_id'] ?? json['id_campo'] ?? 0,
       campoNombre: json['campo_nombre'],
-      campoHa: json['campo_ha'] != null ? (json['campo_ha'] as num).toDouble() : null,
+      campoHa: _toDoubleSafe(json['campo_ha']),
       estado: json['estado'],
       observaciones: json['observaciones'],
       esTercero: _parseBoolean(json['a_terceros']),
       cobrado: (json['cobrado'] ?? false) == true || (json['cobrado'] == 1),
-      montoCobrado: json['monto_cobrado'] != null
-          ? (json['monto_cobrado'] as num).toDouble()
-          : (json['montoCobrado'] != null ? (json['montoCobrado'] as num).toDouble() : null),
+      montoCobrado: _toDoubleSafe(json['monto_cobrado'] ?? json['montoCobrado']),
       cliente: json['cliente'],
       servicioContratado: _parseBoolean(json['servicio_contratado']),
     );
+  }
+
+  // Función helper para convertir a double de forma segura
+  static double? _toDoubleSafe(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      if (value.isEmpty || value.trim().isEmpty) return null;
+      final cleaned = value.trim().replaceAll(',', '.');
+      return double.tryParse(cleaned);
+    }
+    try {
+      final stringValue = value.toString().trim();
+      if (stringValue.isEmpty) return null;
+      final cleaned = stringValue.replaceAll(',', '.');
+      return double.tryParse(cleaned);
+    } catch (e) {
+      return null;
+    }
   }
 
   // Helper method para parsear valores booleanos
@@ -101,7 +144,7 @@ class Trabajo {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'tipo': tipo,
+      'id_tipo_trabajo': idTipoTrabajo, // Solo se envía al crear/actualizar
       'cultivo': cultivo,
       'fecha_inicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
       'fecha_fin': fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
@@ -122,7 +165,8 @@ class Trabajo {
 
   Trabajo copyWith({
     int? id,
-    String? tipo,
+    int? idTipoTrabajo,
+    String? tipoTrabajoNombre,
     String? cultivo,
     DateTime? fechaInicio,
     DateTime? fechaFin,
@@ -139,7 +183,8 @@ class Trabajo {
   }) {
     return Trabajo(
       id: id ?? this.id,
-      tipo: tipo ?? this.tipo,
+      idTipoTrabajo: idTipoTrabajo ?? this.idTipoTrabajo,
+      tipoTrabajoNombre: tipoTrabajoNombre ?? this.tipoTrabajoNombre,
       cultivo: cultivo ?? this.cultivo,
       fechaInicio: fechaInicio ?? this.fechaInicio,
       fechaFin: fechaFin ?? this.fechaFin,
@@ -177,6 +222,9 @@ class Trabajo {
     return '$start - $end';
   }
 
+  // Getter para obtener el nombre del tipo de trabajo (compatibilidad)
+  String get tipo => tipoTrabajoNombre ?? 'Sin tipo';
+
   // Información del campo
   String get campoInfo {
     if (campoNombre != null && campoHa != null) {
@@ -190,7 +238,7 @@ class Trabajo {
 
   @override
   String toString() {
-    return 'Trabajo(id: $id, tipo: $tipo, cultivo: $cultivo, fechaInicio: $fechaInicio)';
+    return 'Trabajo(id: $id, idTipoTrabajo: $idTipoTrabajo, tipoTrabajoNombre: $tipoTrabajoNombre, cultivo: $cultivo, fechaInicio: $fechaInicio)';
   }
 
   @override
