@@ -1,6 +1,6 @@
 class AppConstants {
   // API Configuration
-  static const String apiBaseUrl = 'https://ef4b330bd447.ngrok-free.app';
+  static const String apiBaseUrl = 'https://65e70006b9ca.ngrok-free.app';
   static const int apiTimeoutSeconds = 30;
   static const Map<String, String> headers = {
     'Content-Type': 'application/json; charset=utf-8',

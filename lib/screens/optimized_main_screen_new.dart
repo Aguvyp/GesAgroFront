@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'optimized_screens.dart';
 import 'optimized_dashboard_screen.dart';
-import 'finanzas/optimized_finanzas_screens.dart';
+// import 'finanzas/optimized_finanzas_screens.dart'; // Oculto temporalmente
 import 'mantenimientos/optimized_mantenimientos_screen.dart';
 import 'reportes/optimized_reportes_screen.dart';
 import 'test_connection_screen.dart';
@@ -10,6 +10,7 @@ import 'test_screen.dart';
 import 'personal/personal_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
 import 'forms/forms_screens.dart';
+import 'costos/costos_main_screen.dart';
 import '../providers/optimized_providers.dart';
 import '../providers/optimized_auth_provider.dart';
 
@@ -340,6 +341,20 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
                           );
                         },
                       ),
+                      const SizedBox(height: 8),
+                      _buildModernDrawerItem(
+                        context,
+                        'Finanzas',
+                        Icons.receipt_long_rounded,
+                        -1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CostosMainScreen()),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 16),
                       
                       // Separador simple
@@ -349,20 +364,21 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
                         color: Colors.grey[300],
                       ),
                       
-                      _buildModernDrawerItem(
-                        context,
-                        'Finanzas',
-                        Icons.account_balance_wallet_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedFinanzasMainScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
+                      // Sección de Finanzas oculta temporalmente
+                      // _buildModernDrawerItem(
+                      //   context,
+                      //   'Finanzas',
+                      //   Icons.account_balance_wallet_rounded,
+                      //   -1,
+                      //   onTap: () {
+                      //     Navigator.pop(context);
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(builder: (context) => const OptimizedFinanzasMainScreen()),
+                      //     );
+                      //   },
+                      // ),
+                      // const SizedBox(height: 8),
                       _buildModernDrawerItem(
                         context,
                         'Reportes',

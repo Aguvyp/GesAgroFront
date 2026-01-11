@@ -8,8 +8,9 @@ import '../../utils/validators.dart';
 /// Pantalla completa para crear/editar costos
 class CostoFormScreen extends ConsumerStatefulWidget {
   final dynamic costo;
+  final bool? esCobro; // Permite pre-seleccionar el tipo
   
-  const CostoFormScreen({Key? key, this.costo}) : super(key: key);
+  const CostoFormScreen({Key? key, this.costo, this.esCobro}) : super(key: key);
 
   @override
   ConsumerState<CostoFormScreen> createState() => _CostoFormScreenState();
@@ -20,21 +21,55 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
   late TextEditingController _descripcionController;
   late TextEditingController _montoController;
   late TextEditingController _categoriaController;
+  late TextEditingController _destinatarioController;
+  late TextEditingController _cobrarAController;
   late TextEditingController _fechaController;
+  late TextEditingController _fechaPagoLimiteController;
+  late TextEditingController _trabajoIdController;
   DateTime? _fecha;
+  DateTime? _fechaPagoLimite;
   
   String? _formaPagoSeleccionada;
   bool _pagado = false;
+  bool _esCobro = false; // false = Gasto, true = Cobro
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    // Determinar si es cobro o gasto
+    if (widget.esCobro != null) {
+      _esCobro = widget.esCobro!;
+    } else if (widget.costo != null) {
+      _esCobro = widget.costo.esCobro ?? false;
+    }
+    
     _descripcionController = TextEditingController(text: widget.costo?.descripcion ?? '');
     _montoController = TextEditingController(text: widget.costo?.monto?.toString() ?? '');
     _categoriaController = TextEditingController(text: widget.costo?.categoria ?? '');
-    _fechaController = TextEditingController(text: widget.costo?.fecha?.toString() ?? '');
-    _fecha = widget.costo?.fecha ?? DateTime.now();
+    _destinatarioController = TextEditingController(text: widget.costo?.destinatario ?? '');
+    _cobrarAController = TextEditingController(text: widget.costo?.cobrarA ?? '');
+    _trabajoIdController = TextEditingController(text: widget.costo?.trabajoId?.toString() ?? '');
+    
+    if (widget.costo?.fecha != null) {
+      _fecha = widget.costo.fecha;
+      _fechaController = TextEditingController(
+        text: '${_fecha!.day}/${_fecha!.month}/${_fecha!.year}',
+      );
+    } else {
+      _fecha = DateTime.now();
+      _fechaController = TextEditingController();
+    }
+    
+    if (widget.costo?.fechaPagoLimite != null) {
+      _fechaPagoLimite = widget.costo.fechaPagoLimite;
+      _fechaPagoLimiteController = TextEditingController(
+        text: '${_fechaPagoLimite!.day}/${_fechaPagoLimite!.month}/${_fechaPagoLimite!.year}',
+      );
+    } else {
+      _fechaPagoLimiteController = TextEditingController();
+    }
+    
     _formaPagoSeleccionada = widget.costo?.formaPago ?? 'Efectivo';
     _pagado = widget.costo?.pagado ?? false;
   }
@@ -44,7 +79,11 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
     _descripcionController.dispose();
     _montoController.dispose();
     _categoriaController.dispose();
+    _destinatarioController.dispose();
+    _cobrarAController.dispose();
     _fechaController.dispose();
+    _fechaPagoLimiteController.dispose();
+    _trabajoIdController.dispose();
     super.dispose();
   }
 
@@ -52,7 +91,9 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: widget.costo == null ? 'Nuevo Costo' : 'Editar Costo',
+        title: widget.costo == null 
+          ? (_esCobro ? 'Nuevo Cobro' : 'Nuevo Gasto')
+          : 'Editar ${_esCobro ? 'Cobro' : 'Gasto'}',
         showBackButton: true,
         actions: [
           TextButton(
@@ -77,6 +118,55 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Selector de tipo: Gasto o Cobro
+              OptimizedCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tipo de Movimiento',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildTipoSelector(
+                            'Gasto',
+                            Icons.call_made,
+                            Colors.red,
+                            !_esCobro,
+                            () {
+                              setState(() {
+                                _esCobro = false;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildTipoSelector(
+                            'Cobro',
+                            Icons.call_received,
+                            Colors.green,
+                            _esCobro,
+                            () {
+                              setState(() {
+                                _esCobro = true;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              
               // Información básica
               OptimizedCard(
                 padding: const EdgeInsets.all(20),
@@ -115,12 +205,41 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                       },
                     ),
                     const SizedBox(height: 24),
-                    OptimizedTextField(
-                      controller: _categoriaController,
-                      label: 'Categoría',
-                      hint: 'Ej: Combustible, Semillas, Fertilizantes',
-                      prefixIcon: const Icon(Icons.category),
-                    ),
+                    // Campos condicionales según el tipo
+                    if (!_esCobro) ...[
+                      // Campos para GASTO
+                      OptimizedTextField(
+                        controller: _destinatarioController,
+                        label: 'Destinatario',
+                        hint: 'A quién se le paga',
+                        prefixIcon: const Icon(Icons.person),
+                        validator: (value) => Validators.validateRequired(value, 'Destinatario'),
+                      ),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _categoriaController,
+                        label: 'Categoría',
+                        hint: 'Ej: Combustible, Semillas, Fertilizantes',
+                        prefixIcon: const Icon(Icons.category),
+                      ),
+                    ] else ...[
+                      // Campos para COBRO
+                      OptimizedTextField(
+                        controller: _cobrarAController,
+                        label: 'Cobrar a',
+                        hint: 'A quién se le cobra',
+                        prefixIcon: const Icon(Icons.person),
+                        validator: (value) => Validators.validateRequired(value, 'Cobrar a'),
+                      ),
+                      const SizedBox(height: 24),
+                      OptimizedTextField(
+                        controller: _trabajoIdController,
+                        label: 'ID Trabajo (Opcional)',
+                        hint: 'ID del trabajo relacionado',
+                        prefixIcon: const Icon(Icons.work),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -227,6 +346,47 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 24),
+                    // Fecha de pago límite (opcional)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fecha de Pago Límite (Opcional)',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _fechaPagoLimiteController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha límite de pago',
+                            suffixIcon: const Icon(Icons.calendar_today),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).cardColor,
+                          ),
+                          readOnly: true,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _fechaPagoLimite ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _fechaPagoLimite = date;
+                                _fechaPagoLimiteController.text = '${date.day}/${date.month}/${date.year}';
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -251,7 +411,9 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(widget.costo == null ? 'Crear Costo' : 'Actualizar Costo'),
+                        : Text(widget.costo == null 
+                          ? (_esCobro ? 'Crear Cobro' : 'Crear Gasto')
+                          : 'Actualizar ${_esCobro ? 'Cobro' : 'Gasto'}'),
                     ),
                   ),
                 ],
@@ -275,15 +437,34 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
           'descripcion': _descripcionController.text,
           'monto': double.parse(_montoController.text),
           'fecha': _fecha?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
-          'destinatario': _categoriaController.text,
           'pagado': _pagado,
           'forma_pago': _formaPagoSeleccionada ?? 'Efectivo',
-          'categoria': _categoriaController.text,
-          'es_cobro': false,
-          'cobrar_a': null,
-          'fecha_pago_limite': null,
-          'id_trabajo': null,
+          'es_cobro': _esCobro,
+          'fecha_pago_limite': _fechaPagoLimite?.toIso8601String().split('T')[0],
         };
+        
+        // Campos específicos según el tipo
+        if (_esCobro) {
+          // Es un COBRO
+          data['cobrar_a'] = _cobrarAController.text.isNotEmpty ? _cobrarAController.text : null;
+          data['id_trabajo'] = _trabajoIdController.text.isNotEmpty 
+            ? int.tryParse(_trabajoIdController.text) 
+            : null;
+          data['destinatario'] = _cobrarAController.text.isNotEmpty 
+            ? _cobrarAController.text 
+            : 'Cliente';
+          data['categoria'] = _categoriaController.text.isNotEmpty 
+            ? _categoriaController.text 
+            : 'Cobro';
+        } else {
+          // Es un GASTO
+          data['destinatario'] = _destinatarioController.text;
+          data['categoria'] = _categoriaController.text.isNotEmpty 
+            ? _categoriaController.text 
+            : 'Otros';
+          data['cobrar_a'] = null;
+          data['id_trabajo'] = null;
+        }
 
         if (widget.costo == null) {
           await ref.read(costosProvider.notifier).createCosto(data);
@@ -295,7 +476,11 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.costo == null ? 'Costo creado exitosamente' : 'Costo actualizado exitosamente'),
+              content: Text(
+                widget.costo == null 
+                  ? (_esCobro ? 'Cobro creado exitosamente' : 'Gasto creado exitosamente')
+                  : '${_esCobro ? 'Cobro' : 'Gasto'} actualizado exitosamente',
+              ),
             ),
           );
         }
@@ -313,5 +498,43 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
         }
       }
     }
+  }
+
+  Widget _buildTipoSelector(
+    String title,
+    IconData icon,
+    Color color,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.withOpacity(0.3),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: isSelected ? color : Colors.grey, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? color : Colors.grey,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
