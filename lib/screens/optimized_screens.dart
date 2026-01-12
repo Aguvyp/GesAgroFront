@@ -9,7 +9,9 @@ import 'forms/forms_screens.dart';
 /// ==================== CAMPOS LIST SCREEN OPTIMIZADA ====================
 
 class OptimizedCamposListScreen extends ConsumerStatefulWidget {
-  const OptimizedCamposListScreen({Key? key}) : super(key: key);
+  final bool? showAppBar;
+  
+  const OptimizedCamposListScreen({Key? key, this.showAppBar}) : super(key: key);
 
   @override
   ConsumerState<OptimizedCamposListScreen> createState() => _OptimizedCamposListScreenState();
@@ -37,9 +39,34 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
   Widget build(BuildContext context) {
     final camposState = ref.watch(camposProvider);
     
+    final body = _buildCamposList(camposState);
+    
+    if (widget.showAppBar ?? false) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Campos'),
+          elevation: 0,
+          backgroundColor: const Color(0xFF2E7D32), // Verde agrícola
+          foregroundColor: Colors.white,
+          centerTitle: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: body,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _showCampoForm(context);
+          },
+          child: const Icon(Icons.add),
+        ),
+      );
+    }
+    
     return Scaffold(
       // AppBar removido - ahora está en OptimizedMainScreen
-      body: _buildCamposList(camposState),
+      body: body,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showCampoForm(context);
@@ -181,7 +208,14 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
 /// ==================== TRABAJOS LIST SCREEN OPTIMIZADA ====================
 
 class OptimizedTrabajosListScreen extends ConsumerStatefulWidget {
-  const OptimizedTrabajosListScreen({Key? key}) : super(key: key);
+  final String? estadoFiltro; // Filtro opcional por estado
+  final bool? showAppBar; // Si debe mostrar AppBar
+  
+  const OptimizedTrabajosListScreen({
+    Key? key,
+    this.estadoFiltro,
+    this.showAppBar,
+  }) : super(key: key);
 
   @override
   ConsumerState<OptimizedTrabajosListScreen> createState() => _OptimizedTrabajosListScreenState();
@@ -209,9 +243,36 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
   Widget build(BuildContext context) {
     final trabajosState = ref.watch(trabajosProvider);
     
+    final body = _buildTrabajosList(trabajosState);
+    
+    if (widget.showAppBar ?? false) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.estadoFiltro != null 
+            ? 'Trabajos - ${widget.estadoFiltro}'
+            : 'Trabajos'),
+          elevation: 0,
+          backgroundColor: const Color(0xFF2E7D32), // Verde agrícola
+          foregroundColor: Colors.white,
+          centerTitle: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: body,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _showTrabajoForm(context);
+          },
+          child: const Icon(Icons.add),
+        ),
+      );
+    }
+    
     return Scaffold(
       // AppBar removido - ahora está en OptimizedMainScreen
-      body: _buildTrabajosList(trabajosState),
+      body: body,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showTrabajoForm(context);
@@ -246,13 +307,33 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
         );
       }
       
-      final filteredTrabajos = _searchQuery.isEmpty
-          ? trabajos
-          : trabajos.where((trabajo) {
-              return trabajo.tipo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                     trabajo.cultivo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                     (trabajo.estado ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
-            }).toList();
+      var filteredTrabajos = trabajos;
+      
+      // Aplicar filtro por estado si existe
+      if (widget.estadoFiltro != null) {
+        filteredTrabajos = filteredTrabajos.where((trabajo) {
+          final estado = (trabajo.estado ?? '').toLowerCase();
+          final filtro = widget.estadoFiltro!.toLowerCase();
+          
+          if (filtro == 'pendientes' || filtro == 'pendiente') {
+            return estado == 'pendiente' || estado == 'programado';
+          } else if (filtro == 'en curso' || filtro == 'en_curso') {
+            return estado == 'en curso' || estado == 'en ejecución' || estado == 'ejecutando' || estado == 'en_progreso';
+          } else if (filtro == 'completados' || filtro == 'completado') {
+            return estado == 'completado' || estado == 'finalizado';
+          }
+          return estado == filtro;
+        }).toList();
+      }
+      
+      // Aplicar filtro de búsqueda
+      if (_searchQuery.isNotEmpty) {
+        filteredTrabajos = filteredTrabajos.where((trabajo) {
+          return trabajo.tipo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                 trabajo.cultivo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                 (trabajo.estado ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+        }).toList();
+      }
       
       return OptimizedAnimatedList(
         children: filteredTrabajos.map((trabajo) {

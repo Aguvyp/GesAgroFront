@@ -13,9 +13,9 @@ import '../core/logger/app_logger.dart';
 import 'trabajos/trabajo_detail_screen.dart';
 import 'forms/trabajo_form_screen.dart';
 import 'forms/mantenimiento_form_screen.dart';
-import 'forms/maquina_form_screen.dart';
-import 'forms/campo_form_screen.dart';
 import 'forms/cliente_form_screen.dart';
+import 'optimized_screens.dart';
+import 'maquinas/maquinas_list_screen.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -357,25 +357,25 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
               'Trabajo',
               Icons.work,
               const Color(AppConstants.primaryColor),
-              () => _navegarAFormularioTrabajo(DateTime.now()),
+              () => _navegarAListaTrabajos(),
             ),
             _buildAccesoRapidoCard(
               'Máquina',
               Icons.build,
               Colors.deepOrange,
-              () => _navegarAFormularioMaquina(),
+              () => _navegarAListaMaquinas(),
             ),
             _buildAccesoRapidoCard(
               'Campo',
               Icons.landscape,
               Colors.green,
-              () => _navegarAFormularioCampo(),
+              () => _navegarAListaCampos(),
             ),
             _buildAccesoRapidoCard(
               'Cliente',
               Icons.person,
               Colors.blue,
-              () => _navegarAFormularioCliente(),
+              () => _navegarAFormularioCliente(), // Por ahora al formulario, no hay lista de clientes
             ),
           ],
         ),
@@ -436,27 +436,50 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     );
   }
 
-  /// Navega al formulario de máquinas
-  void _navegarAFormularioMaquina() {
+  /// Navega a la lista de trabajos
+  void _navegarAListaTrabajos() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const MaquinaFormScreen(),
+        builder: (context) => const OptimizedTrabajosListScreen(showAppBar: true),
       ),
     );
   }
 
-  /// Navega al formulario de campos
-  void _navegarAFormularioCampo() {
+  /// Navega a la lista de máquinas
+  void _navegarAListaMaquinas() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const CampoFormScreen(),
+        builder: (context) => const OptimizedMaquinasListScreen(showAppBar: true),
       ),
     );
   }
 
-  /// Navega al formulario de clientes
+  /// Navega a la lista de campos
+  void _navegarAListaCampos() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const OptimizedCamposListScreen(showAppBar: true),
+      ),
+    );
+  }
+
+  /// Navega a la lista de trabajos filtrada por estado
+  void _navegarAListaTrabajosPorEstado(String estado) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OptimizedTrabajosListScreen(
+          showAppBar: true,
+          estadoFiltro: estado,
+        ),
+      ),
+    );
+  }
+
+  /// Navega al formulario de clientes (no hay lista de clientes aún)
   void _navegarAFormularioCliente() {
     Navigator.push(
       context,
@@ -528,6 +551,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             pendientes.toString(),
             Icons.schedule,
             const Color(AppConstants.infoColor),
+            onTap: () => _navegarAListaTrabajosPorEstado('Pendientes'),
           ),
         ),
         const SizedBox(width: 12),
@@ -537,6 +561,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             enCurso.toString(),
             Icons.play_circle,
             const Color(AppConstants.accentColor),
+            onTap: () => _navegarAListaTrabajosPorEstado('En Curso'),
           ),
         ),
         const SizedBox(width: 12),
@@ -546,6 +571,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             completados.toString(),
             Icons.check_circle,
             const Color(AppConstants.successColor),
+            onTap: () => _navegarAListaTrabajosPorEstado('Completados'),
           ),
         ),
       ],
@@ -1692,8 +1718,8 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     return colors[index % colors.length];
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, {VoidCallback? onTap}) {
+    final card = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1731,5 +1757,15 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
         ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: card,
+      );
+    }
+
+    return card;
   }
 }

@@ -13,7 +13,9 @@ import 'maquina_detail_screen.dart';
 
 /// Pantalla de lista de máquinas
 class OptimizedMaquinasListScreen extends ConsumerStatefulWidget {
-  const OptimizedMaquinasListScreen({Key? key}) : super(key: key);
+  final bool? showAppBar;
+  
+  const OptimizedMaquinasListScreen({Key? key, this.showAppBar}) : super(key: key);
 
   @override
   ConsumerState<OptimizedMaquinasListScreen> createState() => _OptimizedMaquinasListScreenState();
@@ -46,13 +48,19 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
       key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Máquinas'),
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: const Color(0xFF2E7D32), // Verde agrícola
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
+        centerTitle: false,
+        leading: (widget.showAppBar ?? false)
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            )
+          : IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
