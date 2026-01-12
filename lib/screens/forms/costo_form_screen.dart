@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 
@@ -90,29 +89,50 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.costo == null 
-          ? (_esCobro ? 'Nuevo Cobro' : 'Nuevo Gasto')
-          : 'Editar ${_esCobro ? 'Cobro' : 'Gasto'}',
-        showBackButton: true,
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text(
+          widget.costo == null 
+            ? (_esCobro ? 'Nuevo Cobro' : 'Nuevo Gasto')
+            : 'Editar ${_esCobro ? 'Cobro' : 'Gasto'}',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _submitForm,
-            child: _isSaving 
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF2E7D32),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(
-                  widget.costo == null ? 'Guardar' : 'Actualizar',
-                  style: const TextStyle(color: Colors.white),
+              : const Text(
+                  'Guardar',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(

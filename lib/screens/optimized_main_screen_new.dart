@@ -79,24 +79,38 @@ class OptimizedMainScreen extends ConsumerStatefulWidget {
 class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   int _currentIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late PageController _pageController;
 
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: 0);
     _screens = [
       OptimizedDashboardScreen(
         onNavigateToIndex: (index) {
           setState(() {
             _currentIndex = index;
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
           });
         },
       ),
       const OptimizedCamposListScreen(),
       const OptimizedTrabajosListScreen(),
-      const OptimizedProfileScreen(),
+      const CostosMainScreen(),
+      const OptimizedMoreScreen(),
     ];
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _handleLogout(BuildContext context) async {
@@ -127,419 +141,89 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(_getAppBarTitle(_currentIndex)),
-        elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
-        actions: [
-          // Botón de recargar removido
-        ],
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(), // Deshabilitar swipe manual
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: _screens,
       ),
-      drawer: _buildDrawer(context),
-      body: Column(
-        children: [
-          // Buscador debajo del AppBar
-          if (_shouldShowSearchBar(_currentIndex))
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.grey[50],
-              child: _buildSearchBar(),
-            ),
-          // Contenido de la pantalla
-          Expanded(
-            child: _screens[_currentIndex],
-          ),
-        ],
-      ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-  String _getAppBarTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'Inicio';
-      case 1:
-        return 'Campos';
-      case 2:
-        return 'Trabajos';
-      case 3:
-        return 'Costos';
-      case 4:
-        return 'Perfil';
-      default:
-        return 'GesAgro';
-    }
-  }
-
-  bool _shouldShowSearchBar(int index) {
-    // Mostrar buscador en Campos y Trabajos
-    return index == 1 || index == 2;
-  }
-
-  Widget _buildSearchBar() {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: _getSearchHint(_currentIndex),
-        prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-      ),
-      onChanged: (value) {
-        // TODO: Implementar búsqueda
-      },
-    );
-  }
-
-  String _getSearchHint(int index) {
-    switch (index) {
-      case 1:
-        return 'Buscar campos...';
-      case 2:
-        return 'Buscar trabajos...';
-      default:
-        return 'Buscar...';
-    }
-  }
-
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      width: 320, // Ancho más amplio para elementos flotantes
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          backgroundBlendMode: BlendMode.overlay,
-        ),
-        child: Column(
-          children: [
-            // Header con efecto blur y sombra
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).primaryColor.withOpacity(0.8),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const Icon(
-                      Icons.agriculture,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'GesAgro',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Text(
-                      'Sistema de Gestión Agrícola',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Contenido del drawer con padding y scroll
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildModernDrawerItem(
-                        context,
-                        'Inicio',
-                        Icons.home_rounded,
-                        0,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Campos',
-                        Icons.landscape_rounded,
-                        1,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Trabajos',
-                        Icons.work_rounded,
-                        2,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Máquinas',
-                        Icons.local_shipping_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedMaquinasListScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Mantenimientos',
-                        Icons.build_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedMantenimientosScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Personal',
-                        Icons.people_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const PersonalListScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Finanzas',
-                        Icons.receipt_long_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const CostosMainScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Separador simple
-                      Container(
-                        height: 1,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.grey[300],
-                      ),
-                      
-                      // Sección de Finanzas oculta temporalmente
-                      // _buildModernDrawerItem(
-                      //   context,
-                      //   'Finanzas',
-                      //   Icons.account_balance_wallet_rounded,
-                      //   -1,
-                      //   onTap: () {
-                      //     Navigator.pop(context);
-                      //     Navigator.push(
-                      //       context,
-                      //       MaterialPageRoute(builder: (context) => const OptimizedFinanzasMainScreen()),
-                      //     );
-                      //   },
-                      // ),
-                      // const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Reportes',
-                        Icons.analytics_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedReportesScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Prueba Conexión',
-                        Icons.wifi_find_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const TestConnectionScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Pruebas y Análisis',
-                        Icons.science_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const TestScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Separador simple
-                      Container(
-                        height: 1,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.grey[300],
-                      ),
-                      
-                      _buildModernDrawerItem(
-                        context,
-                        'Perfil',
-                        Icons.person_rounded,
-                        4,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Configuración',
-                        Icons.settings_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: Implementar pantalla de configuración
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Cerrar Sesión',
-                        Icons.logout_rounded,
-                        -1,
-                        isDestructive: true,
-                        onTap: () async {
-                          Navigator.pop(context);
-                          await _handleLogout(context);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernDrawerItem(
-    BuildContext context,
-    String title,
-    IconData icon,
-    int index, {
-    VoidCallback? onTap,
-    bool isDestructive = false,
-  }) {
-    final isSelected = index == _currentIndex && index >= 0;
-    
+  Widget _buildBottomNavigationBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 1),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap ?? () {
-            Navigator.pop(context);
-            if (index >= 0) {
-              setState(() {
-                _currentIndex = index;
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: isSelected 
-                ? Theme.of(context).primaryColor.withOpacity(0.08)
-                : Colors.transparent,
-              border: Border(
-                left: BorderSide(
-                  color: isSelected 
-                    ? Theme.of(context).primaryColor
-                    : Colors.transparent,
-                  width: 3,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isDestructive 
-                    ? Colors.red.shade600
-                    : (isSelected 
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey.shade600),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: isDestructive 
-                        ? Colors.red.shade600
-                        : (isSelected 
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey.shade700),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF2E7D32),
+        unselectedItemColor: const Color(0xFF8E8E93),
+        selectedLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+        ),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_rounded, size: 26),
+            activeIcon: Icon(Icons.home_rounded, size: 28),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.landscape_rounded, size: 26),
+            activeIcon: Icon(Icons.landscape_rounded, size: 28),
+            label: 'Campos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.work_rounded, size: 26),
+            activeIcon: Icon(Icons.work_rounded, size: 28),
+            label: 'Trabajos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_rounded, size: 26),
+            activeIcon: Icon(Icons.receipt_long_rounded, size: 28),
+            label: 'Finanzas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.more_horiz_rounded, size: 26),
+            activeIcon: Icon(Icons.more_horiz_rounded, size: 28),
+            label: 'Más',
+          ),
+        ],
       ),
     );
   }
+
+  // Métodos removidos - ahora se usa Bottom Navigation Bar
+  // El drawer se movió a la pantalla "Más"
 }
 
 /// Pantalla de costos optimizada
@@ -746,6 +430,347 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
   }
 }
 
+/// Pantalla "Más" con opciones secundarias
+class OptimizedMoreScreen extends ConsumerStatefulWidget {
+  const OptimizedMoreScreen({Key? key}) : super(key: key);
+
+  @override
+  ConsumerState<OptimizedMoreScreen> createState() => _OptimizedMoreScreenState();
+}
+
+class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: CustomScrollView(
+        slivers: [
+          // AppBar moderno estilo iOS
+          SliverAppBar(
+            expandedHeight: 120,
+            floating: false,
+            pinned: true,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text(
+                'Más',
+                style: TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+            ),
+          ),
+          
+          // Contenido
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Perfil
+                  _buildSectionCard(
+                    'Perfil',
+                    [
+                      _buildMoreItem(
+                        'Mi Perfil',
+                        Icons.person_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OptimizedProfileScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Gestión
+                  _buildSectionCard(
+                    'Gestión',
+                    [
+                      _buildMoreItem(
+                        'Máquinas',
+                        Icons.local_shipping_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OptimizedMaquinasListScreen(showAppBar: true),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildMoreItem(
+                        'Personal',
+                        Icons.people_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PersonalListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildMoreItem(
+                        'Mantenimientos',
+                        Icons.build_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OptimizedMantenimientosScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Reportes y Análisis
+                  _buildSectionCard(
+                    'Reportes',
+                    [
+                      _buildMoreItem(
+                        'Reportes',
+                        Icons.analytics_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OptimizedReportesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Configuración
+                  _buildSectionCard(
+                    'Configuración',
+                    [
+                      _buildMoreItem(
+                        'Configuración',
+                        Icons.settings_rounded,
+                        () {
+                          // TODO: Implementar pantalla de configuración
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Próximamente')),
+                          );
+                        },
+                      ),
+                      _buildMoreItem(
+                        'Prueba Conexión',
+                        Icons.wifi_find_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TestConnectionScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildMoreItem(
+                        'Pruebas y Análisis',
+                        Icons.science_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TestScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Cerrar Sesión
+                  _buildLogoutButton(context),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+              letterSpacing: -0.08,
+            ),
+          ),
+        ),
+        Card(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: Colors.grey.withOpacity(0.1),
+              width: 0.5,
+            ),
+          ),
+          margin: EdgeInsets.zero,
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMoreItem(String title, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2E7D32).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: const Color(0xFF2E7D32),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey[400],
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Colors.grey.withOpacity(0.1),
+          width: 0.5,
+        ),
+      ),
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => _handleLogout(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ref.read(authProvider.notifier).logout();
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al cerrar sesión: $e')),
+          );
+        }
+      }
+    }
+  }
+}
+
 /// Pantalla de perfil optimizada
 class OptimizedProfileScreen extends ConsumerStatefulWidget {
   const OptimizedProfileScreen({Key? key}) : super(key: key);
@@ -758,10 +783,16 @@ class _OptimizedProfileScreenState extends ConsumerState<OptimizedProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Perfil'),
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1C1C1E),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: const Center(
         child: Column(

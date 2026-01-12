@@ -10,7 +10,9 @@ import 'costos_categoria_screen.dart';
 
 /// Pantalla principal de costos con menú
 class CostosMainScreen extends ConsumerStatefulWidget {
-  const CostosMainScreen({Key? key}) : super(key: key);
+  final bool showAppBar;
+  
+  const CostosMainScreen({Key? key, this.showAppBar = false}) : super(key: key);
 
   @override
   ConsumerState<CostosMainScreen> createState() => _CostosMainScreenState();
@@ -30,38 +32,61 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _getBody();
+    
+    if (widget.showAppBar) {
+      return Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title: Text(_getAppBarTitle(_selectedIndex)),
+          elevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF1C1C1E),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: body,
+        floatingActionButton: _selectedIndex == 1 || _selectedIndex == 0
+            ? FloatingActionButton(
+                onPressed: () => _navigateToFormulario(),
+                backgroundColor: const Color(0xFF2E7D32),
+                child: const Icon(Icons.add),
+              )
+            : null,
+      );
+    }
+    
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(_getAppBarTitle(_selectedIndex)),
-        elevation: 0,
-        backgroundColor: const Color(0xFF2E7D32), // Verde agrícola
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {
-            // Navegar de vuelta al OptimizedMainScreen para usar su drawer
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const OptimizedMainScreen()),
-            );
-          },
-        ),
-        actions: [
-          if (_selectedIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.home),
-              tooltip: 'Volver al inicio',
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const OptimizedMainScreen()),
-                );
-              },
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: CustomScrollView(
+        slivers: [
+          // AppBar moderno estilo iOS
+          SliverAppBar(
+            expandedHeight: 120,
+            floating: false,
+            pinned: true,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                _getAppBarTitle(_selectedIndex),
+                style: const TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
             ),
+          ),
+          SliverToBoxAdapter(
+            child: body,
+          ),
         ],
       ),
-      body: _getBody(),
       floatingActionButton: _selectedIndex == 1 || _selectedIndex == 0
           ? FloatingActionButton(
               onPressed: () => _navigateToFormulario(),

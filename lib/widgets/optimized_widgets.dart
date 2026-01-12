@@ -258,19 +258,25 @@ class OptimizedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Card(
-      elevation: elevation ?? 2,
-      color: color,
+    final card = Container(
       margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: borderRadius ?? BorderRadius.circular(12),
+      decoration: BoxDecoration(
+        color: color ?? Colors.white,
+        borderRadius: borderRadius ?? BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 0.5,
+        ),
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: borderRadius ?? BorderRadius.circular(12),
-        child: Padding(
-          padding: padding ?? const EdgeInsets.all(16),
-          child: child,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: borderRadius ?? BorderRadius.circular(16),
+          child: Padding(
+            padding: padding ?? const EdgeInsets.all(16),
+            child: child,
+          ),
         ),
       ),
     );
@@ -313,7 +319,9 @@ class OptimizedButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: style ??
             ElevatedButton.styleFrom(
-              padding: padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              padding: padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -340,7 +348,11 @@ class OptimizedButton extends StatelessWidget {
                     child: AutoSizeText(
                       text,
                       maxLines: 1,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17,
+                        letterSpacing: -0.41,
+                      ),
                     ),
                   ),
                 ],

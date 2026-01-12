@@ -277,34 +277,62 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       body: RefreshIndicator(
         onRefresh: _refreshDashboard,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Accesos rápidos
-              _buildAccesosRapidos(),
-              const SizedBox(height: 24),
+          slivers: [
+            // AppBar moderno estilo iOS
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.white,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                title: const Text(
+                  'Inicio',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1C1C1E),
+                  ),
+                ),
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              ),
+            ),
+            
+            // Contenido
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Accesos rápidos
+                    _buildAccesosRapidos(),
+                    const SizedBox(height: 24),
 
-              // Lista de trabajos por estado
-              _buildTrabajosSection(_trabajos),
-              const SizedBox(height: 24),
+                    // Lista de trabajos por estado
+                    _buildTrabajosSection(_trabajos),
+                    const SizedBox(height: 24),
 
-              // Calendario de trabajos y mantenimientos
-              _buildCalendarioTrabajosYMantenimientos(_trabajos, _mantenimientos),
-              const SizedBox(height: 24),
+                    // Calendario de trabajos y mantenimientos
+                    _buildCalendarioTrabajosYMantenimientos(_trabajos, _mantenimientos),
+                    const SizedBox(height: 24),
 
-              // Superficies de máquinas
-              _buildMaquinasSection(_maquinas),
-              const SizedBox(height: 24),
+                    // Superficies de máquinas
+                    _buildMaquinasSection(_maquinas),
+                    const SizedBox(height: 24),
 
-              // Superficies y horas de operadores
-              _buildPersonalSection(_personal),
-            ],
-          ),
+                    // Superficies y horas de operadores
+                    _buildPersonalSection(_personal),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1720,38 +1748,43 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color, {VoidCallback? onTap}) {
     final card = Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 0.5,
+        ),
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 12),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
               color: color,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF8E8E93),
               fontWeight: FontWeight.w500,
+              letterSpacing: -0.08,
             ),
           ),
         ],
@@ -1761,7 +1794,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: card,
       );
     }

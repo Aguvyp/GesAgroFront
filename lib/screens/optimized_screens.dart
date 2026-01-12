@@ -65,12 +65,37 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
     }
     
     return Scaffold(
-      // AppBar removido - ahora está en OptimizedMainScreen
-      body: body,
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.white,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                title: const Text(
+                  'Campos',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1C1C1E),
+                  ),
+                ),
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              ),
+            ),
+          ];
+        },
+        body: body,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showCampoForm(context);
         },
+        backgroundColor: const Color(0xFF2E7D32),
         child: const Icon(Icons.add),
       ),
     );
@@ -108,13 +133,45 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
                      campo.superficieHa.toString().contains(_searchQuery);
             }).toList();
       
-      return OptimizedAnimatedList(
-        children: filteredCampos.map((campo) {
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: filteredCampos.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final campo = filteredCampos[index];
           return OptimizedCard(
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(16),
             child: ListTile(
-              leading: const Icon(Icons.landscape, color: Colors.green),
-              title: Text(campo.nombre),
-              subtitle: Text('${campo.superficieHa.toStringAsFixed(2)} hectáreas'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E7D32).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.landscape_rounded, color: Color(0xFF2E7D32), size: 24),
+              ),
+              title: Text(
+                campo.nombre,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                  letterSpacing: -0.41,
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '${campo.superficieHa.toStringAsFixed(2)} hectáreas',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF8E8E93),
+                    letterSpacing: -0.24,
+                  ),
+                ),
+              ),
               onTap: () {
                 Navigator.push(
                   context,
@@ -124,24 +181,28 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
                 );
               },
               trailing: PopupMenuButton(
+                icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF8E8E93)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
-                    child: Row(
+                    child: const Row(
                       children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 8),
-                        Text('Editar'),
+                        Icon(Icons.edit_rounded, size: 20, color: Color(0xFF1C1C1E)),
+                        SizedBox(width: 12),
+                        Text('Editar', style: TextStyle(fontSize: 17)),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
-                    child: Row(
+                    child: const Row(
                       children: [
-                        Icon(Icons.delete, size: 20),
-                        SizedBox(width: 8),
-                        Text('Eliminar'),
+                        Icon(Icons.delete_rounded, size: 20, color: Color(0xFFFF3B30)),
+                        SizedBox(width: 12),
+                        Text('Eliminar', style: TextStyle(fontSize: 17, color: Color(0xFFFF3B30))),
                       ],
                     ),
                   ),
@@ -156,7 +217,7 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
               ),
             ),
           );
-        }).toList(),
+        },
       );
     }
     
@@ -271,12 +332,39 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
     }
     
     return Scaffold(
-      // AppBar removido - ahora está en OptimizedMainScreen
-      body: body,
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.white,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  widget.estadoFiltro != null 
+                    ? 'Trabajos - ${widget.estadoFiltro}'
+                    : 'Trabajos',
+                  style: const TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1C1C1E),
+                  ),
+                ),
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              ),
+            ),
+          ];
+        },
+        body: body,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showTrabajoForm(context);
         },
+        backgroundColor: const Color(0xFF2E7D32),
         child: const Icon(Icons.add),
       ),
     );
@@ -335,9 +423,15 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
         }).toList();
       }
       
-      return OptimizedAnimatedList(
-        children: filteredTrabajos.map((trabajo) {
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: filteredTrabajos.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final trabajo = filteredTrabajos[index];
           return OptimizedCard(
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(16),
             child: InkWell(
               onTap: () {
                 Navigator.push(
@@ -347,17 +441,25 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
                   ),
                 );
               },
+              borderRadius: BorderRadius.circular(16),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.work, 
-                          color: _getTrabajoColor(trabajo.estado),
-                          size: 24,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: _getTrabajoColor(trabajo.estado).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.work_rounded, 
+                            color: _getTrabajoColor(trabajo.estado),
+                            size: 24,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -367,42 +469,51 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
                               Text(
                                 '${trabajo.tipo} - ${trabajo.cultivo}',
                                 style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1C1C1E),
+                                  letterSpacing: -0.41,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Campo: ${trabajo.campoInfo}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Color(0xFF8E8E93),
+                                  letterSpacing: -0.24,
                                 ),
                               ),
+                              const SizedBox(height: 2),
                               Text(
                                 '${trabajo.formattedDateRange} • ${trabajo.estado ?? 'Pendiente'}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF8E8E93),
+                                  letterSpacing: -0.08,
                                 ),
                               ),
                             ],
                           ),
                         ),
                         PopupMenuButton(
+                          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF8E8E93)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           itemBuilder: (context) => _buildTrabajoMenuItems(trabajo),
                           onSelected: (value) => _handleTrabajoMenuAction(value, trabajo),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     _buildTrabajoActionButtons(trabajo),
                   ],
                 ),
               ),
             ),
           );
-        }).toList(),
+        },
       );
     }
     
@@ -455,29 +566,39 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ElevatedButton.icon(
-            onPressed: () => _cambiarEstadoTrabajo(trabajo, 'En Curso'),
-            icon: const Icon(Icons.play_arrow, size: 12),
-            label: const Text('Iniciar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              textStyle: const TextStyle(fontSize: 10),
-              minimumSize: const Size(0, 28),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _cambiarEstadoTrabajo(trabajo, 'En Curso'),
+              icon: const Icon(Icons.play_arrow_rounded, size: 16),
+              label: const Text('Iniciar'),
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: const Color(0xFFFF9800),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 6),
-          ElevatedButton.icon(
-            onPressed: () => _cambiarEstadoTrabajo(trabajo, 'Completado'),
-            icon: const Icon(Icons.check_circle, size: 12),
-            label: const Text('Completar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              textStyle: const TextStyle(fontSize: 10),
-              minimumSize: const Size(0, 28),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _cambiarEstadoTrabajo(trabajo, 'Completado'),
+              icon: const Icon(Icons.check_circle_rounded, size: 16),
+              label: const Text('Completar'),
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: const Color(0xFF2E7D32),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
           ),
         ],
@@ -512,9 +633,9 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
         value: 'edit',
         child: Row(
           children: [
-            Icon(Icons.edit, size: 20),
-            SizedBox(width: 8),
-            Text('Editar'),
+            Icon(Icons.edit_rounded, size: 20, color: Color(0xFF1C1C1E)),
+            SizedBox(width: 12),
+            Text('Editar', style: TextStyle(fontSize: 17)),
           ],
         ),
       ),
@@ -522,9 +643,9 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
         value: 'delete',
         child: Row(
           children: [
-            Icon(Icons.delete, size: 20, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Eliminar', style: TextStyle(color: Colors.red)),
+            Icon(Icons.delete_rounded, size: 20, color: Color(0xFFFF3B30)),
+            SizedBox(width: 12),
+            Text('Eliminar', style: TextStyle(fontSize: 17, color: Color(0xFFFF3B30))),
           ],
         ),
       ),
