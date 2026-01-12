@@ -285,21 +285,24 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           slivers: [
             // AppBar moderno estilo iOS
             SliverAppBar(
-              expandedHeight: 120,
+              expandedHeight: 56,
               floating: false,
               pinned: true,
               backgroundColor: Colors.white,
               elevation: 0,
+              toolbarHeight: 56,
               flexibleSpace: FlexibleSpaceBar(
                 title: const Text(
                   'Inicio',
                   style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                     color: Color(0xFF1C1C1E),
+                    letterSpacing: -0.41,
                   ),
                 ),
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+                centerTitle: false,
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
               ),
             ),
             

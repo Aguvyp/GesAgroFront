@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/personal.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 
@@ -43,27 +42,48 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.personal == null ? 'Nuevo Operario' : 'Editar Operario',
-        showBackButton: true,
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text(
+          widget.personal == null ? 'Nuevo Operario' : 'Editar Operario',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _submitForm,
-            child: _isSaving 
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF2E7D32),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(
-                  widget.personal == null ? 'Guardar' : 'Actualizar',
-                  style: const TextStyle(color: Colors.white),
+              : const Text(
+                  'Guardar',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
@@ -71,17 +91,19 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
             children: [
               // Información personal
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Información Personal',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1E),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _nombreController,
                       label: 'Nombre completo',
@@ -89,7 +111,7 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
                       prefixIcon: const Icon(Icons.person),
                       validator: (value) => Validators.validateRequired(value, 'Nombre'),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _dniController,
                       label: 'DNI',
@@ -106,7 +128,7 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _telefonoController,
                       label: 'Teléfono (opcional)',

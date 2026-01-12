@@ -55,27 +55,48 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.maquina == null ? 'Nueva Máquina' : 'Editar Máquina',
-        showBackButton: true,
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text(
+          widget.maquina == null ? 'Nueva Máquina' : 'Editar Máquina',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _submitForm,
-            child: _isSaving 
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF2E7D32),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(
-                  widget.maquina == null ? 'Guardar' : 'Actualizar',
-                  style: const TextStyle(color: Colors.white),
+              : const Text(
+                  'Guardar',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
@@ -83,17 +104,19 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
             children: [
               // Información básica
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Información Básica',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1E),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _nombreController,
                       label: 'Nombre',
@@ -101,14 +124,14 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
                       prefixIcon: const Icon(Icons.build),
                       validator: (value) => Validators.validateRequired(value, 'Nombre'),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _marcaController,
                       label: 'Marca',
                       hint: 'Marca de la máquina',
                       prefixIcon: const Icon(Icons.business),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _modeloController,
                       label: 'Modelo',
@@ -122,17 +145,19 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
 
               // Especificaciones técnicas
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Especificaciones Técnicas',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1E),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _anioController,
                       label: 'Año',
@@ -140,7 +165,7 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
                       prefixIcon: const Icon(Icons.calendar_today),
                       keyboardType: TextInputType.number,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _anchoTrabajoController,
                       label: 'Ancho de Trabajo (metros)',
@@ -148,7 +173,7 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
                       prefixIcon: const Icon(Icons.straighten),
                       keyboardType: TextInputType.number,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _horasTrabajadasController,
                       label: 'Horas de Uso',
@@ -163,17 +188,19 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
 
               // Detalles adicionales
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Detalles Adicionales',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1E),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _detallesController,
                       label: 'Detalles (opcional)',

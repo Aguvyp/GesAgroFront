@@ -59,13 +59,21 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
     
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Mantenimientos'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Mantenimientos',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu),
+          icon: const Icon(Icons.menu_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
@@ -75,7 +83,7 @@ class _OptimizedMantenimientosScreenState extends ConsumerState<OptimizedManteni
         onPressed: () {
           _showMantenimientoForm(context);
         },
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: const Color(0xFF2E7D32),
         child: const Icon(Icons.add),
       ),
     );

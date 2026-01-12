@@ -113,30 +113,6 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
-    try {
-      // Cerrar sesión usando el provider
-      await ref.read(authProvider.notifier).logout();
-      
-      // Navegar a la pantalla de login
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/login',
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cerrar sesión: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -450,21 +426,24 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
         slivers: [
           // AppBar moderno estilo iOS
           SliverAppBar(
-            expandedHeight: 120,
+            expandedHeight: 56,
             floating: false,
             pinned: true,
             backgroundColor: Colors.white,
             elevation: 0,
+            toolbarHeight: 56,
             flexibleSpace: FlexibleSpaceBar(
               title: const Text(
                 'Más',
                 style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF1C1C1E),
+                  letterSpacing: -0.41,
                 ),
               ),
-              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              centerTitle: false,
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
             ),
           ),
           

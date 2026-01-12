@@ -66,18 +66,27 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
     
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Personal'),
+        title: const Text(
+          'Personal',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
         elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.menu),
+          icon: const Icon(Icons.menu_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            color: const Color(0xFF1C1C1E),
             onPressed: () {
               ref.read(personalProvider.notifier).loadPersonal();
             },

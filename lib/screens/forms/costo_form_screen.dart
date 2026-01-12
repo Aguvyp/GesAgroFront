@@ -132,7 +132,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
@@ -140,17 +140,18 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
             children: [
               // Selector de tipo: Gasto o Cobro
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Tipo de Movimiento',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
@@ -185,29 +186,30 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // Información básica
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Información Básica',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _descripcionController,
                       label: 'Descripción',
                       hint: 'Descripción del costo o gasto',
-                      prefixIcon: const Icon(Icons.description),
+                      prefixIcon: const Icon(Icons.description, size: 20),
                       validator: (value) => Validators.validateRequired(value, 'Descripción'),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _montoController,
                       label: 'Monto',
@@ -224,7 +226,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     // Campos condicionales según el tipo
                     if (!_esCobro) ...[
                       // Campos para GASTO
@@ -235,7 +237,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         prefixIcon: const Icon(Icons.person),
                         validator: (value) => Validators.validateRequired(value, 'Destinatario'),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                       OptimizedTextField(
                         controller: _categoriaController,
                         label: 'Categoría',
@@ -251,7 +253,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         prefixIcon: const Icon(Icons.person),
                         validator: (value) => Validators.validateRequired(value, 'Cobrar a'),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                       OptimizedTextField(
                         controller: _trabajoIdController,
                         label: 'ID Trabajo (Opcional)',
@@ -267,7 +269,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
 
               // Información de pago
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -277,7 +279,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
                         labelText: 'Forma de Pago',
@@ -297,7 +299,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     SwitchListTile(
                       title: const Text('Pagado'),
                       subtitle: const Text('Marcar si ya fue pagado'),
@@ -316,7 +318,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
 
               // Fecha
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -326,7 +328,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -366,7 +368,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     // Fecha de pago límite (opcional)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

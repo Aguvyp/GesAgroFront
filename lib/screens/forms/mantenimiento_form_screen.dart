@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/mantenimiento.dart';
 import '../../models/maquina.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 import '../../utils/constants.dart';
@@ -162,14 +161,50 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.mantenimiento == null ? 'Nuevo Mantenimiento' : 'Editar Mantenimiento',
-        showBackButton: true,
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text(
+          widget.mantenimiento == null ? 'Nuevo Mantenimiento' : 'Editar Mantenimiento',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : _submitForm,
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF2E7D32),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text(
+                  'Guardar',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+          ),
+        ],
       ),
       body: _isLoadingData
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -177,17 +212,19 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                   children: [
                     // Información básica
                     OptimizedCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Información Básica',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1C1C1E),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           DropdownButtonFormField<Maquina>(
                             decoration: const InputDecoration(
                               labelText: 'Máquina',
@@ -213,7 +250,7 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                               return null;
                             },
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -247,21 +284,23 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                     // Detalles del mantenimiento
                     OptimizedCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Detalles del Mantenimiento',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1C1C1E),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           OptimizedTextField(
                             controller: _descripcionController,
                             label: 'Descripción',
@@ -270,7 +309,7 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                             maxLines: 3,
                             validator: (value) => Validators.validateRequired(value, 'Descripción'),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           OptimizedTextField(
                             controller: _costoTotalController,
                             label: 'Costo Total',
@@ -278,7 +317,7 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                             prefixIcon: const Icon(Icons.attach_money),
                             keyboardType: TextInputType.number,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             decoration: const InputDecoration(
                               labelText: 'Estado',

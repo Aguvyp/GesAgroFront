@@ -436,19 +436,19 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null) ...[
-          AutoSizeText(
-            widget.label!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: _isFocused
-                  ? Theme.of(context).primaryColor
-                  : Theme.of(context).textTheme.bodyMedium?.color,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              widget.label!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: _isFocused
+                    ? Theme.of(context).primaryColor
+                    : const Color(0xFF8E8E93),
+              ),
             ),
-            maxLines: 1,
-          )
-              .animate()
-              .fadeIn(duration: 200.ms),
-          const SizedBox(height: 8),
+          ),
         ],
         TextFormField(
           controller: widget.controller,
@@ -462,51 +462,70 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
           maxLines: widget.maxLines,
           maxLength: widget.maxLength,
           enabled: widget.enabled,
+          style: const TextStyle(
+            fontSize: 17,
+            color: Color(0xFF1C1C1E),
+          ),
           decoration: InputDecoration(
             hintText: widget.hint,
-            prefixIcon: widget.prefixIcon,
+            hintStyle: const TextStyle(
+              fontSize: 17,
+              color: Color(0xFF8E8E93),
+            ),
+            prefixIcon: widget.prefixIcon != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: widget.prefixIcon,
+                  )
+                : null,
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 44,
+              minHeight: 44,
+            ),
             suffixIcon: widget.suffixIcon,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: Theme.of(context).dividerColor,
+                color: Colors.grey.withOpacity(0.2),
+                width: 0.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: Theme.of(context).dividerColor,
+                color: Colors.grey.withOpacity(0.2),
+                width: 0.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).primaryColor,
+              borderSide: const BorderSide(
+                color: Color(0xFF2E7D32),
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
+              borderSide: const BorderSide(
+                color: Color(0xFFFF3B30),
+                width: 0.5,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
+              borderSide: const BorderSide(
+                color: Color(0xFFFF3B30),
                 width: 2,
               ),
             ),
             filled: true,
             fillColor: widget.enabled
-                ? Theme.of(context).cardColor
+                ? Colors.white
                 : Theme.of(context).disabledColor.withOpacity(0.1),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            isDense: true,
           ),
-        )
-            .animate()
-            .fadeIn(duration: 300.ms)
-            .slideY(begin: 0.1, end: 0, duration: 300.ms),
+        ),
       ],
     );
   }

@@ -46,24 +46,33 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
     
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Máquinas'),
-        backgroundColor: const Color(0xFF2E7D32), // Verde agrícola
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Máquinas',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: false,
         leading: (widget.showAppBar ?? false)
           ? IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+              color: const Color(0xFF1C1C1E),
               onPressed: () => Navigator.pop(context),
             )
           : IconButton(
-              icon: const Icon(Icons.menu),
+              icon: const Icon(Icons.menu_rounded, size: 20),
+              color: const Color(0xFF1C1C1E),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            color: const Color(0xFF1C1C1E),
             onPressed: () {
               ref.read(maquinasProvider.notifier).loadMaquinas();
             },

@@ -44,12 +44,21 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
     final camposStats = _getCamposStats(camposList);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Campos'),
+        title: const Text(
+          'Campos',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -57,7 +66,8 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
             onPressed: () async {
               await ref.read(camposProvider.notifier).loadCampos();
             },
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            color: const Color(0xFF1C1C1E),
           ),
         ],
       ),
@@ -92,15 +102,8 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
       ),
       child: Row(
         children: [
@@ -108,7 +111,7 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
             height: 24,
             width: 4,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFF2E7D32),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -119,7 +122,7 @@ class _OptimizedCamposScreenState extends ConsumerState<OptimizedCamposScreen>
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF1C1C1E),
               ),
             ),
           ),

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/costo.dart';
 import '../forms/costo_form_screen.dart';
-import '../optimized_main_screen_new.dart';
 import 'costos_list_screen.dart';
 import 'costos_resumen_screen.dart';
 import 'costos_categoria_screen.dart';
@@ -64,24 +63,27 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
       body: CustomScrollView(
         slivers: [
           // AppBar moderno estilo iOS
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                _getAppBarTitle(_selectedIndex),
-                style: const TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1C1C1E),
+            SliverAppBar(
+              expandedHeight: 56,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.white,
+              elevation: 0,
+              toolbarHeight: 56,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  _getAppBarTitle(_selectedIndex),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1C1C1E),
+                    letterSpacing: -0.41,
+                  ),
                 ),
+                centerTitle: false,
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
               ),
-              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
             ),
-          ),
           SliverToBoxAdapter(
             child: body,
           ),

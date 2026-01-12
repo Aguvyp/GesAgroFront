@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/campo.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 
@@ -49,27 +48,48 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.campo == null ? 'Nuevo Campo' : 'Editar Campo',
-        showBackButton: true,
+      appBar: AppBar(
+        title: Text(
+          widget.campo == null ? 'Nuevo Campo' : 'Editar Campo',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _submitForm,
-            child: _isSaving 
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF2E7D32),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(
-                  widget.campo == null ? 'Guardar' : 'Actualizar',
-                  style: const TextStyle(color: Colors.white),
+              : const Text(
+                  'Guardar',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
           ),
         ],
       ),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
@@ -77,17 +97,19 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
             children: [
               // Información básica
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Información Básica',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1E),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _nombreController,
                       label: 'Nombre del Campo',
@@ -95,7 +117,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
                       prefixIcon: const Icon(Icons.landscape),
                       validator: (value) => Validators.validateRequired(value, 'Nombre del campo'),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _superficieController,
                       label: 'Superficie (hectáreas)',
@@ -115,21 +137,23 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Ubicación
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Ubicación',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1E),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
@@ -153,7 +177,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Text(
                       'Las coordenadas son opcionales y se pueden obtener desde Google Maps',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -163,21 +187,23 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Detalles adicionales
               OptimizedCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Detalles Adicionales',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1E),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _detallesController,
                       label: 'Detalles (opcional)',

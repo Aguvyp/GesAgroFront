@@ -13,7 +13,6 @@ import '../../models/trabajo_detalle.dart';
 import '../../models/tipo_trabajo.dart';
 import '../../services/cliente_service.dart';
 import '../../services/tipo_trabajo_service.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 import '../../utils/constants.dart';
@@ -21,6 +20,13 @@ import 'campo_form_screen.dart';
 import 'maquina_form_screen.dart';
 import 'personal_form_screen.dart';
 import 'cliente_form_screen.dart';
+
+/// Enum para el tipo de trabajo en el formulario
+enum TipoTrabajoForm {
+  propio,
+  aTerceros,
+  deTercerosHaciaMi,
+}
 
 /// Pantalla completa para crear/editar trabajos
 class TrabajoFormScreen extends ConsumerStatefulWidget {
@@ -48,6 +54,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   late TextEditingController _horasTrabajadasController;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
+  
+  // Tipo de trabajo en el formulario
+  TipoTrabajoForm? _tipoTrabajoForm;
   
   // Estados adicionales
   String? _estadoSeleccionado;
@@ -110,14 +119,28 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     // Estados adicionales
     _estadoSeleccionado = widget.trabajo?.estado ?? 'Pendiente';
     
-    // FORZAR VALORES CORRECTOS PARA DEBUG
+    // Determinar tipo de trabajo form según el trabajo existente
     if (widget.trabajo != null) {
-      // Si hay un trabajo, usar sus valores reales
-      _esTercero = widget.trabajo!.esTercero;
-      _cobrado = widget.trabajo!.cobrado;
-      _servicioContratado = widget.trabajo!.servicioContratado;
+      // Si hay un trabajo, determinar el tipo según sus valores
+      if (widget.trabajo!.servicioContratado) {
+        _tipoTrabajoForm = TipoTrabajoForm.deTercerosHaciaMi;
+        _esTercero = false;
+        _servicioContratado = true;
+        _cobrado = false;
+      } else if (widget.trabajo!.esTercero) {
+        _tipoTrabajoForm = TipoTrabajoForm.aTerceros;
+        _esTercero = true;
+        _servicioContratado = false;
+        _cobrado = widget.trabajo!.cobrado;
+      } else {
+        _tipoTrabajoForm = TipoTrabajoForm.propio;
+        _esTercero = false;
+        _servicioContratado = false;
+        _cobrado = false;
+      }
     } else {
-      // Si es un trabajo nuevo, valores por defecto
+      // Si es un trabajo nuevo, no establecer tipo aún (usuario debe seleccionar)
+      _tipoTrabajoForm = null;
       _esTercero = false;
       _cobrado = false;
       _servicioContratado = false;
@@ -297,41 +320,116 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
   // Método para aplicar filtros de campos según el cliente seleccionado
   Future<void> _aplicarFiltrosCampos() async {
-    if ((_servicioContratado || _esTercero) && _clienteSeleccionado != null) {
-      // Si es servicio contratado o trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
+    if (_tipoTrabajoForm == TipoTrabajoForm.aTerceros && _clienteSeleccionado != null && _clienteSeleccionado!.id != null) {
+      // Si es tipo "A terceros" y hay cliente seleccionado, cargar solo sus campos
       try {
-        _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
+        await _filtrarCamposPorCliente(_clienteSeleccionado!.id!);
       } catch (e) {
         print('Error cargando campos del cliente: $e');
-        _camposFiltrados = [];
+        setState(() {
+          _camposFiltrados = [];
+        });
       }
     } else {
-      // Si no es trabajo a terceros, mostrar todos los campos propios
-      _camposFiltrados = List.from(_campos);
+      // Para otros tipos, mostrar todos los campos propios
+      setState(() {
+        _camposFiltrados = List.from(_campos);
+      });
+    }
+  }
+
+  Widget _buildTipoSelector(String label, IconData icon, Color color, bool isSelected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.withOpacity(0.2),
+            width: isSelected ? 2 : 0.5,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: isSelected ? color : const Color(0xFF8E8E93), size: 24),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? color : const Color(0xFF8E8E93),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _filtrarCamposPorCliente(int clienteId) async {
+    try {
+      setState(() {
+        _camposFiltrados = [];
+      });
+      final campos = await ClienteService.getCamposByCliente(clienteId);
+      setState(() {
+        _camposFiltrados = campos;
+        _campoSeleccionado = null; // Reset campo seleccionado al cambiar cliente
+      });
+    } catch (e) {
+      setState(() {
+        _camposFiltrados = [];
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo',
-        showBackButton: true,
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text(
+          widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
-          if (!_isLoadingData)
-            TextButton(
-              onPressed: _isSaving ? null : _submitForm,
-              child: _isSaving 
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    widget.trabajo == null ? 'Guardar' : 'Actualizar',
-                    style: const TextStyle(color: Colors.white),
-                  ),
+          TextButton(
+            onPressed: (_isLoadingData || _isSaving) ? null : _submitForm,
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF2E7D32),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
+            child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text(
+                  'Guardar',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+          ),
         ],
       ),
       body: _isLoadingData
@@ -346,31 +444,159 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Información General
+                    // Selector de tipo de trabajo
                     OptimizedCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Información General',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                          const Text(
+                            'Tipo de Trabajo',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1C1C1E),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTipoSelector(
+                                  'Propio',
+                                  Icons.home_rounded,
+                                  const Color(0xFF2E7D32),
+                                  _tipoTrabajoForm == TipoTrabajoForm.propio,
+                                  () {
+                                    setState(() {
+                                      _tipoTrabajoForm = TipoTrabajoForm.propio;
+                                      _esTercero = false;
+                                      _servicioContratado = false;
+                                      _cobrado = false;
+                                      _clienteSeleccionado = null;
+                                      _campoSeleccionado = null;
+                                      _camposFiltrados = List.from(_campos);
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildTipoSelector(
+                                  'A terceros',
+                                  Icons.person_outline_rounded,
+                                  const Color(0xFF2196F3),
+                                  _tipoTrabajoForm == TipoTrabajoForm.aTerceros,
+                                  () {
+                                    setState(() {
+                                      _tipoTrabajoForm = TipoTrabajoForm.aTerceros;
+                                      _esTercero = true;
+                                      _servicioContratado = false;
+                                      _cobrado = false;
+                                      _campoSeleccionado = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildTipoSelector(
+                                  'De terceros hacia mi',
+                                  Icons.arrow_downward_rounded,
+                                  const Color(0xFFFF9800),
+                                  _tipoTrabajoForm == TipoTrabajoForm.deTercerosHaciaMi,
+                                  () {
+                                    setState(() {
+                                      _tipoTrabajoForm = TipoTrabajoForm.deTercerosHaciaMi;
+                                      _esTercero = false;
+                                      _servicioContratado = true;
+                                      _cobrado = false;
+                                      _campoSeleccionado = null;
+                                      _camposFiltrados = List.from(_campos);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Campos condicionales según el tipo
+                    if (_tipoTrabajoForm != null) ...[
+                      _buildCamposCondicionales(),
+                    ] else ...[
+                      const OptimizedCard(
+                        padding: EdgeInsets.all(16),
+                        child: Center(
+                          child: Text(
+                            'Selecciona el tipo de trabajo para continuar',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildCamposCondicionales() {
+    switch (_tipoTrabajoForm) {
+      case TipoTrabajoForm.propio:
+        return _buildCamposPropio();
+      case TipoTrabajoForm.aTerceros:
+        return _buildCamposATerceros();
+      case TipoTrabajoForm.deTercerosHaciaMi:
+        return _buildCamposDeTercerosHaciaMi();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildCamposPropio() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Información General
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Información General',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
                           DropdownButtonFormField<int>(
                             decoration: const InputDecoration(
                               labelText: 'Tipo de Trabajo',
                               border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.work),
+                              prefixIcon: Icon(Icons.work_rounded, size: 20),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              isDense: true,
                             ),
+                            style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
                             value: _tipoTrabajoSeleccionado,
                             items: _tiposTrabajo.map((tipo) {
                               return DropdownMenuItem<int>(
@@ -390,143 +616,61 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           OptimizedTextField(
                             controller: _cultivoController,
                             label: 'Cultivo',
                             hint: 'Ej: Soja, Maíz, Trigo',
-                            prefixIcon: const Icon(Icons.eco),
+                            prefixIcon: const Icon(Icons.eco_rounded, size: 20),
                             validator: (value) => Validators.validateRequired(value, 'Cultivo'),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           OptimizedTextField(
                             controller: _descripcionController,
                             label: 'Descripción',
                             hint: 'Detalles adicionales del trabajo',
-                            prefixIcon: const Icon(Icons.description),
+                            prefixIcon: const Icon(Icons.description_rounded, size: 20),
                             maxLines: 3,
                           ),
                           // Campos específicos para cosecha (tipo de trabajo id = 1)
                           if (_tipoTrabajoSeleccionado == 1) ...[
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 16),
                             OptimizedTextField(
                               controller: _rindeCosechaController,
                               label: 'Rinde Cosecha (kg/ha)',
                               hint: 'Ingrese el rinde de la cosecha',
-                              prefixIcon: const Icon(Icons.trending_up),
+                              prefixIcon: const Icon(Icons.trending_up_rounded, size: 20),
                               keyboardType: TextInputType.number,
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 16),
                             OptimizedTextField(
                               controller: _humedadCosechaController,
                               label: 'Humedad Cosecha (%)',
                               hint: 'Ingrese el porcentaje de humedad',
-                              prefixIcon: const Icon(Icons.water_drop),
+                              prefixIcon: const Icon(Icons.water_drop_rounded, size: 20),
                               keyboardType: TextInputType.number,
                             ),
                           ],
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Configuración
+                    // Campo
                     OptimizedCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Configuración',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                          const Text(
+                            'Campo',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1C1C1E),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          SwitchListTile(
-                            title: const Text('Servicio contratado'),
-                            subtitle: const Text('Marcar si es un servicio contratado'),
-                            value: _servicioContratado,
-                            onChanged: (value) {
-                              setState(() {
-                                _servicioContratado = value;
-                                if (value) {
-                                  _esTercero = false;
-                                }
-                                if (!value) {
-                                  _clienteSeleccionado = null;
-                                  _clienteController.clear();
-                                  _campoSeleccionado = null;
-                                }
-                              });
-                              _aplicarFiltrosCampos();
-                            },
-                            contentPadding: EdgeInsets.zero,
                           ),
                           const SizedBox(height: 16),
-                          SwitchListTile(
-                            title: const Text('Trabajo a terceros'),
-                            subtitle: const Text('Marcar si el trabajo es para un cliente'),
-                            value: _esTercero,
-                            onChanged: (value) async {
-                              setState(() {
-                                _esTercero = value;
-                                if (value) {
-                                  _servicioContratado = false;
-                                }
-                                if (!value) {
-                                  _clienteSeleccionado = null;
-                                  _clienteController.clear();
-                                  _campoSeleccionado = null;
-                                }
-                              });
-                              await _aplicarFiltrosCampos();
-                            },
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Cliente y Campo
-                    OptimizedCard(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Cliente y Campo',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          if (_esTercero) ...[
-                            _buildExpandableSelector(
-                              title: 'Cliente',
-                              subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar cliente',
-                              isExpanded: _clientesExpanded,
-                              onToggle: () => setState(() => _clientesExpanded = !_clientesExpanded),
-                              onAddPressed: () => _showClienteForm(),
-                              addButtonText: 'Nuevo',
-                              child: _buildClientesSelector(),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          if (_servicioContratado) ...[
-                            _buildExpandableSelector(
-                              title: 'Prestador de servicio',
-                              subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar prestador',
-                              isExpanded: _clientesExpanded,
-                              onToggle: () => setState(() => _clientesExpanded = !_clientesExpanded),
-                              onAddPressed: () => _showClienteForm(),
-                              addButtonText: 'Nuevo',
-                              child: _buildClientesSelector(),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
                           _buildExpandableSelector(
                             title: 'Campo',
                             subtitle: _campoSeleccionado?.nombre ?? 'Seleccionar campo',
@@ -539,21 +683,23 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Recursos
+                    // Recursos (Máquinas y Personal)
                     OptimizedCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Recursos',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1C1C1E),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           _buildExpandableSelector(
                             title: 'Máquinas',
                             subtitle: '${_maquinasSeleccionadas.length} seleccionadas',
@@ -576,57 +722,76 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                     // Fechas
                     OptimizedCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Fechas',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1C1C1E),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           Row(
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Fecha de Inicio',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                    const Padding(
+                                      padding: EdgeInsets.only(bottom: 6),
+                                      child: Text(
+                                        'Fecha de Inicio',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF8E8E93),
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
                                     TextFormField(
                                       controller: _fechaInicioController,
                                       decoration: InputDecoration(
                                         hintText: 'Seleccione la fecha',
-                                        suffixIcon: const Icon(Icons.calendar_today),
+                                        hintStyle: const TextStyle(fontSize: 17, color: Color(0xFF8E8E93)),
+                                        suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
                                         ),
                                         filled: true,
-                                        fillColor: Theme.of(context).cardColor,
+                                        fillColor: Colors.white,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        isDense: true,
                                       ),
+                                      style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
                                       readOnly: true,
                                       onTap: () async {
                                         final date = await showDatePicker(
                                           context: context,
                                           initialDate: _fechaInicio ?? DateTime.now(),
                                           firstDate: DateTime(2020),
-                                          lastDate: DateTime.now(),
+                                          lastDate: DateTime.now().add(const Duration(days: 365)),
                                         );
                                         if (date != null) {
                                           setState(() {
                                             _fechaInicio = date;
-                                            _fechaInicioController.text = '${date.day}/${date.month}/${date.year}';
+                                            _fechaInicioController.text = DateFormat('dd/MM/yyyy').format(date);
                                           });
                                         }
                                       },
@@ -634,41 +799,58 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Fecha de Fin',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                    const Padding(
+                                      padding: EdgeInsets.only(bottom: 6),
+                                      child: Text(
+                                        'Fecha de Fin',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF8E8E93),
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
                                     TextFormField(
                                       controller: _fechaFinController,
                                       decoration: InputDecoration(
                                         hintText: 'Seleccione la fecha',
-                                        suffixIcon: const Icon(Icons.calendar_today),
+                                        hintStyle: const TextStyle(fontSize: 17, color: Color(0xFF8E8E93)),
+                                        suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
                                         ),
                                         filled: true,
-                                        fillColor: Theme.of(context).cardColor,
+                                        fillColor: Colors.white,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        isDense: true,
                                       ),
+                                      style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
                                       readOnly: true,
                                       onTap: () async {
                                         final date = await showDatePicker(
                                           context: context,
                                           initialDate: _fechaFin ?? DateTime.now(),
                                           firstDate: _fechaInicio ?? DateTime(2020),
-                                          lastDate: DateTime.now(),
+                                          lastDate: DateTime.now().add(const Duration(days: 365)),
                                         );
                                         if (date != null) {
                                           setState(() {
                                             _fechaFin = date;
-                                            _fechaFinController.text = '${date.day}/${date.month}/${date.year}';
+                                            _fechaFinController.text = DateFormat('dd/MM/yyyy').format(date);
                                           });
                                         }
                                       },
@@ -678,37 +860,18 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 24),
-                          TextFormField(
-                            controller: _horasTrabajadasController,
-                            decoration: InputDecoration(
-                              labelText: 'Horas Trabajadas',
-                              hintText: 'Total de horas trabajadas',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              prefixIcon: const Icon(Icons.access_time),
-                              filled: true,
-                              fillColor: Theme.of(context).cardColor,
-                            ),
-                            keyboardType: TextInputType.numberWithOptions(decimal: true),
-                            validator: (value) {
-                              if (value != null && value.isNotEmpty) {
-                                final horas = double.tryParse(value);
-                                if (horas == null || horas < 0) {
-                                  return 'Ingrese un número válido';
-                                }
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             decoration: const InputDecoration(
                               labelText: 'Estado',
                               border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.flag),
+                              prefixIcon: Icon(Icons.flag_rounded, size: 20),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              isDense: true,
                             ),
+                            style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
                             value: _estadoSeleccionado,
                             items: const [
                               DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
@@ -722,68 +885,735 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                               });
                             },
                           ),
-                          const SizedBox(height: 24),
-                          SwitchListTile(
-                            title: const Text('Cobrado'),
-                            subtitle: const Text('Marcar si ya se cobró o pagó el trabajo'),
-                            value: _cobrado,
-                            onChanged: (value) {
-                              setState(() {
-                                _cobrado = value;
-                              });
-                            },
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          if (_cobrado) ...[
-                            const SizedBox(height: 24),
-                            OptimizedTextField(
-                              controller: _montoCobradoController,
-                              label: 'Monto Total',
-                              hint: 'Ingrese el monto cobrado',
-                              prefixIcon: const Icon(Icons.attach_money),
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (_cobrado && (value == null || value.isEmpty)) {
-                                  return 'El monto es requerido si está cobrado';
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+      ],
+    );
+  }
 
-                    // Botones de acción
-                    Row(
+  Widget _buildCamposATerceros() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Información General
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Información General',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de Trabajo',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.work_rounded, size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                value: _tipoTrabajoSeleccionado,
+                items: _tiposTrabajo.map((tipo) {
+                  return DropdownMenuItem<int>(
+                    value: tipo.id,
+                    child: Text(tipo.trabajo),
+                  );
+                }).toList(),
+                onChanged: (int? newValue) {
+                  setState(() {
+                    _tipoTrabajoSeleccionado = newValue;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'El tipo de trabajo es requerido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              OptimizedTextField(
+                controller: _cultivoController,
+                label: 'Cultivo',
+                hint: 'Ej: Soja, Maíz, Trigo',
+                prefixIcon: const Icon(Icons.eco_rounded, size: 20),
+                validator: (value) => Validators.validateRequired(value, 'Cultivo'),
+              ),
+              const SizedBox(height: 16),
+              OptimizedTextField(
+                controller: _descripcionController,
+                label: 'Descripción',
+                hint: 'Detalles adicionales del trabajo',
+                prefixIcon: const Icon(Icons.description_rounded, size: 20),
+                maxLines: 3,
+              ),
+              if (_tipoTrabajoSeleccionado == 1) ...[
+                const SizedBox(height: 16),
+                OptimizedTextField(
+                  controller: _rindeCosechaController,
+                  label: 'Rinde Cosecha (kg/ha)',
+                  hint: 'Ingrese el rinde de la cosecha',
+                  prefixIcon: const Icon(Icons.trending_up_rounded, size: 20),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                OptimizedTextField(
+                  controller: _humedadCosechaController,
+                  label: 'Humedad Cosecha (%)',
+                  hint: 'Ingrese el porcentaje de humedad',
+                  prefixIcon: const Icon(Icons.water_drop_rounded, size: 20),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Cliente y Campo
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Cliente y Campo',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildExpandableSelector(
+                title: 'Cliente',
+                subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar cliente',
+                isExpanded: _clientesExpanded,
+                onToggle: () => setState(() => _clientesExpanded = !_clientesExpanded),
+                onAddPressed: () => _showClienteForm(),
+                addButtonText: 'Nuevo',
+                child: _buildClientesSelector(),
+              ),
+              const SizedBox(height: 16),
+              if (_clienteSeleccionado != null) ...[
+                _buildExpandableSelector(
+                  title: 'Campo',
+                  subtitle: _campoSeleccionado?.nombre ?? 'Seleccionar campo',
+                  isExpanded: _camposExpanded,
+                  onToggle: () => setState(() => _camposExpanded = !_camposExpanded),
+                  onAddPressed: () => _showCampoForm(),
+                  addButtonText: 'Nuevo',
+                  child: _buildCamposSelector(),
+                ),
+                if (_camposFiltrados.isEmpty && _clienteSeleccionado != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF9800).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFF9800).withOpacity(0.3)),
+                    ),
+                    child: Row(
                       children: [
+                        const Icon(Icons.info_outline_rounded, color: Color(0xFFFF9800), size: 20),
+                        const SizedBox(width: 8),
                         Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isSaving ? null : () => Navigator.pop(context),
-                            child: const Text('Cancelar'),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isSaving ? null : _submitForm,
-                            child: _isSaving 
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : Text(widget.trabajo == null ? 'Crear Trabajo' : 'Actualizar Trabajo'),
+                          child: Text(
+                            'Este cliente no tiene campos asignados. Puedes crear uno nuevo.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
-                  ],
+                  ),
+                ],
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: Color(0xFF8E8E93), size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Selecciona un cliente para ver sus campos',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Recursos
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Recursos',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
                 ),
               ),
-            ),
+              const SizedBox(height: 16),
+              _buildExpandableSelector(
+                title: 'Máquinas',
+                subtitle: '${_maquinasSeleccionadas.length} seleccionadas',
+                isExpanded: _maquinasExpanded,
+                onToggle: () => setState(() => _maquinasExpanded = !_maquinasExpanded),
+                onAddPressed: () => _showMaquinaForm(),
+                addButtonText: 'Nueva',
+                child: _buildMaquinasSelector(),
+              ),
+              const SizedBox(height: 16),
+              _buildExpandableSelector(
+                title: 'Personal/Operarios',
+                subtitle: '${_personalSeleccionado.length} seleccionados',
+                isExpanded: _personalExpanded,
+                onToggle: () => setState(() => _personalExpanded = !_personalExpanded),
+                onAddPressed: () => _showPersonalForm(),
+                addButtonText: 'Nuevo',
+                child: _buildPersonalSelector(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Fechas y Estado
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Fechas y Estado',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Fecha de Inicio',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _fechaInicioController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha',
+                            hintStyle: const TextStyle(fontSize: 17, color: Color(0xFF8E8E93)),
+                            suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            isDense: true,
+                          ),
+                          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                          readOnly: true,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _fechaInicio ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _fechaInicio = date;
+                                _fechaInicioController.text = DateFormat('dd/MM/yyyy').format(date);
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Fecha de Fin',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _fechaFinController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha',
+                            hintStyle: const TextStyle(fontSize: 17, color: Color(0xFF8E8E93)),
+                            suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            isDense: true,
+                          ),
+                          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                          readOnly: true,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _fechaFin ?? DateTime.now(),
+                              firstDate: _fechaInicio ?? DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _fechaFin = date;
+                                _fechaFinController.text = DateFormat('dd/MM/yyyy').format(date);
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Estado',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.flag_rounded, size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                value: _estadoSeleccionado,
+                items: const [
+                  DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
+                  DropdownMenuItem(value: 'En progreso', child: Text('En progreso')),
+                  DropdownMenuItem(value: 'Completado', child: Text('Completado')),
+                  DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _estadoSeleccionado = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Cobro
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Cobro',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Cobrado'),
+                subtitle: const Text('Marcar si ya se cobró el trabajo'),
+                value: _cobrado,
+                onChanged: (value) {
+                  setState(() {
+                    _cobrado = value;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
+              if (_cobrado) ...[
+                const SizedBox(height: 16),
+                OptimizedTextField(
+                  controller: _montoCobradoController,
+                  label: 'Monto Cobrado',
+                  hint: 'Ingrese el monto cobrado',
+                  prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (_cobrado && (value == null || value.isEmpty)) {
+                      return 'El monto es requerido si está cobrado';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCamposDeTercerosHaciaMi() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Información General
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Información General',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de Trabajo',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.work_rounded, size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                value: _tipoTrabajoSeleccionado,
+                items: _tiposTrabajo.map((tipo) {
+                  return DropdownMenuItem<int>(
+                    value: tipo.id,
+                    child: Text(tipo.trabajo),
+                  );
+                }).toList(),
+                onChanged: (int? newValue) {
+                  setState(() {
+                    _tipoTrabajoSeleccionado = newValue;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'El tipo de trabajo es requerido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              OptimizedTextField(
+                controller: _cultivoController,
+                label: 'Cultivo',
+                hint: 'Ej: Soja, Maíz, Trigo',
+                prefixIcon: const Icon(Icons.eco_rounded, size: 20),
+                validator: (value) => Validators.validateRequired(value, 'Cultivo'),
+              ),
+              const SizedBox(height: 16),
+              OptimizedTextField(
+                controller: _descripcionController,
+                label: 'Descripción',
+                hint: 'Detalles adicionales del trabajo',
+                prefixIcon: const Icon(Icons.description_rounded, size: 20),
+                maxLines: 3,
+              ),
+              if (_tipoTrabajoSeleccionado == 1) ...[
+                const SizedBox(height: 16),
+                OptimizedTextField(
+                  controller: _rindeCosechaController,
+                  label: 'Rinde Cosecha (kg/ha)',
+                  hint: 'Ingrese el rinde de la cosecha',
+                  prefixIcon: const Icon(Icons.trending_up_rounded, size: 20),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                OptimizedTextField(
+                  controller: _humedadCosechaController,
+                  label: 'Humedad Cosecha (%)',
+                  hint: 'Ingrese el porcentaje de humedad',
+                  prefixIcon: const Icon(Icons.water_drop_rounded, size: 20),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Prestador y Campo
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Prestador y Campo',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildExpandableSelector(
+                title: 'Prestador de Servicio',
+                subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar prestador',
+                isExpanded: _clientesExpanded,
+                onToggle: () => setState(() => _clientesExpanded = !_clientesExpanded),
+                onAddPressed: () => _showClienteForm(),
+                addButtonText: 'Nuevo',
+                child: _buildClientesSelector(),
+              ),
+              const SizedBox(height: 16),
+              _buildExpandableSelector(
+                title: 'Campo',
+                subtitle: _campoSeleccionado?.nombre ?? 'Seleccionar campo',
+                isExpanded: _camposExpanded,
+                onToggle: () => setState(() => _camposExpanded = !_camposExpanded),
+                onAddPressed: () => _showCampoForm(),
+                addButtonText: 'Nuevo',
+                child: _buildCamposSelector(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Fechas y Estado
+        OptimizedCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Fechas y Estado',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Fecha de Inicio',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _fechaInicioController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha',
+                            hintStyle: const TextStyle(fontSize: 17, color: Color(0xFF8E8E93)),
+                            suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            isDense: true,
+                          ),
+                          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                          readOnly: true,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _fechaInicio ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _fechaInicio = date;
+                                _fechaInicioController.text = DateFormat('dd/MM/yyyy').format(date);
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Fecha de Fin',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _fechaFinController,
+                          decoration: InputDecoration(
+                            hintText: 'Seleccione la fecha',
+                            hintStyle: const TextStyle(fontSize: 17, color: Color(0xFF8E8E93)),
+                            suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            isDense: true,
+                          ),
+                          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                          readOnly: true,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _fechaFin ?? DateTime.now(),
+                              firstDate: _fechaInicio ?? DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _fechaFin = date;
+                                _fechaFinController.text = DateFormat('dd/MM/yyyy').format(date);
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Estado',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.flag_rounded, size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                value: _estadoSeleccionado,
+                items: const [
+                  DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
+                  DropdownMenuItem(value: 'En progreso', child: Text('En progreso')),
+                  DropdownMenuItem(value: 'Completado', child: Text('Completado')),
+                  DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _estadoSeleccionado = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -914,13 +1744,23 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   }
 
   Widget _buildCamposSelector() {
+    // Determinar qué lista de campos usar según el tipo de trabajo
+    List<Campo> camposParaMostrar;
+    if (_tipoTrabajoForm == TipoTrabajoForm.aTerceros) {
+      // Para "A terceros", usar campos filtrados por cliente
+      camposParaMostrar = _camposFiltrados;
+    } else {
+      // Para otros tipos, usar todos los campos propios
+      camposParaMostrar = _campos;
+    }
+    
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: _camposFiltrados.isEmpty
+      child: camposParaMostrar.isEmpty
           ? const Text(
               'No hay campos disponibles',
               style: TextStyle(color: Colors.grey),
@@ -929,9 +1769,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               constraints: const BoxConstraints(maxHeight: 200),
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: _camposFiltrados.length,
+                itemCount: camposParaMostrar.length,
                 itemBuilder: (context, index) {
-                  final campo = _camposFiltrados[index];
+                  final campo = camposParaMostrar[index];
                   return ListTile(
                     title: Text(campo.nombre),
                     subtitle: Text('${campo.superficieHa.toStringAsFixed(2)} hectáreas'),
@@ -1220,12 +2060,46 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
       try {
         print('🔵 Iniciando construcción del request...');
+        
+        // Establecer valores por defecto según el tipo de trabajo
+        bool esTercero = false;
+        bool servicioContratado = false;
+        bool cobrado = false;
+        String? clienteNombre;
+        
+        switch (_tipoTrabajoForm) {
+          case TipoTrabajoForm.propio:
+            esTercero = false;
+            servicioContratado = false;
+            cobrado = false;
+            clienteNombre = null;
+            break;
+          case TipoTrabajoForm.aTerceros:
+            esTercero = true;
+            servicioContratado = false;
+            cobrado = _cobrado; // Usar el valor del toggle
+            clienteNombre = _clienteSeleccionado?.nombre;
+            break;
+          case TipoTrabajoForm.deTercerosHaciaMi:
+            esTercero = false;
+            servicioContratado = true;
+            cobrado = false;
+            clienteNombre = _clienteSeleccionado?.nombre;
+            break;
+          default:
+            // Si no hay tipo seleccionado, usar valores actuales (para edición)
+            esTercero = _esTercero;
+            servicioContratado = _servicioContratado;
+            cobrado = _cobrado;
+            clienteNombre = (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
+                ? _clienteSeleccionado!.nombre 
+                : null;
+        }
+        
         // Construir el request según el formato requerido por el endpoint
         final data = <String, dynamic>{
           'id_tipo_trabajo': _tipoTrabajoSeleccionado,
-          'cliente': (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
-              ? _clienteSeleccionado!.nombre 
-              : null,
+          'cliente': clienteNombre,
           'fecha_inicio': _fechaInicio?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'id_campo': _campoSeleccionado?.id,
           'cultivo': _cultivoController.text,
@@ -1233,10 +2107,16 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               ? _descripcionController.text 
               : null,
           'estado': _estadoSeleccionado ?? 'Pendiente',
-          'a_terceros': _esTercero,
-          'servicio_contratado': _servicioContratado,
+          'a_terceros': esTercero,
+          'servicio_contratado': servicioContratado,
+          'cobrado': cobrado,
           'fecha_fin': _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
         };
+        
+        // Agregar monto cobrado si está cobrado
+        if (cobrado && _montoCobradoController.text.isNotEmpty) {
+          data['monto_cobrado'] = double.tryParse(_montoCobradoController.text);
+        }
         
         // Agregar campos de cosecha: si es cosecha (id = 1) usar valores ingresados, sino enviar 0
         if (_tipoTrabajoSeleccionado == 1) {

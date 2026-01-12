@@ -43,14 +43,21 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
     
     if (widget.showAppBar ?? false) {
       return Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
         appBar: AppBar(
-          title: const Text('Campos'),
+          title: const Text(
+            'Campos',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1C1C1E),
+            ),
+          ),
           elevation: 0,
-          backgroundColor: const Color(0xFF2E7D32), // Verde agrícola
-          foregroundColor: Colors.white,
-          centerTitle: false,
+          backgroundColor: Colors.white,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+            color: const Color(0xFF1C1C1E),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -59,6 +66,7 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
           onPressed: () {
             _showCampoForm(context);
           },
+          backgroundColor: const Color(0xFF2E7D32),
           child: const Icon(Icons.add),
         ),
       );
@@ -70,21 +78,24 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 120,
+              expandedHeight: 56,
               floating: false,
               pinned: true,
               backgroundColor: Colors.white,
               elevation: 0,
+              toolbarHeight: 56,
               flexibleSpace: FlexibleSpaceBar(
                 title: const Text(
                   'Campos',
                   style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                     color: Color(0xFF1C1C1E),
+                    letterSpacing: -0.41,
                   ),
                 ),
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+                centerTitle: false,
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
               ),
             ),
           ];
@@ -308,16 +319,23 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
     
     if (widget.showAppBar ?? false) {
       return Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
         appBar: AppBar(
-          title: Text(widget.estadoFiltro != null 
-            ? 'Trabajos - ${widget.estadoFiltro}'
-            : 'Trabajos'),
+          title: Text(
+            widget.estadoFiltro != null 
+              ? 'Trabajos - ${widget.estadoFiltro}'
+              : 'Trabajos',
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1C1C1E),
+            ),
+          ),
           elevation: 0,
-          backgroundColor: const Color(0xFF2E7D32), // Verde agrícola
-          foregroundColor: Colors.white,
-          centerTitle: false,
+          backgroundColor: Colors.white,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+            color: const Color(0xFF1C1C1E),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -326,6 +344,7 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
           onPressed: () {
             _showTrabajoForm(context);
           },
+          backgroundColor: const Color(0xFF2E7D32),
           child: const Icon(Icons.add),
         ),
       );
@@ -337,7 +356,8 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 120,
+              expandedHeight: 56,
+              toolbarHeight: 56,
               floating: false,
               pinned: true,
               backgroundColor: Colors.white,
@@ -348,12 +368,14 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
                     ? 'Trabajos - ${widget.estadoFiltro}'
                     : 'Trabajos',
                   style: const TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                     color: Color(0xFF1C1C1E),
+                    letterSpacing: -0.41,
                   ),
                 ),
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+                centerTitle: false,
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
               ),
             ),
           ];

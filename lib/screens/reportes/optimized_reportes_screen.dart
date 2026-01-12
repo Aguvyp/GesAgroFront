@@ -44,14 +44,22 @@ class _OptimizedReportesScreenState extends ConsumerState<OptimizedReportesScree
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Reportes'),
+        title: const Text(
+          'Reportes',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
         elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        centerTitle: true,
+        backgroundColor: Colors.white,
+        centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.menu),
+          icon: const Icon(Icons.menu_rounded, size: 20),
+          color: const Color(0xFF1C1C1E),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
