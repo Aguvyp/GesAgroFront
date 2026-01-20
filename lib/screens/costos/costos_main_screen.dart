@@ -102,7 +102,7 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
   String _getAppBarTitle(int index) {
     switch (index) {
       case 0:
-        return 'Dashboard Costos';
+        return 'finanzas';
       case 1:
         return 'Movimientos';
       case 2:

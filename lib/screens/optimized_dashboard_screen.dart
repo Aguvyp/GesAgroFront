@@ -13,9 +13,7 @@ import '../core/logger/app_logger.dart';
 import 'trabajos/trabajo_detail_screen.dart';
 import 'forms/trabajo_form_screen.dart';
 import 'forms/mantenimiento_form_screen.dart';
-import 'forms/cliente_form_screen.dart';
 import 'optimized_screens.dart';
-import 'maquinas/maquinas_list_screen.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -276,30 +274,40 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       );
     }
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final appBarBackground = theme.appBarTheme.backgroundColor ?? colorScheme.surfaceVariant;
+    final titleBaseStyle = theme.appBarTheme.titleTextStyle ?? theme.textTheme.titleLarge ?? const TextStyle();
+    final appBarTitleStyle = titleBaseStyle.copyWith(
+      color: theme.appBarTheme.foregroundColor ?? colorScheme.primary,
+      letterSpacing: -0.41,
+    );
+
+    final background = theme.colorScheme.background;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: background,
       body: RefreshIndicator(
+        backgroundColor: background,
+        color: theme.colorScheme.primary,
         onRefresh: _refreshDashboard,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
+        child: Container(
+          color: background,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
             // AppBar moderno estilo iOS
             SliverAppBar(
               expandedHeight: 56,
               floating: false,
               pinned: true,
-              backgroundColor: Colors.white,
+              backgroundColor: appBarBackground,
+              foregroundColor: theme.appBarTheme.foregroundColor,
               elevation: 0,
               toolbarHeight: 56,
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
+                title: Text(
                   'Inicio',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1C1C1E),
-                    letterSpacing: -0.41,
-                  ),
+                  style: appBarTitleStyle,
                 ),
                 centerTitle: false,
                 titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
@@ -313,10 +321,6 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Accesos rápidos
-                    _buildAccesosRapidos(),
-                    const SizedBox(height: 24),
-
                     // Lista de trabajos por estado
                     _buildTrabajosSection(_trabajos),
                     const SizedBox(height: 24),
@@ -338,164 +342,10 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
-
-  /// Construye la sección de accesos rápidos
-  Widget _buildAccesosRapidos() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(AppConstants.primaryColor),
-                    const Color(AppConstants.primaryColor).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Accesos Rápidos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.5,
-          children: [
-            _buildAccesoRapidoCard(
-              'Trabajo',
-              Icons.work,
-              const Color(AppConstants.primaryColor),
-              () => _navegarAListaTrabajos(),
-            ),
-            _buildAccesoRapidoCard(
-              'Máquina',
-              Icons.build,
-              Colors.deepOrange,
-              () => _navegarAListaMaquinas(),
-            ),
-            _buildAccesoRapidoCard(
-              'Campo',
-              Icons.landscape,
-              Colors.green,
-              () => _navegarAListaCampos(),
-            ),
-            _buildAccesoRapidoCard(
-              'Cliente',
-              Icons.person,
-              Colors.blue,
-              () => _navegarAFormularioCliente(), // Por ahora al formulario, no hay lista de clientes
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// Construye una tarjeta de acceso rápido
-  Widget _buildAccesoRapidoCard(
-    String titulo,
-    IconData icono,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icono,
-                color: color,
-                size: 32,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              titulo,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Navega a la lista de trabajos
-  void _navegarAListaTrabajos() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const OptimizedTrabajosListScreen(showAppBar: true),
-      ),
-    );
-  }
-
-  /// Navega a la lista de máquinas
-  void _navegarAListaMaquinas() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const OptimizedMaquinasListScreen(showAppBar: true),
-      ),
-    );
-  }
-
-  /// Navega a la lista de campos
-  void _navegarAListaCampos() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const OptimizedCamposListScreen(showAppBar: true),
-      ),
-    );
-  }
 
   /// Navega a la lista de trabajos filtrada por estado
   void _navegarAListaTrabajosPorEstado(String estado) {
@@ -506,16 +356,6 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           showAppBar: true,
           estadoFiltro: estado,
         ),
-      ),
-    );
-  }
-
-  /// Navega al formulario de clientes (no hay lista de clientes aún)
-  void _navegarAFormularioCliente() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ClienteFormScreen(),
       ),
     );
   }

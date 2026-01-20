@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../utils/constants.dart';
 
 class AppTheme {
   // Colores base modernizados
@@ -9,6 +8,10 @@ class AppTheme {
   static const Color accentOrange = Color(0xFFFF9800); // Naranja
   static const Color backgroundLight = Color(0xFFF5F5F5); // Fondo muy claro estilo iOS
   static const Color surfaceLight = Color(0xFFFFFFFF); // Superficie blanca
+  static const Color appBarLightSurface = Color(0xFFF1F7F2); // Header suave
+  static const Color bottomNavLightSurface = Color(0xFFF7FBF7); // Barra inferior diferenciada
+  static const Color appBarDarkSurface = Color(0xFF121716); // Header oscuro
+  static const Color bottomNavDarkSurface = Color(0xFF151B15); // Barra inferior oscura
   static const Color textPrimary = Color(0xFF1C1C1E); // Texto principal iOS
   static const Color textSecondary = Color(0xFF8E8E93); // Texto secundario iOS
   
@@ -21,32 +24,46 @@ class AppTheme {
         secondary: secondaryGreen,
         tertiary: accentOrange,
         surface: surfaceLight,
+        surfaceVariant: appBarLightSurface,
         background: backgroundLight,
         error: const Color(0xFFFF3B30), // Rojo iOS
+        outline: const Color(0xFFB7C7BB),
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: textPrimary,
+        onSurfaceVariant: textPrimary,
         onBackground: textPrimary,
         onError: Colors.white,
         brightness: Brightness.light,
       ),
       
-      // AppBar estilo iOS (más delgado y limpio)
+      // AppBar estilo iOS (más delgado y con color suave)
       appBarTheme: AppBarTheme(
-        backgroundColor: surfaceLight,
-        foregroundColor: textPrimary,
+        backgroundColor: appBarLightSurface,
+        foregroundColor: primaryGreen,
+        surfaceTintColor: appBarLightSurface,
         elevation: 0,
         centerTitle: false,
+        titleSpacing: 20,
         titleTextStyle: const TextStyle(
-          fontSize: 34,
-          fontWeight: FontWeight.bold,
-          color: textPrimary,
-          letterSpacing: 0.37,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: primaryGreen,
+          letterSpacing: -0.41,
         ),
-        toolbarHeight: 44, // Más delgado estilo iOS
+        toolbarTextStyle: const TextStyle(
+          color: primaryGreen,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        toolbarHeight: 54,
         iconTheme: const IconThemeData(
           color: primaryGreen,
-          size: 28,
+          size: 26,
+        ),
+        shadowColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
         ),
       ),
       
@@ -153,29 +170,32 @@ class AppTheme {
         ),
       ),
       
-      // Bottom Navigation Bar estilo iOS
+      // Bottom Navigation Bar estilo iOS con superficie diferenciada
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: surfaceLight,
+        backgroundColor: bottomNavLightSurface,
         selectedItemColor: primaryGreen,
         unselectedItemColor: textSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.24,
+          color: primaryGreen,
         ),
         unselectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w400,
           letterSpacing: -0.24,
+          color: textSecondary,
         ),
         selectedIconTheme: const IconThemeData(
           size: 28,
         ),
-        unselectedIconTheme: IconThemeData(
+        unselectedIconTheme: const IconThemeData(
           size: 26,
-          color: textSecondary,
         ),
       ),
       
@@ -349,31 +369,45 @@ class AppTheme {
         secondary: secondaryGreen,
         tertiary: accentOrange,
         surface: darkSurface,
+        surfaceVariant: appBarDarkSurface,
         background: darkBackground,
         error: const Color(0xFFFF453A),
+        outline: const Color(0xFF2E7D32),
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: darkTextPrimary,
+        onSurfaceVariant: darkTextPrimary,
         onBackground: darkTextPrimary,
         onError: Colors.white,
         brightness: Brightness.dark,
       ),
       
       appBarTheme: AppBarTheme(
-        backgroundColor: darkSurface,
-        foregroundColor: darkTextPrimary,
+        backgroundColor: appBarDarkSurface,
+        foregroundColor: primaryGreen,
+        surfaceTintColor: appBarDarkSurface,
         elevation: 0,
         centerTitle: false,
+        titleSpacing: 20,
         titleTextStyle: const TextStyle(
-          fontSize: 34,
-          fontWeight: FontWeight.bold,
-          color: darkTextPrimary,
-          letterSpacing: 0.37,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: primaryGreen,
+          letterSpacing: -0.41,
         ),
-        toolbarHeight: 44,
+        toolbarTextStyle: const TextStyle(
+          color: primaryGreen,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        toolbarHeight: 54,
         iconTheme: const IconThemeData(
           color: primaryGreen,
-          size: 28,
+          size: 26,
+        ),
+        shadowColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
         ),
       ),
       
@@ -393,11 +427,31 @@ class AppTheme {
       ),
       
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: darkSurface,
+        backgroundColor: bottomNavDarkSurface,
         selectedItemColor: primaryGreen,
         unselectedItemColor: darkTextSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        selectedLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.24,
+          color: primaryGreen,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.24,
+          color: darkTextSecondary,
+        ),
+        selectedIconTheme: const IconThemeData(
+          size: 28,
+        ),
+        unselectedIconTheme: const IconThemeData(
+          size: 26,
+        ),
       ),
       
       // Replicar otros temas para dark mode

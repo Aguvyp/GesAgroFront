@@ -132,68 +132,93 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final navBackground =
+        theme.bottomNavigationBarTheme.backgroundColor ?? colorScheme.surfaceVariant;
+    final borderColor = theme.dividerColor.withOpacity(0.35);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: navBackground,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        border: Border(
+          top: BorderSide(color: borderColor, width: 0.8),
+        ),
         boxShadow: [
           BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 26,
+            spreadRadius: 2,
+            offset: const Offset(0, -4),
+          ),
+          BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            blurRadius: 14,
+            offset: const Offset(0, -1),
           ),
         ],
       ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF2E7D32),
-        unselectedItemColor: const Color(0xFF8E8E93),
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+              _pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: navBackground,
+          selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor ??
+              colorScheme.primary,
+          unselectedItemColor: theme.bottomNavigationBarTheme.unselectedItemColor ??
+              colorScheme.onSurface.withOpacity(0.6),
+          selectedLabelStyle: theme.bottomNavigationBarTheme.selectedLabelStyle,
+          unselectedLabelStyle:
+              theme.bottomNavigationBarTheme.unselectedLabelStyle,
+          selectedIconTheme: theme.bottomNavigationBarTheme.selectedIconTheme,
+          unselectedIconTheme:
+              theme.bottomNavigationBarTheme.unselectedIconTheme,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_rounded, size: 26),
+              activeIcon: Icon(Icons.home_rounded, size: 28),
+              label: 'Inicio',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.landscape_rounded, size: 26),
+              activeIcon: Icon(Icons.landscape_rounded, size: 28),
+              label: 'Campos',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.work_rounded, size: 26),
+              activeIcon: Icon(Icons.work_rounded, size: 28),
+              label: 'Trabajos',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_rounded, size: 26),
+              activeIcon: Icon(Icons.receipt_long_rounded, size: 28),
+              label: 'Finanzas',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.more_horiz_rounded, size: 26),
+              activeIcon: Icon(Icons.more_horiz_rounded, size: 28),
+              label: 'Más',
+            ),
+          ],
         ),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded, size: 26),
-            activeIcon: Icon(Icons.home_rounded, size: 28),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.landscape_rounded, size: 26),
-            activeIcon: Icon(Icons.landscape_rounded, size: 28),
-            label: 'Campos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work_rounded, size: 26),
-            activeIcon: Icon(Icons.work_rounded, size: 28),
-            label: 'Trabajos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_rounded, size: 26),
-            activeIcon: Icon(Icons.receipt_long_rounded, size: 28),
-            label: 'Finanzas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.more_horiz_rounded, size: 26),
-            activeIcon: Icon(Icons.more_horiz_rounded, size: 28),
-            label: 'Más',
-          ),
-        ],
       ),
     );
   }
