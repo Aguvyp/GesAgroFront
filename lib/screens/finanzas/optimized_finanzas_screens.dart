@@ -12,12 +12,12 @@ class OptimizedFinanzasMainScreen extends ConsumerStatefulWidget {
   const OptimizedFinanzasMainScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedFinanzasMainScreen> createState() => _OptimizedFinanzasMainScreenState();
+  ConsumerState<OptimizedFinanzasMainScreen> createState() =>
+      _OptimizedFinanzasMainScreenState();
 }
 
-class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasMainScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
+class _OptimizedFinanzasMainScreenState
+    extends ConsumerState<OptimizedFinanzasMainScreen> {
   @override
   void initState() {
     super.initState();
@@ -30,7 +30,6 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text(
@@ -43,11 +42,6 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
         ),
         elevation: 0,
         backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, size: 20),
-          color: const Color(0xFF1C1C1E),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
@@ -59,7 +53,6 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
           ),
         ],
       ),
-      drawer: _buildFinanzasDrawer(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -68,76 +61,15 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
             // Botones de acceso rápido
             _buildQuickAccessButtons(),
             const SizedBox(height: 24),
-            
+
             // Movimientos recientes
             _buildMovimientosSection(),
             const SizedBox(height: 24),
-            
+
             // Créditos con próximos vencimientos
             _buildCreditosSection(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFinanzasDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF7E57C2), Color(0xFFB39DDB)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: const [
-                Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 40),
-                SizedBox(height: 8),
-                Text('Finanzas', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                Text('Dashboard y gestión', style: TextStyle(color: Colors.white70)),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.dashboard_customize_rounded),
-            title: const Text('Dashboard'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.description),
-            title: const Text('Facturas'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const OptimizedFacturasScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.credit_card),
-            title: const Text('Créditos'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const OptimizedCreditosScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.swap_horiz),
-            title: const Text('Movimientos'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const OptimizedMovimientosScreen()));
-            },
-          ),
-        ],
       ),
     );
   }
@@ -152,7 +84,8 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
             Colors.blue,
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const OptimizedFacturasScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const OptimizedFacturasScreen()),
             ),
           ),
         ),
@@ -164,7 +97,8 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
             Colors.green,
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const OptimizedCreditosScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const OptimizedCreditosScreen()),
             ),
           ),
         ),
@@ -176,7 +110,8 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
             Colors.orange,
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const OptimizedMovimientosScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const OptimizedMovimientosScreen()),
             ),
           ),
         ),
@@ -184,7 +119,8 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
     );
   }
 
-  Widget _buildQuickAccessButton(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickAccessButton(
+      String title, IconData icon, Color color, VoidCallback onTap) {
     return Card(
       elevation: 2,
       child: InkWell(
@@ -213,7 +149,7 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
 
   Widget _buildMovimientosSection() {
     final movimientosState = ref.watch(movimientosProvider);
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -235,7 +171,8 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const OptimizedMovimientosScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const OptimizedMovimientosScreen()),
                   ),
                   child: const Text('Ver todos'),
                 ),
@@ -256,15 +193,15 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
     if (state is ErrorState) {
       return Center(child: Text('Error: ${state.message}'));
     }
-    
+
     final movimientos = (state as LoadedState<List<Movimiento>>).data;
     if (movimientos.isEmpty) {
       return const Center(child: Text('No hay movimientos'));
     }
-    
+
     // Mostrar solo los últimos 5 movimientos
     final recentMovimientos = movimientos.take(5).toList();
-    
+
     return Column(
       children: recentMovimientos.map((movimiento) {
         return ListTile(
@@ -302,7 +239,7 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
 
   Widget _buildCreditosSection() {
     final creditosState = ref.watch(creditosProvider);
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -324,7 +261,8 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const OptimizedCreditosScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const OptimizedCreditosScreen()),
                   ),
                   child: const Text('Ver todos'),
                 ),
@@ -345,22 +283,24 @@ class _OptimizedFinanzasMainScreenState extends ConsumerState<OptimizedFinanzasM
     if (state is ErrorState) {
       return Center(child: Text('Error: ${state.message}'));
     }
-    
+
     final creditos = (state as LoadedState<List<Credito>>).data;
     final creditosActivos = creditos.where((c) => c.estaActivo).toList();
-    
+
     if (creditosActivos.isEmpty) {
       return const Center(child: Text('No hay créditos activos'));
     }
-    
+
     // Mostrar solo los primeros 5 créditos activos
     final recentCreditos = creditosActivos.take(5).toList();
-    
+
     return Column(
       children: recentCreditos.map((credito) {
-        final fechaVencimiento = credito.fechaDesembolso.add(Duration(days: credito.plazoMeses * 30));
-        final diasRestantes = fechaVencimiento.difference(DateTime.now()).inDays;
-        
+        final fechaVencimiento = credito.fechaDesembolso
+            .add(Duration(days: credito.plazoMeses * 30));
+        final diasRestantes =
+            fechaVencimiento.difference(DateTime.now()).inDays;
+
         return ListTile(
           leading: Icon(
             Icons.credit_card,
@@ -397,10 +337,12 @@ class OptimizedFacturasScreen extends ConsumerStatefulWidget {
   const OptimizedFacturasScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedFacturasScreen> createState() => _OptimizedFacturasScreenState();
+  ConsumerState<OptimizedFacturasScreen> createState() =>
+      _OptimizedFacturasScreenState();
 }
 
-class _OptimizedFacturasScreenState extends ConsumerState<OptimizedFacturasScreen> {
+class _OptimizedFacturasScreenState
+    extends ConsumerState<OptimizedFacturasScreen> {
   @override
   void initState() {
     super.initState();
@@ -412,7 +354,7 @@ class _OptimizedFacturasScreenState extends ConsumerState<OptimizedFacturasScree
   @override
   Widget build(BuildContext context) {
     final facturasState = ref.watch(facturasProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Facturas'),
@@ -451,12 +393,12 @@ class _OptimizedFacturasScreenState extends ConsumerState<OptimizedFacturasScree
     if (state is ErrorState) {
       return Center(child: Text(state.message));
     }
-    
+
     final facturas = (state as LoadedState<List<dynamic>>).data;
     if (facturas.isEmpty) {
       return const Center(child: Text('No hay facturas'));
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: facturas.length,
@@ -471,7 +413,8 @@ class _OptimizedFacturasScreenState extends ConsumerState<OptimizedFacturasScree
             ),
             title: Text('Factura #${factura['numero'] ?? 'N/A'}'),
             subtitle: Text('Cliente: ${factura['cliente'] ?? 'N/A'}'),
-            trailing: Text('\$${factura['total']?.toStringAsFixed(2) ?? '0.00'}'),
+            trailing:
+                Text('\$${factura['total']?.toStringAsFixed(2) ?? '0.00'}'),
             onTap: () {
               // TODO: Navegar a detalles de la factura
             },
@@ -496,10 +439,12 @@ class OptimizedCreditosScreen extends ConsumerStatefulWidget {
   const OptimizedCreditosScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedCreditosScreen> createState() => _OptimizedCreditosScreenState();
+  ConsumerState<OptimizedCreditosScreen> createState() =>
+      _OptimizedCreditosScreenState();
 }
 
-class _OptimizedCreditosScreenState extends ConsumerState<OptimizedCreditosScreen> {
+class _OptimizedCreditosScreenState
+    extends ConsumerState<OptimizedCreditosScreen> {
   @override
   void initState() {
     super.initState();
@@ -511,7 +456,7 @@ class _OptimizedCreditosScreenState extends ConsumerState<OptimizedCreditosScree
   @override
   Widget build(BuildContext context) {
     final creditosState = ref.watch(creditosProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Créditos'),
@@ -550,12 +495,12 @@ class _OptimizedCreditosScreenState extends ConsumerState<OptimizedCreditosScree
     if (state is ErrorState) {
       return Center(child: Text(state.message));
     }
-    
+
     final creditos = (state as LoadedState<List<Credito>>).data;
     if (creditos.isEmpty) {
       return const Center(child: Text('No hay créditos'));
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: creditos.length,
@@ -569,7 +514,8 @@ class _OptimizedCreditosScreenState extends ConsumerState<OptimizedCreditosScree
               child: const Icon(Icons.credit_card, color: Colors.green),
             ),
             title: Text(credito.entidad),
-            subtitle: Text('Monto: \$${credito.montoOtorgado.toStringAsFixed(2)}'),
+            subtitle:
+                Text('Monto: \$${credito.montoOtorgado.toStringAsFixed(2)}'),
             trailing: Chip(
               label: Text(credito.estado),
               backgroundColor: _getEstadoColor(credito.estado),
@@ -613,10 +559,12 @@ class OptimizedMovimientosScreen extends ConsumerStatefulWidget {
   const OptimizedMovimientosScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedMovimientosScreen> createState() => _OptimizedMovimientosScreenState();
+  ConsumerState<OptimizedMovimientosScreen> createState() =>
+      _OptimizedMovimientosScreenState();
 }
 
-class _OptimizedMovimientosScreenState extends ConsumerState<OptimizedMovimientosScreen> {
+class _OptimizedMovimientosScreenState
+    extends ConsumerState<OptimizedMovimientosScreen> {
   @override
   void initState() {
     super.initState();
@@ -642,7 +590,8 @@ class _OptimizedMovimientosScreenState extends ConsumerState<OptimizedMovimiento
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(movimientosProvider.notifier).loadMovimientos(),
+            onPressed: () =>
+                ref.read(movimientosProvider.notifier).loadMovimientos(),
           ),
         ],
       ),
@@ -671,9 +620,11 @@ class _OptimizedMovimientosScreenState extends ConsumerState<OptimizedMovimiento
       itemBuilder: (_, i) {
         final m = items[i];
         return ListTile(
-          leading: Icon(m.monto >= 0 ? Icons.call_received : Icons.call_made, color: Theme.of(context).primaryColor),
+          leading: Icon(m.monto >= 0 ? Icons.call_received : Icons.call_made,
+              color: Theme.of(context).primaryColor),
           title: Text(m.descripcion ?? 'Movimiento'),
-          subtitle: Text('${m.tipoMovimiento}${m.fecha != null ? ' • ${m.fecha!.day}/${m.fecha!.month}/${m.fecha!.year}' : ''}'),
+          subtitle: Text(
+              '${m.tipoMovimiento}${m.fecha != null ? ' • ${m.fecha!.day}/${m.fecha!.month}/${m.fecha!.year}' : ''}'),
           trailing: Text(m.monto.toStringAsFixed(2)),
           onTap: () => _showForm(context, movimiento: m),
         );

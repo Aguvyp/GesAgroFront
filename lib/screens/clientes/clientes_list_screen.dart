@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/personal.dart';
+import '../../models/cliente.dart';
 import '../../providers/optimized_providers.dart';
 import '../../widgets/optimized_widgets.dart';
-import '../forms/forms_screens.dart';
-import 'personal_detail_screen.dart';
+import '../forms/cliente_form_screen.dart';
+import 'cliente_detail_screen.dart';
 
-class PersonalListScreen extends ConsumerStatefulWidget {
-  const PersonalListScreen({Key? key}) : super(key: key);
+class ClientesListScreen extends ConsumerStatefulWidget {
+  const ClientesListScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<PersonalListScreen> createState() => _PersonalListScreenState();
+  ConsumerState<ClientesListScreen> createState() => _ClientesListScreenState();
 }
 
-class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
+class _ClientesListScreenState extends ConsumerState<ClientesListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -21,7 +21,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(personalProvider.notifier).loadPersonal();
+      ref.read(clientesProvider.notifier).loadClientes();
     });
   }
 
@@ -33,13 +33,13 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final personalState = ref.watch(personalProvider);
+    final clientesState = ref.watch(clientesProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text(
-          'Personal',
+          'Clientes',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -53,7 +53,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
             icon: const Icon(Icons.refresh_rounded, size: 20),
             color: const Color(0xFF1C1C1E),
             onPressed: () {
-              ref.read(personalProvider.notifier).loadPersonal();
+              ref.read(clientesProvider.notifier).loadClientes();
             },
           ),
         ],
@@ -66,7 +66,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar personal...',
+                hintText: 'Buscar clientes...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -93,35 +93,35 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
             ),
           ),
 
-          // Lista de personal
+          // Lista de clientes
           Expanded(
-            child: _buildPersonalList(personalState),
+            child: _buildClientesList(clientesState),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddPersonalDialog(),
+        onPressed: () => _showAddClienteDialog(),
         backgroundColor: Theme.of(context).primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildPersonalList(BaseState personalState) {
-    if (personalState is LoadingState) {
+  Widget _buildClientesList(BaseState clientesState) {
+    if (clientesState is LoadingState) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Cargando personal...'),
+            Text('Cargando clientes...'),
           ],
         ),
       );
     }
 
-    if (personalState is ErrorState) {
+    if (clientesState is ErrorState) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -133,7 +133,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Error al cargar personal',
+              'Error al cargar clientes',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -142,14 +142,14 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              personalState.message,
+              clientesState.message,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.red[600]),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                ref.read(personalProvider.notifier).loadPersonal();
+                ref.read(clientesProvider.notifier).loadClientes();
               },
               child: const Text('Reintentar'),
             ),
@@ -158,15 +158,18 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
       );
     }
 
-    if (personalState is LoadedState<List<Personal>>) {
-      final personalList = personalState.data;
+    if (clientesState is LoadedState<List<Cliente>>) {
+      final clientesList = clientesState.data;
       final filteredList = _searchQuery.isEmpty
-          ? personalList
-          : personalList.where((personal) {
-              return personal.nombre.toLowerCase().contains(_searchQuery) ||
-                  personal.dni.toLowerCase().contains(_searchQuery) ||
-                  (personal.telefono?.toLowerCase().contains(_searchQuery) ??
-                      false);
+          ? clientesList
+          : clientesList.where((cliente) {
+              return (cliente.nombre?.toLowerCase().contains(_searchQuery) ??
+                      false) ||
+                  (cliente.email?.toLowerCase().contains(_searchQuery) ??
+                      false) ||
+                  (cliente.telefono?.toLowerCase().contains(_searchQuery) ??
+                      false) ||
+                  (cliente.cuit?.toLowerCase().contains(_searchQuery) ?? false);
             }).toList();
 
       if (filteredList.isEmpty) {
@@ -182,7 +185,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
               const SizedBox(height: 16),
               Text(
                 _searchQuery.isEmpty
-                    ? 'No hay personal registrado'
+                    ? 'No hay clientes registrados'
                     : 'No se encontraron resultados',
                 style: TextStyle(
                   fontSize: 18,
@@ -193,7 +196,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
               const SizedBox(height: 8),
               Text(
                 _searchQuery.isEmpty
-                    ? 'Toca el botón + para agregar personal'
+                    ? 'Toca el botón + para agregar un cliente'
                     : 'Intenta con otros términos de búsqueda',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[500]),
@@ -205,14 +208,14 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
 
       return RefreshIndicator(
         onRefresh: () async {
-          await ref.read(personalProvider.notifier).loadPersonal();
+          await ref.read(clientesProvider.notifier).loadClientes();
         },
         child: ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: filteredList.length,
           itemBuilder: (context, index) {
-            final personal = filteredList[index];
-            return _buildPersonalCard(personal);
+            final cliente = filteredList[index];
+            return _buildClienteCard(cliente);
           },
         ),
       );
@@ -223,14 +226,14 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
     );
   }
 
-  Widget _buildPersonalCard(Personal personal) {
+  Widget _buildClienteCard(Cliente cliente) {
     return OptimizedCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
           child: Text(
-            personal.initials,
+            cliente.initials,
             style: TextStyle(
               color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.bold,
@@ -238,7 +241,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
           ),
         ),
         title: Text(
-          personal.nombre,
+          cliente.nombre ?? 'Sin nombre',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -248,13 +251,16 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text('DNI: ${personal.dni}'),
-            if (personal.telefono != null && personal.telefono!.isNotEmpty)
-              Text('Tel: ${personal.telefono}'),
+            if (cliente.email != null && cliente.email!.isNotEmpty)
+              Text('Email: ${cliente.email}'),
+            if (cliente.telefono != null && cliente.telefono!.isNotEmpty)
+              Text('Tel: ${cliente.telefono}'),
+            if (cliente.cuit != null && cliente.cuit!.isNotEmpty)
+              Text('CUIT: ${cliente.cuit}'),
           ],
         ),
         trailing: PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value, personal),
+          onSelected: (value) => _handleMenuAction(value, cliente),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 'view',
@@ -288,71 +294,71 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
             ),
           ],
         ),
-        onTap: () => _navigateToDetail(personal),
+        onTap: () => _navigateToDetail(cliente),
       ),
     );
   }
 
-  void _handleMenuAction(String action, Personal personal) {
+  void _handleMenuAction(String action, Cliente cliente) {
     switch (action) {
       case 'view':
-        _navigateToDetail(personal);
+        _navigateToDetail(cliente);
         break;
       case 'edit':
-        _showEditPersonalDialog(personal);
+        _showEditClienteDialog(cliente);
         break;
       case 'delete':
-        _showDeleteConfirmation(personal);
+        _showDeleteConfirmation(cliente);
         break;
     }
   }
 
-  void _navigateToDetail(Personal personal) {
+  void _navigateToDetail(Cliente cliente) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PersonalDetailScreen(personal: personal),
+        builder: (context) => ClienteDetailScreen(cliente: cliente),
       ),
     );
   }
 
-  void _showAddPersonalDialog() {
+  void _showAddClienteDialog() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PersonalFormScreen(),
+        builder: (context) => const ClienteFormScreen(),
       ),
     ).then((_) {
-      ref.read(personalProvider.notifier).loadPersonal();
+      ref.read(clientesProvider.notifier).loadClientes();
       OptimizedSnackBar.showSuccess(
         context,
-        message: 'Personal agregado exitosamente',
+        message: 'Cliente agregado exitosamente',
       );
     });
   }
 
-  void _showEditPersonalDialog(Personal personal) {
+  void _showEditClienteDialog(Cliente cliente) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PersonalFormScreen(personal: personal),
+        builder: (context) => ClienteFormScreen(cliente: cliente),
       ),
     ).then((_) {
-      ref.read(personalProvider.notifier).loadPersonal();
+      ref.read(clientesProvider.notifier).loadClientes();
       OptimizedSnackBar.showSuccess(
         context,
-        message: 'Personal actualizado exitosamente',
+        message: 'Cliente actualizado exitosamente',
       );
     });
   }
 
-  void _showDeleteConfirmation(Personal personal) {
+  void _showDeleteConfirmation(Cliente cliente) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content:
-            Text('¿Estás seguro de que deseas eliminar a ${personal.nombre}?'),
+        content: Text(
+            '¿Estás seguro de que deseas eliminar a ${cliente.nombre ?? "este cliente"}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -361,7 +367,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _deletePersonal(personal);
+              await _deleteCliente(cliente);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Eliminar'),
@@ -371,17 +377,17 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
     );
   }
 
-  Future<void> _deletePersonal(Personal personal) async {
+  Future<void> _deleteCliente(Cliente cliente) async {
     try {
-      await ref.read(personalProvider.notifier).deletePersonal(personal.id!);
+      await ref.read(clientesProvider.notifier).deleteCliente(cliente.id!);
       OptimizedSnackBar.showSuccess(
         context,
-        message: 'Personal eliminado exitosamente',
+        message: 'Cliente eliminado exitosamente',
       );
     } catch (e) {
       OptimizedSnackBar.showError(
         context,
-        message: 'Error al eliminar personal: $e',
+        message: 'Error al eliminar cliente: $e',
       );
     }
   }

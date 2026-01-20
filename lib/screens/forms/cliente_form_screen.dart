@@ -1,40 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/cliente.dart';
-import '../../services/cliente_service.dart';
-import '../../widgets/custom_app_bar.dart';
+import '../../providers/optimized_providers.dart';
 import '../../widgets/optimized_widgets.dart';
-import '../../utils/validators.dart';
 
-/// Pantalla completa para crear/editar clientes
-class ClienteFormScreen extends StatefulWidget {
+class ClienteFormScreen extends ConsumerStatefulWidget {
   final Cliente? cliente;
-  
-  const ClienteFormScreen({Key? key, this.cliente}) : super(key: key);
+
+  const ClienteFormScreen({
+    Key? key,
+    this.cliente,
+  }) : super(key: key);
 
   @override
-  State<ClienteFormScreen> createState() => _ClienteFormScreenState();
+  ConsumerState<ClienteFormScreen> createState() => _ClienteFormScreenState();
 }
 
-class _ClienteFormScreenState extends State<ClienteFormScreen> {
+class _ClienteFormScreenState extends ConsumerState<ClienteFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nombreController;
-  late TextEditingController _emailController;
-  late TextEditingController _telefonoController;
-  late TextEditingController _direccionController;
-  late TextEditingController _cuitController;
-  late TextEditingController _observacionesController;
-  
-  bool _isSaving = false;
+  final _nombreController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _telefonoController = TextEditingController();
+  final _direccionController = TextEditingController();
+  final _cuitController = TextEditingController();
+  final _observacionesController = TextEditingController();
+
+  bool _isLoading = false;
+  bool get _isEditing => widget.cliente != null;
 
   @override
   void initState() {
     super.initState();
-    _nombreController = TextEditingController(text: widget.cliente?.nombre ?? '');
-    _emailController = TextEditingController(text: widget.cliente?.email ?? '');
-    _telefonoController = TextEditingController(text: widget.cliente?.telefono ?? '');
-    _direccionController = TextEditingController(text: widget.cliente?.direccion ?? '');
-    _cuitController = TextEditingController(text: widget.cliente?.cuit ?? '');
-    _observacionesController = TextEditingController(text: widget.cliente?.observaciones ?? '');
+    if (_isEditing) {
+      _nombreController.text = widget.cliente!.nombre ?? '';
+      _emailController.text = widget.cliente!.email ?? '';
+      _telefonoController.text = widget.cliente!.telefono ?? '';
+      _direccionController.text = widget.cliente!.direccion ?? '';
+      _cuitController.text = widget.cliente!.cuit ?? '';
+      _observacionesController.text = widget.cliente!.observaciones ?? '';
+    }
   }
 
   @override
@@ -54,160 +58,171 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text(
-          widget.cliente == null ? 'Nuevo Cliente' : 'Editar Cliente',
+          _isEditing ? 'Editar Cliente' : 'Nuevo Cliente',
           style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: Color(0xFF1C1C1E),
           ),
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
+        backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
           color: const Color(0xFF1C1C1E),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          TextButton(
-            onPressed: _isSaving ? null : _submitForm,
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF2E7D32),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-            ),
-            child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text(
-                  'Guardar',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Información básica
-              OptimizedCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Información Básica',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1C1C1E),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    OptimizedTextField(
-                      controller: _nombreController,
-                      label: 'Nombre completo',
-                      hint: 'Ingresa el nombre completo del cliente',
-                      prefixIcon: const Icon(Icons.person),
-                      validator: (value) => Validators.validateRequired(value, 'Nombre'),
-                    ),
-                    const SizedBox(height: 24),
-                    OptimizedTextField(
-                      controller: _emailController,
-                      label: 'Email',
-                      hint: 'Ingresa el email del cliente',
-                      prefixIcon: const Icon(Icons.email),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) => Validators.validateEmail(value),
-                    ),
-                    const SizedBox(height: 24),
-                    OptimizedTextField(
-                      controller: _telefonoController,
-                      label: 'Teléfono',
-                      hint: 'Ingresa el número de teléfono',
-                      prefixIcon: const Icon(Icons.phone),
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ],
-                ),
+              _buildSection(
+                'Información Básica',
+                Icons.person,
+                [
+                  _buildTextField(
+                    controller: _nombreController,
+                    label: 'Nombre',
+                    hint: 'Ingrese el nombre del cliente',
+                    icon: Icons.person_outline,
+                    maxLength: 255,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    hint: 'ejemplo@email.com',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final emailRegex =
+                            RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                        if (!emailRegex.hasMatch(value)) {
+                          return 'Ingrese un email válido';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Información de contacto
+              _buildSection(
+                'Contacto',
+                Icons.contact_phone,
+                [
+                  _buildTextField(
+                    controller: _telefonoController,
+                    label: 'Teléfono',
+                    hint: '3512345678',
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    maxLength: 50,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _direccionController,
+                    label: 'Dirección',
+                    hint: 'Calle, número, ciudad',
+                    icon: Icons.location_on_outlined,
+                    maxLines: 2,
+                    maxLength: 500,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Información fiscal
+              _buildSection(
+                'Información Fiscal',
+                Icons.account_balance,
+                [
+                  _buildTextField(
+                    controller: _cuitController,
+                    label: 'CUIT',
+                    hint: '20-12345678-9',
+                    icon: Icons.badge_outlined,
+                    keyboardType: TextInputType.number,
+                    maxLength: 20,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final cuitRegex = RegExp(r'^\d{2}-\d{8}-\d{1}$');
+                        if (!cuitRegex.hasMatch(value)) {
+                          return 'Formato: XX-XXXXXXXX-X';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Observaciones
+              _buildSection(
+                'Observaciones',
+                Icons.notes,
+                [
+                  _buildTextField(
+                    controller: _observacionesController,
+                    label: 'Observaciones',
+                    hint: 'Notas adicionales sobre el cliente',
+                    icon: Icons.note_outlined,
+                    maxLines: 4,
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
-
-              // Información adicional
-              OptimizedCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Información Adicional',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    OptimizedTextField(
-                      controller: _direccionController,
-                      label: 'Dirección',
-                      hint: 'Ingresa la dirección del cliente',
-                      prefixIcon: const Icon(Icons.location_on),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 24),
-                    OptimizedTextField(
-                      controller: _cuitController,
-                      label: 'CUIT',
-                      hint: 'Ingresa el CUIT del cliente',
-                      prefixIcon: const Icon(Icons.business),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 24),
-                    OptimizedTextField(
-                      controller: _observacionesController,
-                      label: 'Observaciones',
-                      hint: 'Ingresa observaciones adicionales',
-                      prefixIcon: const Icon(Icons.note),
-                      maxLines: 3,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
 
               // Botones de acción
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isSaving ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       child: const Text('Cancelar'),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isSaving ? null : _submitForm,
-                      child: _isSaving 
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(widget.cliente == null ? 'Crear Cliente' : 'Actualizar Cliente'),
+                      onPressed: _isLoading ? null : _saveCliente,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(_isEditing ? 'Actualizar' : 'Guardar'),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -215,52 +230,121 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
     );
   }
 
-  void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isSaving = true;
-      });
-
-      try {
-        final data = {
-          'nombre': _nombreController.text,
-          'email': _emailController.text.isNotEmpty ? _emailController.text : null,
-          'telefono': _telefonoController.text.isNotEmpty ? _telefonoController.text : null,
-          'direccion': _direccionController.text.isNotEmpty ? _direccionController.text : null,
-          'cuit': _cuitController.text.isNotEmpty ? _cuitController.text : null,
-          'observaciones': _observacionesController.text.isNotEmpty ? _observacionesController.text : null,
-        };
-
-        Cliente cliente;
-        if (widget.cliente == null) {
-          cliente = await ClienteService.createCliente(data);
-        } else {
-          cliente = await ClienteService.updateCliente(widget.cliente!.id!, data);
-        }
-
-        if (mounted) {
-          Navigator.pop(context, cliente);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(widget.cliente == null ? 'Cliente creado exitosamente' : 'Cliente actualizado exitosamente'),
+  Widget _buildSection(String title, IconData icon, List<Widget> children) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isSaving = false;
-          });
-        }
+            const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    int? maxLength,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        counterText: maxLength != null ? '' : null,
+      ),
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      maxLength: maxLength,
+      validator: validator,
+    );
+  }
+
+  Future<void> _saveCliente() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final clienteData = {
+        if (_nombreController.text.trim().isNotEmpty)
+          'nombre': _nombreController.text.trim(),
+        if (_emailController.text.trim().isNotEmpty)
+          'email': _emailController.text.trim(),
+        if (_telefonoController.text.trim().isNotEmpty)
+          'telefono': _telefonoController.text.trim(),
+        if (_direccionController.text.trim().isNotEmpty)
+          'direccion': _direccionController.text.trim(),
+        if (_cuitController.text.trim().isNotEmpty)
+          'cuit': _cuitController.text.trim(),
+        if (_observacionesController.text.trim().isNotEmpty)
+          'observaciones': _observacionesController.text.trim(),
+      };
+
+      if (_isEditing) {
+        await ref.read(clientesProvider.notifier).updateCliente(
+              widget.cliente!.id!,
+              clienteData,
+            );
+      } else {
+        await ref.read(clientesProvider.notifier).createCliente(clienteData);
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        OptimizedSnackBar.showSuccess(
+          context,
+          message: _isEditing
+              ? 'Cliente actualizado exitosamente'
+              : 'Cliente creado exitosamente',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        OptimizedSnackBar.showError(
+          context,
+          message: 'Error al guardar cliente: $e',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }

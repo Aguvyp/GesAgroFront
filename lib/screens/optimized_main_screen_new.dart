@@ -8,6 +8,7 @@ import 'reportes/optimized_reportes_screen.dart';
 import 'test_connection_screen.dart';
 import 'test_screen.dart';
 import 'personal/personal_list_screen.dart';
+import 'clientes/clientes_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
 import 'forms/forms_screens.dart';
 import 'costos/costos_main_screen.dart';
@@ -18,7 +19,8 @@ class OptimizedSplashScreen extends ConsumerStatefulWidget {
   const OptimizedSplashScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedSplashScreen> createState() => _OptimizedSplashScreenState();
+  ConsumerState<OptimizedSplashScreen> createState() =>
+      _OptimizedSplashScreenState();
 }
 
 class _OptimizedSplashScreenState extends ConsumerState<OptimizedSplashScreen> {
@@ -54,9 +56,9 @@ class _OptimizedSplashScreenState extends ConsumerState<OptimizedSplashScreen> {
             Text(
               'GesAgro',
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 20),
             const CircularProgressIndicator(
@@ -73,7 +75,8 @@ class OptimizedMainScreen extends ConsumerStatefulWidget {
   const OptimizedMainScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedMainScreen> createState() => _OptimizedMainScreenState();
+  ConsumerState<OptimizedMainScreen> createState() =>
+      _OptimizedMainScreenState();
 }
 
 class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
@@ -119,7 +122,8 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
       key: _scaffoldKey,
       body: PageView(
         controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Deshabilitar swipe manual
+        physics:
+            const NeverScrollableScrollPhysics(), // Deshabilitar swipe manual
         onPageChanged: (index) {
           setState(() {
             _currentIndex = index;
@@ -134,8 +138,8 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   Widget _buildBottomNavigationBar() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final navBackground =
-        theme.bottomNavigationBarTheme.backgroundColor ?? colorScheme.surfaceVariant;
+    final navBackground = theme.bottomNavigationBarTheme.backgroundColor ??
+        colorScheme.surfaceVariant;
     final borderColor = theme.dividerColor.withOpacity(0.35);
 
     return Container(
@@ -183,8 +187,9 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
           backgroundColor: navBackground,
           selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor ??
               colorScheme.primary,
-          unselectedItemColor: theme.bottomNavigationBarTheme.unselectedItemColor ??
-              colorScheme.onSurface.withOpacity(0.6),
+          unselectedItemColor:
+              theme.bottomNavigationBarTheme.unselectedItemColor ??
+                  colorScheme.onSurface.withOpacity(0.6),
           selectedLabelStyle: theme.bottomNavigationBarTheme.selectedLabelStyle,
           unselectedLabelStyle:
               theme.bottomNavigationBarTheme.unselectedLabelStyle,
@@ -232,7 +237,8 @@ class OptimizedCostosScreen extends ConsumerStatefulWidget {
   const OptimizedCostosScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedCostosScreen> createState() => _OptimizedCostosScreenState();
+  ConsumerState<OptimizedCostosScreen> createState() =>
+      _OptimizedCostosScreenState();
 }
 
 class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
@@ -247,7 +253,7 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
   @override
   Widget build(BuildContext context) {
     final costosState = ref.watch(costosProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Costos'),
@@ -282,7 +288,7 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
         child: CircularProgressIndicator(),
       );
     }
-    
+
     if (state is ErrorState) {
       return Center(
         child: Column(
@@ -302,10 +308,10 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
         ),
       );
     }
-    
+
     if (state is LoadedState<List<dynamic>>) {
       final costos = state.data;
-      
+
       if (costos.isEmpty) {
         return const Center(
           child: Column(
@@ -320,7 +326,7 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
           ),
         );
       }
-      
+
       return ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: costos.length,
@@ -330,14 +336,16 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                backgroundColor:
+                    Theme.of(context).primaryColor.withOpacity(0.1),
                 child: Icon(
                   Icons.receipt,
                   color: Theme.of(context).primaryColor,
                 ),
               ),
               title: Text(costo.descripcion ?? 'Sin descripción'),
-              subtitle: Text('Monto: \$${costo.monto?.toStringAsFixed(2) ?? '0.00'}'),
+              subtitle:
+                  Text('Monto: \$${costo.monto?.toStringAsFixed(2) ?? '0.00'}'),
               trailing: PopupMenuButton<String>(
                 onSelected: (value) => _handleCostoAction(value, costo),
                 itemBuilder: (context) => [
@@ -368,7 +376,7 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
         },
       );
     }
-    
+
     return const Center(child: Text('Estado no reconocido'));
   }
 
@@ -412,7 +420,8 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
                 if (mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Costo eliminado exitosamente')),
+                    const SnackBar(
+                        content: Text('Costo eliminado exitosamente')),
                   );
                 }
               } catch (e) {
@@ -436,7 +445,8 @@ class OptimizedMoreScreen extends ConsumerStatefulWidget {
   const OptimizedMoreScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedMoreScreen> createState() => _OptimizedMoreScreenState();
+  ConsumerState<OptimizedMoreScreen> createState() =>
+      _OptimizedMoreScreenState();
 }
 
 class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
@@ -471,7 +481,7 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
               titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
             ),
           ),
-          
+
           // Contenido
           SliverToBoxAdapter(
             child: Padding(
@@ -490,7 +500,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const OptimizedProfileScreen(),
+                              builder: (context) =>
+                                  const OptimizedProfileScreen(),
                             ),
                           );
                         },
@@ -498,7 +509,7 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Gestión
                   _buildSectionCard(
                     'Gestión',
@@ -510,7 +521,9 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const OptimizedMaquinasListScreen(showAppBar: true),
+                              builder: (context) =>
+                                  const OptimizedMaquinasListScreen(
+                                      showAppBar: true),
                             ),
                           );
                         },
@@ -528,13 +541,26 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                         },
                       ),
                       _buildMoreItem(
+                        'Clientes',
+                        Icons.contacts_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ClientesListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildMoreItem(
                         'Mantenimientos',
                         Icons.build_rounded,
                         () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const OptimizedMantenimientosScreen(),
+                              builder: (context) =>
+                                  const OptimizedMantenimientosScreen(),
                             ),
                           );
                         },
@@ -542,7 +568,7 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Reportes y Análisis
                   _buildSectionCard(
                     'Reportes',
@@ -554,7 +580,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const OptimizedReportesScreen(),
+                              builder: (context) =>
+                                  const OptimizedReportesScreen(),
                             ),
                           );
                         },
@@ -562,7 +589,7 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Configuración
                   _buildSectionCard(
                     'Configuración',
@@ -584,7 +611,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const TestConnectionScreen(),
+                              builder: (context) =>
+                                  const TestConnectionScreen(),
                             ),
                           );
                         },
@@ -604,7 +632,7 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Cerrar Sesión
                   _buildLogoutButton(context),
                   const SizedBox(height: 32),
@@ -780,10 +808,12 @@ class OptimizedProfileScreen extends ConsumerStatefulWidget {
   const OptimizedProfileScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedProfileScreen> createState() => _OptimizedProfileScreenState();
+  ConsumerState<OptimizedProfileScreen> createState() =>
+      _OptimizedProfileScreenState();
 }
 
-class _OptimizedProfileScreenState extends ConsumerState<OptimizedProfileScreen> {
+class _OptimizedProfileScreenState
+    extends ConsumerState<OptimizedProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -6,7 +6,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool showBackButton;
   final VoidCallback? onBackPressed;
-  final GlobalKey<ScaffoldState>? scaffoldKey;
 
   const CustomAppBar({
     Key? key,
@@ -14,7 +13,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.showBackButton = true,
     this.onBackPressed,
-    this.scaffoldKey,
   }) : super(key: key);
 
   @override
@@ -36,12 +34,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               icon: const Icon(Icons.arrow_back),
               onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
             )
-          : scaffoldKey != null
-              ? IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => scaffoldKey?.currentState?.openDrawer(),
-                )
-              : null,
+          : null,
       actions: actions,
     );
   }

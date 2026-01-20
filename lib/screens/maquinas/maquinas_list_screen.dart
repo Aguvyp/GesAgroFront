@@ -3,26 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/maquina.dart';
 import '../forms/maquina_form_screen.dart';
-import '../optimized_main_screen_new.dart';
-import '../optimized_screens.dart';
-import '../personal/personal_list_screen.dart';
-import '../finanzas/optimized_finanzas_screens.dart';
-import '../reportes/optimized_reportes_screen.dart';
-import '../mantenimientos/optimized_mantenimientos_screen.dart';
 import 'maquina_detail_screen.dart';
 
 /// Pantalla de lista de máquinas
 class OptimizedMaquinasListScreen extends ConsumerStatefulWidget {
   final bool? showAppBar;
-  
-  const OptimizedMaquinasListScreen({Key? key, this.showAppBar}) : super(key: key);
+
+  const OptimizedMaquinasListScreen({Key? key, this.showAppBar})
+      : super(key: key);
 
   @override
-  ConsumerState<OptimizedMaquinasListScreen> createState() => _OptimizedMaquinasListScreenState();
+  ConsumerState<OptimizedMaquinasListScreen> createState() =>
+      _OptimizedMaquinasListScreenState();
 }
 
-class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasListScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+class _OptimizedMaquinasListScreenState
+    extends ConsumerState<OptimizedMaquinasListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -43,9 +39,8 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
   @override
   Widget build(BuildContext context) {
     final maquinasState = ref.watch(maquinasProvider);
-    
+
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text(
@@ -59,16 +54,12 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
         backgroundColor: Colors.white,
         elevation: 0,
         leading: (widget.showAppBar ?? false)
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-              color: const Color(0xFF1C1C1E),
-              onPressed: () => Navigator.pop(context),
-            )
-          : IconButton(
-              icon: const Icon(Icons.menu_rounded, size: 20),
-              color: const Color(0xFF1C1C1E),
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+                color: const Color(0xFF1C1C1E),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
@@ -79,7 +70,6 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
           ),
         ],
       ),
-      drawer: _buildDrawer(context),
       body: Column(
         children: [
           // Barra de búsqueda
@@ -158,8 +148,8 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
             Text(
               state.message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -174,12 +164,13 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
       );
     }
 
-    final maquinas = state is LoadedState<List<Maquina>> ? state.data : <Maquina>[];
+    final maquinas =
+        state is LoadedState<List<Maquina>> ? state.data : <Maquina>[];
     final filteredMaquinas = maquinas.where((maquina) {
       if (_searchQuery.isEmpty) return true;
       return maquina.nombre.toLowerCase().contains(_searchQuery) ||
-             maquina.marca.toLowerCase().contains(_searchQuery) ||
-             maquina.modelo.toLowerCase().contains(_searchQuery);
+          maquina.marca.toLowerCase().contains(_searchQuery) ||
+          maquina.modelo.toLowerCase().contains(_searchQuery);
     }).toList();
 
     if (filteredMaquinas.isEmpty) {
@@ -194,17 +185,19 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
             ),
             const SizedBox(height: 16),
             Text(
-              _searchQuery.isNotEmpty ? 'No se encontraron máquinas' : 'No hay máquinas registradas',
+              _searchQuery.isNotEmpty
+                  ? 'No se encontraron máquinas'
+                  : 'No hay máquinas registradas',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              _searchQuery.isNotEmpty 
+              _searchQuery.isNotEmpty
                   ? 'Intenta con otros términos de búsqueda'
                   : 'Agrega tu primera máquina tocando el botón +',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -263,16 +256,18 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
                       children: [
                         Text(
                           maquina.nombre,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '${maquina.marca} ${maquina.modelo}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -296,7 +291,8 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
                           children: [
                             Icon(Icons.delete, size: 20, color: Colors.red),
                             SizedBox(width: 8),
-                            Text('Eliminar', style: TextStyle(color: Colors.red)),
+                            Text('Eliminar',
+                                style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
@@ -317,8 +313,8 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
                     Text(
                       'Año: ${maquina.ano}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                            color: Colors.grey[600],
+                          ),
                     ),
                   ],
                 ),
@@ -336,8 +332,8 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
                     Text(
                       'Ancho: ${maquina.anchoTrabajo}m',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                            color: Colors.grey[600],
+                          ),
                     ),
                   ],
                 ),
@@ -345,7 +341,8 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
               if (maquina.estado != null) ...[
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getEstadoColor(maquina.estado!).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -422,7 +419,8 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Máquina'),
-        content: Text('¿Estás seguro de que quieres eliminar la máquina "${maquina.nombre}"?'),
+        content: Text(
+            '¿Estás seguro de que quieres eliminar la máquina "${maquina.nombre}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -432,10 +430,13 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await ref.read(maquinasProvider.notifier).deleteMaquina(maquina.id!);
+                await ref
+                    .read(maquinasProvider.notifier)
+                    .deleteMaquina(maquina.id!);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Máquina eliminada exitosamente')),
+                    const SnackBar(
+                        content: Text('Máquina eliminada exitosamente')),
                   );
                 }
               } catch (e) {
@@ -449,267 +450,6 @@ class _OptimizedMaquinasListScreenState extends ConsumerState<OptimizedMaquinasL
             child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      width: 320, // Ancho más amplio para elementos flotantes
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          backgroundBlendMode: BlendMode.overlay,
-        ),
-        child: Column(
-          children: [
-            // Header con efecto blur y sombra
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).primaryColor.withOpacity(0.8),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const Icon(
-                      Icons.agriculture,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'GesAgro',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Text(
-                      'Sistema de Gestión Agrícola',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Contenido del drawer con padding y scroll
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildModernDrawerItem(
-                        context,
-                        'Inicio',
-                        Icons.home_rounded,
-                        0,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedMainScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Campos',
-                        Icons.landscape_rounded,
-                        1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedCamposListScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Trabajos',
-                        Icons.work_rounded,
-                        2,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedTrabajosListScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Máquinas',
-                        Icons.local_shipping_rounded,
-                        -1,
-                        isSelected: true,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Mantenimientos',
-                        Icons.build_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedMantenimientosScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Personal',
-                        Icons.people_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const PersonalListScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Separador simple
-                      Container(
-                        height: 1,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.grey[300],
-                      ),
-                      
-                      _buildModernDrawerItem(
-                        context,
-                        'Finanzas',
-                        Icons.account_balance_wallet_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedFinanzasMainScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildModernDrawerItem(
-                        context,
-                        'Reportes',
-                        Icons.assessment_rounded,
-                        -1,
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OptimizedReportesScreen()),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernDrawerItem(
-    BuildContext context,
-    String title,
-    IconData icon,
-    int index, {
-    VoidCallback? onTap,
-    bool isSelected = false,
-    bool isDestructive = false,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 1),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap ?? () {
-            Navigator.pop(context);
-            // Navegación por índice si es necesario
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: isSelected 
-                ? Theme.of(context).primaryColor.withOpacity(0.08)
-                : Colors.transparent,
-              border: Border(
-                left: BorderSide(
-                  color: isSelected 
-                    ? Theme.of(context).primaryColor
-                    : Colors.transparent,
-                  width: 3,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isDestructive 
-                    ? Colors.red.shade600
-                    : (isSelected 
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey.shade600),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: isDestructive 
-                        ? Colors.red.shade600
-                        : (isSelected 
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey.shade700),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 class Cliente {
   final int? id;
-  final String nombre;
+  final String? nombre;
   final String? email;
   final String? telefono;
   final String? direccion;
@@ -8,10 +8,13 @@ class Cliente {
   final String? observaciones;
   final DateTime? fechaCreacion;
   final DateTime? fechaModificacion;
+  final int? usuarioId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Cliente({
     this.id,
-    required this.nombre,
+    this.nombre,
     this.email,
     this.telefono,
     this.direccion,
@@ -19,37 +22,55 @@ class Cliente {
     this.observaciones,
     this.fechaCreacion,
     this.fechaModificacion,
+    this.usuarioId,
+    this.createdAt,
+    this.updatedAt,
   });
+
+  /// Iniciales del nombre del cliente para el avatar
+  String get initials {
+    if (nombre == null || nombre!.isEmpty) return '?';
+    final parts = nombre!.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return nombre![0].toUpperCase();
+  }
 
   factory Cliente.fromJson(Map<String, dynamic> json) {
     return Cliente(
-      id: json['id'],
-      nombre: json['nombre'] ?? '',
-      email: json['email'],
-      telefono: json['telefono'],
-      direccion: json['direccion'],
-      cuit: json['cuit'],
-      observaciones: json['observaciones'],
-      fechaCreacion: json['fecha_creacion'] != null 
-          ? DateTime.parse(json['fecha_creacion'])
+      id: json['id'] as int?,
+      nombre: json['nombre'] as String?,
+      email: json['email'] as String?,
+      telefono: json['telefono'] as String?,
+      direccion: json['direccion'] as String?,
+      cuit: json['cuit'] as String?,
+      observaciones: json['observaciones'] as String?,
+      fechaCreacion: json['fecha_creacion'] != null
+          ? DateTime.parse(json['fecha_creacion'] as String)
           : null,
-      fechaModificacion: json['fecha_modificacion'] != null 
-          ? DateTime.parse(json['fecha_modificacion'])
+      fechaModificacion: json['fecha_modificacion'] != null
+          ? DateTime.parse(json['fecha_modificacion'] as String)
+          : null,
+      usuarioId: json['usuario_id'] as int?,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
           : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'nombre': nombre,
-      'email': email,
-      'telefono': telefono,
-      'direccion': direccion,
-      'cuit': cuit,
-      'observaciones': observaciones,
-      'fecha_creacion': fechaCreacion?.toIso8601String(),
-      'fecha_modificacion': fechaModificacion?.toIso8601String(),
+      if (id != null) 'id': id,
+      if (nombre != null) 'nombre': nombre,
+      if (email != null) 'email': email,
+      if (telefono != null) 'telefono': telefono,
+      if (direccion != null) 'direccion': direccion,
+      if (cuit != null) 'cuit': cuit,
+      if (observaciones != null) 'observaciones': observaciones,
     };
   }
 
