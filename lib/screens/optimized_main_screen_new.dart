@@ -138,92 +138,188 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   Widget _buildBottomNavigationBar() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final navBackground = theme.bottomNavigationBarTheme.backgroundColor ??
-        colorScheme.surfaceVariant;
-    final borderColor = theme.dividerColor.withOpacity(0.35);
+    final navBackground = Colors.white;
+    const activeColor = Color(0xFF00E676);
+    const inactiveColor = Color(0xFF8E8E93);
+
+    // Determinar si estamos en el Dashboard o en pantallas de entidades
+    final isDashboard = _currentIndex == 0;
+
+    List<BottomNavigationBarItem> items;
+    if (isDashboard) {
+      items = [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined, size: 26),
+          activeIcon: Icon(Icons.home_rounded, size: 28),
+          label: 'Inicio',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.landscape_outlined, size: 26),
+          activeIcon: Icon(Icons.landscape_rounded, size: 28),
+          label: 'Campos',
+        ),
+        BottomNavigationBarItem(
+          icon: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: activeColor,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
+          ),
+          label: '',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.account_balance_outlined, size: 26),
+          activeIcon: Icon(Icons.account_balance_rounded, size: 28),
+          label: 'Finanzas',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.more_horiz_outlined, size: 26),
+          activeIcon: Icon(Icons.more_horiz_rounded, size: 28),
+          label: 'Más',
+        ),
+      ];
+    } else {
+      items = [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined, size: 26),
+          activeIcon: Icon(Icons.home_rounded, size: 28),
+          label: 'Inicio',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.assignment_outlined, size: 26),
+          activeIcon: Icon(Icons.assignment_rounded, size: 28),
+          label: 'Trabajos',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.engineering_outlined, size: 26),
+          activeIcon: Icon(Icons.engineering_rounded, size: 28),
+          label: 'Maquinaria',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.account_balance_outlined, size: 26),
+          activeIcon: Icon(Icons.account_balance_rounded, size: 28),
+          label: 'Finanzas',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline_rounded, size: 26),
+          activeIcon: Icon(Icons.person_rounded, size: 28),
+          label: 'Perfil',
+        ),
+      ];
+    }
 
     return Container(
       decoration: BoxDecoration(
         color: navBackground,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        border: Border(
-          top: BorderSide(color: borderColor, width: 0.8),
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 26,
-            spreadRadius: 2,
-            offset: const Offset(0, -4),
-          ),
-          BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 14,
-            offset: const Offset(0, -1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-              _pageController.animateToPage(
-                index,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: navBackground,
-          selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor ??
-              colorScheme.primary,
-          unselectedItemColor:
-              theme.bottomNavigationBarTheme.unselectedItemColor ??
-                  colorScheme.onSurface.withOpacity(0.6),
-          selectedLabelStyle: theme.bottomNavigationBarTheme.selectedLabelStyle,
-          unselectedLabelStyle:
-              theme.bottomNavigationBarTheme.unselectedLabelStyle,
-          selectedIconTheme: theme.bottomNavigationBarTheme.selectedIconTheme,
-          unselectedIconTheme:
-              theme.bottomNavigationBarTheme.unselectedIconTheme,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded, size: 26),
-              activeIcon: Icon(Icons.home_rounded, size: 28),
-              label: 'Inicio',
+      child: BottomNavigationBar(
+        currentIndex: isDashboard
+            ? _currentIndex
+            : (_currentIndex > 4 ? 4 : _currentIndex),
+        onTap: (index) {
+          if (isDashboard && index == 2) {
+            // Acción para el botón + del Dashboard
+            _showQuickActions();
+            return;
+          }
+          setState(() {
+            _currentIndex = index;
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: navBackground,
+        selectedItemColor: activeColor,
+        unselectedItemColor: inactiveColor,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        selectedLabelStyle:
+            const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        unselectedLabelStyle:
+            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        items: items,
+      ),
+    );
+  }
+
+  void _showQuickActions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Acciones Rápidas',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.landscape_rounded, size: 26),
-              activeIcon: Icon(Icons.landscape_rounded, size: 28),
-              label: 'Campos',
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildQuickAction('Nuevo Trabajo', Icons.work_outline, () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const TrabajoFormScreen()));
+                }),
+                _buildQuickAction('Nuevo Campo', Icons.landscape_outlined, () {
+                  Navigator.pop(context);
+                  // Navegar a form campo
+                }),
+                _buildQuickAction('Nuevo Costo', Icons.add_card_outlined, () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CostoFormScreen()));
+                }),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.work_rounded, size: 26),
-              activeIcon: Icon(Icons.work_rounded, size: 28),
-              label: 'Trabajos',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_rounded, size: 26),
-              activeIcon: Icon(Icons.receipt_long_rounded, size: 28),
-              label: 'Finanzas',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.more_horiz_rounded, size: 26),
-              activeIcon: Icon(Icons.more_horiz_rounded, size: 28),
-              label: 'Más',
-            ),
+            const SizedBox(height: 16),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(String label, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00E676).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: const Color(0xFF00E676), size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }

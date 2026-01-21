@@ -1,6 +1,6 @@
 class AppConstants {
   // API Configuration
-  static const String apiBaseUrl = 'https://a380fb8c3fd5.ngrok-free.app';
+  static const String apiBaseUrl = 'https://271ea998f9a8.ngrok-free.app';
   static const int apiTimeoutSeconds = 30;
   static const Map<String, String> headers = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -19,8 +19,10 @@ class AppConstants {
   static const int errorColor = 0xFFF44336; // Rojo
   static const int successColor = 0xFF4CAF50; // Verde
   static const int infoColor = 0xFF2196F3; // Azul información
-  static const int cancelColor = 0xFFE57373; // Rojo clarito para botones de cancelar
-  static const int deleteColor = 0xFFE57373; // Rojo clarito para botones de eliminar
+  static const int cancelColor =
+      0xFFE57373; // Rojo clarito para botones de cancelar
+  static const int deleteColor =
+      0xFFE57373; // Rojo clarito para botones de eliminar
 
   // User Roles
   static const String roleAdministrador = 'Administrador';
@@ -40,7 +42,7 @@ class AppConstants {
   static const String personalEndpoint = '/api/personal/';
   static const String trabajosEndpoint = '/api/trabajos/';
   static const String costosEndpoint = '/api/costo/';
-  
+
   // Nuevos endpoints v2.0
   static const String clientesEndpoint = '/api/clientes/';
   static const String facturasEndpoint = '/api/facturas/';
@@ -53,9 +55,12 @@ class AppConstants {
   static const String usuariosEndpoint = '/api/usuarios/';
 
   // Mobile endpoints
-  static const String trabajosRecientesEndpoint = '/api/mobile/trabajos/recientes/';
-  static const String mantenimientosProximosEndpoint = '/api/mobile/mantenimientos/proximos/';
-  static const String insumosBajoStockEndpoint = '/api/mobile/insumos/bajo-stock/';
+  static const String trabajosRecientesEndpoint =
+      '/api/mobile/trabajos/recientes/';
+  static const String mantenimientosProximosEndpoint =
+      '/api/mobile/mantenimientos/proximos/';
+  static const String insumosBajoStockEndpoint =
+      '/api/mobile/insumos/bajo-stock/';
   static const String finanzasResumenEndpoint = '/api/mobile/finanzas/resumen/';
   static const String resumenMobileEndpoint = '/api/mobile/resumen/';
   static const String estadisticasMobileEndpoint = '/api/mobile/estadisticas/';

@@ -10,14 +10,17 @@ import 'forms/forms_screens.dart';
 
 class OptimizedCamposListScreen extends ConsumerStatefulWidget {
   final bool? showAppBar;
-  
-  const OptimizedCamposListScreen({Key? key, this.showAppBar}) : super(key: key);
+
+  const OptimizedCamposListScreen({Key? key, this.showAppBar})
+      : super(key: key);
 
   @override
-  ConsumerState<OptimizedCamposListScreen> createState() => _OptimizedCamposListScreenState();
+  ConsumerState<OptimizedCamposListScreen> createState() =>
+      _OptimizedCamposListScreenState();
 }
 
-class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListScreen> {
+class _OptimizedCamposListScreenState
+    extends ConsumerState<OptimizedCamposListScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -38,9 +41,9 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
   @override
   Widget build(BuildContext context) {
     final camposState = ref.watch(camposProvider);
-    
+
     final body = _buildCamposList(camposState);
-    
+
     if (widget.showAppBar ?? false) {
       return Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
@@ -71,7 +74,7 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
         ),
       );
     }
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: NestedScrollView(
@@ -116,7 +119,7 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
     if (state is LoadingState) {
       return const OptimizedShimmerList();
     }
-    
+
     if (state is ErrorState) {
       return OptimizedErrorWidget(
         message: state.message,
@@ -125,10 +128,10 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
         },
       );
     }
-    
+
     if (state is LoadedState<List<dynamic>>) {
       final campos = state.data;
-      
+
       if (campos.isEmpty) {
         return const OptimizedEmptyWidget(
           message: 'No hay campos registrados',
@@ -136,14 +139,16 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
           icon: Icons.landscape_outlined,
         );
       }
-      
+
       final filteredCampos = _searchQuery.isEmpty
           ? campos
           : campos.where((campo) {
-              return campo.nombre.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                     campo.superficieHa.toString().contains(_searchQuery);
+              return campo.nombre
+                      .toLowerCase()
+                      .contains(_searchQuery.toLowerCase()) ||
+                  campo.superficieHa.toString().contains(_searchQuery);
             }).toList();
-      
+
       return ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: filteredCampos.length,
@@ -154,14 +159,16 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
             margin: EdgeInsets.zero,
             borderRadius: BorderRadius.circular(16),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: const Color(0xFF2E7D32).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.landscape_rounded, color: Color(0xFF2E7D32), size: 24),
+                child: const Icon(Icons.landscape_rounded,
+                    color: Color(0xFF2E7D32), size: 24),
               ),
               title: Text(
                 campo.nombre,
@@ -192,7 +199,8 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
                 );
               },
               trailing: PopupMenuButton(
-                icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF8E8E93)),
+                icon: const Icon(Icons.more_vert_rounded,
+                    color: Color(0xFF8E8E93)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -201,7 +209,8 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
                     value: 'edit',
                     child: const Row(
                       children: [
-                        Icon(Icons.edit_rounded, size: 20, color: Color(0xFF1C1C1E)),
+                        Icon(Icons.edit_rounded,
+                            size: 20, color: Color(0xFF1C1C1E)),
                         SizedBox(width: 12),
                         Text('Editar', style: TextStyle(fontSize: 17)),
                       ],
@@ -211,9 +220,12 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
                     value: 'delete',
                     child: const Row(
                       children: [
-                        Icon(Icons.delete_rounded, size: 20, color: Color(0xFFFF3B30)),
+                        Icon(Icons.delete_rounded,
+                            size: 20, color: Color(0xFFFF3B30)),
                         SizedBox(width: 12),
-                        Text('Eliminar', style: TextStyle(fontSize: 17, color: Color(0xFFFF3B30))),
+                        Text('Eliminar',
+                            style: TextStyle(
+                                fontSize: 17, color: Color(0xFFFF3B30))),
                       ],
                     ),
                   ),
@@ -231,7 +243,7 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
         },
       );
     }
-    
+
     return const OptimizedEmptyWidget(
       message: 'Estado desconocido',
       icon: Icons.help_outline,
@@ -252,7 +264,8 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: const Text('¿Estás seguro de que quieres eliminar este campo?'),
+        content:
+            const Text('¿Estás seguro de que quieres eliminar este campo?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -282,7 +295,7 @@ class _OptimizedCamposListScreenState extends ConsumerState<OptimizedCamposListS
 class OptimizedTrabajosListScreen extends ConsumerStatefulWidget {
   final String? estadoFiltro; // Filtro opcional por estado
   final bool? showAppBar; // Si debe mostrar AppBar
-  
+
   const OptimizedTrabajosListScreen({
     Key? key,
     this.estadoFiltro,
@@ -290,10 +303,12 @@ class OptimizedTrabajosListScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<OptimizedTrabajosListScreen> createState() => _OptimizedTrabajosListScreenState();
+  ConsumerState<OptimizedTrabajosListScreen> createState() =>
+      _OptimizedTrabajosListScreenState();
 }
 
-class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosListScreen> {
+class _OptimizedTrabajosListScreenState
+    extends ConsumerState<OptimizedTrabajosListScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -314,20 +329,20 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
   @override
   Widget build(BuildContext context) {
     final trabajosState = ref.watch(trabajosProvider);
-    
+
     final body = _buildTrabajosList(trabajosState);
-    
+
     if (widget.showAppBar ?? false) {
       return Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
         appBar: AppBar(
           title: Text(
-            widget.estadoFiltro != null 
-              ? 'Trabajos - ${widget.estadoFiltro}'
-              : 'Trabajos',
+            widget.estadoFiltro != null
+                ? 'Trabajos - ${widget.estadoFiltro}'
+                : 'Trabajos Agrícolas',
             style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
               color: Color(0xFF1C1C1E),
             ),
           ),
@@ -344,12 +359,12 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
           onPressed: () {
             _showTrabajoForm(context);
           },
-          backgroundColor: const Color(0xFF2E7D32),
-          child: const Icon(Icons.add),
+          backgroundColor: const Color(0xFF00E676),
+          child: const Icon(Icons.add, size: 28),
         ),
       );
     }
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: NestedScrollView(
@@ -364,12 +379,12 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
               elevation: 0,
               flexibleSpace: FlexibleSpaceBar(
                 title: Text(
-                  widget.estadoFiltro != null 
-                    ? 'Trabajos - ${widget.estadoFiltro}'
-                    : 'Trabajos',
+                  widget.estadoFiltro != null
+                      ? 'Trabajos - ${widget.estadoFiltro}'
+                      : 'Trabajos Agrícolas',
                   style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
                     color: Color(0xFF1C1C1E),
                     letterSpacing: -0.41,
                   ),
@@ -386,8 +401,8 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
         onPressed: () {
           _showTrabajoForm(context);
         },
-        backgroundColor: const Color(0xFF2E7D32),
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF00E676),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
@@ -396,7 +411,7 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
     if (state is LoadingState) {
       return const OptimizedShimmerList();
     }
-    
+
     if (state is ErrorState) {
       return OptimizedErrorWidget(
         message: state.message,
@@ -405,10 +420,10 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
         },
       );
     }
-    
+
     if (state is LoadedState<List<dynamic>>) {
       final trabajos = state.data;
-      
+
       if (trabajos.isEmpty) {
         return const OptimizedEmptyWidget(
           message: 'No hay trabajos registrados',
@@ -416,132 +431,257 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
           icon: Icons.work_outline,
         );
       }
-      
+
       var filteredTrabajos = trabajos;
-      
+
       // Aplicar filtro por estado si existe
       if (widget.estadoFiltro != null) {
         filteredTrabajos = filteredTrabajos.where((trabajo) {
           final estado = (trabajo.estado ?? '').toLowerCase();
           final filtro = widget.estadoFiltro!.toLowerCase();
-          
+
           if (filtro == 'pendientes' || filtro == 'pendiente') {
             return estado == 'pendiente' || estado == 'programado';
           } else if (filtro == 'en curso' || filtro == 'en_curso') {
-            return estado == 'en curso' || estado == 'en ejecución' || estado == 'ejecutando' || estado == 'en_progreso';
+            return estado == 'en curso' ||
+                estado == 'en ejecución' ||
+                estado == 'ejecutando' ||
+                estado == 'en_progreso';
           } else if (filtro == 'completados' || filtro == 'completado') {
             return estado == 'completado' || estado == 'finalizado';
           }
           return estado == filtro;
         }).toList();
       }
-      
+
       // Aplicar filtro de búsqueda
       if (_searchQuery.isNotEmpty) {
         filteredTrabajos = filteredTrabajos.where((trabajo) {
-          return trabajo.tipo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                 trabajo.cultivo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                 (trabajo.estado ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+          return trabajo.tipo
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase()) ||
+              trabajo.cultivo
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase()) ||
+              (trabajo.estado ?? '')
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase());
         }).toList();
       }
-      
-      return ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: filteredTrabajos.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final trabajo = filteredTrabajos[index];
-          return OptimizedCard(
-            margin: EdgeInsets.zero,
-            borderRadius: BorderRadius.circular(16),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
+
+      return Column(
+        children: [
+          // Search bar and filters
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              children: [
+                // Search bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              },
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: _getTrabajoColor(trabajo.estado).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.work_rounded, 
-                            color: _getTrabajoColor(trabajo.estado),
-                            size: 24,
-                          ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Buscar trabajos o lotes...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 15,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey[600],
+                        size: 22,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Filter chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Todos', true),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Estado', false),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Fecha', false),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Lote', false),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // List of trabajos
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              itemCount: filteredTrabajos.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final trabajo = filteredTrabajos[index];
+                final borderColor = _getTrabajoColor(trabajo.estado);
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border(
+                      left: BorderSide(
+                        color: borderColor,
+                        width: 4,
+                      ),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              TrabajoDetailScreen(trabajo: trabajo),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                '${trabajo.tipo} - ${trabajo.cultivo}',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1C1C1E),
-                                  letterSpacing: -0.41,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Status badge
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: borderColor.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        trabajo.estado?.toUpperCase() ??
+                                            'PENDIENTE',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: borderColor,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    // Title
+                                    Text(
+                                      '${trabajo.tipo} - ${trabajo.cultivo}',
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF1C1C1E),
+                                        letterSpacing: -0.41,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    // Location
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.location_on_outlined,
+                                          size: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            trabajo.campoInfo,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[700],
+                                              letterSpacing: -0.24,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Campo: ${trabajo.campoInfo}',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  color: Color(0xFF8E8E93),
-                                  letterSpacing: -0.24,
+                              PopupMenuButton(
+                                icon: Icon(Icons.more_vert_rounded,
+                                    color: Colors.grey[600]),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${trabajo.formattedDateRange} • ${trabajo.estado ?? 'Pendiente'}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF8E8E93),
-                                  letterSpacing: -0.08,
-                                ),
+                                itemBuilder: (context) =>
+                                    _buildTrabajoMenuItems(trabajo),
+                                onSelected: (value) =>
+                                    _handleTrabajoMenuAction(value, trabajo),
                               ),
                             ],
                           ),
-                        ),
-                        PopupMenuButton(
-                          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF8E8E93)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          itemBuilder: (context) => _buildTrabajoMenuItems(trabajo),
-                          onSelected: (value) => _handleTrabajoMenuAction(value, trabajo),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    _buildTrabajoActionButtons(trabajo),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       );
     }
-    
+
     return const OptimizedEmptyWidget(
       message: 'Estado desconocido',
       icon: Icons.help_outline,
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isSelected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFF1C1C1E) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSelected ? const Color(0xFF1C1C1E) : Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: isSelected ? Colors.white : Colors.grey[700],
+        ),
+      ),
     );
   }
 
@@ -559,7 +699,8 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: const Text('¿Estás seguro de que quieres eliminar este trabajo?'),
+        content:
+            const Text('¿Estás seguro de que quieres eliminar este trabajo?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -581,74 +722,6 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
     );
   }
 
-  Widget _buildTrabajoActionButtons(dynamic trabajo) {
-    final estado = trabajo.estado?.toLowerCase() ?? 'pendiente';
-    
-    if (estado == 'pendiente') {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _cambiarEstadoTrabajo(trabajo, 'En Curso'),
-              icon: const Icon(Icons.play_arrow_rounded, size: 16),
-              label: const Text('Iniciar'),
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: const Color(0xFFFF9800),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _cambiarEstadoTrabajo(trabajo, 'Completado'),
-              icon: const Icon(Icons.check_circle_rounded, size: 16),
-              label: const Text('Completar'),
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: const Color(0xFF2E7D32),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (estado == 'en curso' || estado == 'en_progreso') {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ElevatedButton.icon(
-            onPressed: () => _cambiarEstadoTrabajo(trabajo, 'Completado'),
-            icon: const Icon(Icons.check_circle, size: 12),
-            label: const Text('Completar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              textStyle: const TextStyle(fontSize: 10),
-              minimumSize: const Size(0, 28),
-            ),
-          ),
-        ],
-      );
-    }
-    
-    // Para trabajos completados, no mostrar botones
-    return const SizedBox.shrink();
-  }
-
   List<PopupMenuEntry> _buildTrabajoMenuItems(dynamic trabajo) {
     return [
       const PopupMenuItem(
@@ -667,7 +740,8 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
           children: [
             Icon(Icons.delete_rounded, size: 20, color: Color(0xFFFF3B30)),
             SizedBox(width: 12),
-            Text('Eliminar', style: TextStyle(fontSize: 17, color: Color(0xFFFF3B30))),
+            Text('Eliminar',
+                style: TextStyle(fontSize: 17, color: Color(0xFFFF3B30))),
           ],
         ),
       ),
@@ -685,50 +759,19 @@ class _OptimizedTrabajosListScreenState extends ConsumerState<OptimizedTrabajosL
     }
   }
 
-  void _cambiarEstadoTrabajo(dynamic trabajo, String nuevoEstado) async {
-    try {
-      // Preparar datos para actualizar
-      final Map<String, dynamic> updateData = {
-        'estado': nuevoEstado,
-      };
-
-      // Si se está completando el trabajo, agregar fecha de fin
-      if (nuevoEstado == 'Completado') {
-        updateData['fecha_fin'] = DateTime.now().toIso8601String().split('T')[0];
-      }
-
-      // Actualizar el trabajo usando el provider
-      await ref.read(trabajosProvider.notifier).updateTrabajo(trabajo.id, updateData);
-
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Estado cambiado a: $nuevoEstado'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      // Mostrar mensaje de error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al cambiar estado: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
   Color _getTrabajoColor(String? estado) {
     switch (estado?.toLowerCase()) {
       case 'completado':
-        return Colors.green;
+      case 'finalizado':
+        return const Color(0xFF00E676); // Green
       case 'en curso':
       case 'en_progreso':
-        return Colors.orange;
+      case 'en ejecución':
+      case 'ejecutando':
+        return const Color(0xFFFF9800); // Orange
       case 'pendiente':
-        return Colors.blue;
+      case 'programado':
+        return const Color(0xFF2196F3); // Blue
       default:
         return Colors.grey;
     }

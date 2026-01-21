@@ -1,11 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/campo.dart';
 import '../../models/maquina.dart';
 import '../../models/personal.dart';
 import '../../models/cliente.dart';
+import '../../models/trabajo.dart';
 import '../../models/tipo_trabajo.dart';
 import '../../services/cliente_service.dart';
 import '../../services/tipo_trabajo_service.dart';
@@ -16,7 +17,7 @@ import '../../utils/validators.dart';
 /// Formulario para crear/editar trabajos
 class TrabajoFormDialog extends ConsumerStatefulWidget {
   final dynamic trabajo;
-  
+
   const TrabajoFormDialog({Key? key, this.trabajo}) : super(key: key);
 
   @override
@@ -38,28 +39,28 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   late TextEditingController _horasTrabajadasController;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
-  
+
   // Estados adicionales
   String? _estadoSeleccionado;
   bool _esTercero = false;
   bool _cobrado = false;
   bool _servicioContratado = false;
-  
+
   // Selectores
   Campo? _campoSeleccionado;
   List<Maquina> _maquinasSeleccionadas = [];
   List<Personal> _personalSeleccionado = [];
-  
+
   // Listas para los selectores
   List<Campo> _campos = [];
   List<Maquina> _maquinas = [];
   List<Personal> _personal = [];
-  
+
   // Variables para cliente y campos filtrados
   Cliente? _clienteSeleccionado;
   List<Campo> _camposFiltrados = []; // Campos filtrados por cliente
   List<Cliente> _clientes = [];
-  
+
   bool _isLoadingData = false;
 
   @override
@@ -68,21 +69,34 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     // Si el trabajo tiene idTipoTrabajo, usarlo directamente
     // Si no, intentar encontrarlo por el nombre del tipo (se hará después de cargar los tipos)
     _tipoTrabajoSeleccionado = widget.trabajo?.idTipoTrabajo;
-    _cultivoController = TextEditingController(text: widget.trabajo?.cultivo ?? '');
-    _descripcionController = TextEditingController(text: widget.trabajo?.observaciones ?? '');
-    _fechaInicioController = TextEditingController(text: widget.trabajo?.fechaInicio?.toString() ?? '');
-    _fechaFinController = TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
-    _clienteController = TextEditingController(text: widget.trabajo?.cliente ?? '');
-    _montoCobradoController = TextEditingController(text: widget.trabajo?.montoCobrado?.toString() ?? '');
-    _rindeCosechaController = TextEditingController(text: widget.trabajo?.rindeCosecha?.toString() ?? '');
-    _humedadCosechaController = TextEditingController(text: widget.trabajo?.humedadCosecha?.toString() ?? '');
-    _horasTrabajadasController = TextEditingController(text: widget.trabajo?.horasTrabajadas?.toString() ?? '');
+    _cultivoController =
+        TextEditingController(text: widget.trabajo?.cultivo ?? '');
+    _descripcionController =
+        TextEditingController(text: widget.trabajo?.observaciones ?? '');
+    _fechaInicioController = TextEditingController(
+        text: widget.trabajo?.fechaInicio != null
+            ? DateFormat('dd/MM/yyyy').format(widget.trabajo!.fechaInicio!)
+            : '');
+    _fechaFinController = TextEditingController(
+        text: widget.trabajo?.fechaFin != null
+            ? DateFormat('dd/MM/yyyy').format(widget.trabajo!.fechaFin!)
+            : '');
+    _clienteController =
+        TextEditingController(text: widget.trabajo?.cliente ?? '');
+    _montoCobradoController = TextEditingController(
+        text: widget.trabajo?.montoCobrado?.toString() ?? '');
+    _rindeCosechaController = TextEditingController(
+        text: widget.trabajo?.rindeCosecha?.toString() ?? '');
+    _humedadCosechaController = TextEditingController(
+        text: widget.trabajo?.humedadCosecha?.toString() ?? '');
+    _horasTrabajadasController = TextEditingController(
+        text: widget.trabajo?.horasTrabajadas?.toString() ?? '');
     _fechaInicio = widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
-    
+
     // Estados adicionales
     _estadoSeleccionado = widget.trabajo?.estado ?? 'Pendiente';
-    
+
     // FORZAR VALORES CORRECTOS PARA DEBUG
     if (widget.trabajo != null) {
       // Si hay un trabajo, usar sus valores reales
@@ -95,13 +109,13 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       _cobrado = false;
       _servicioContratado = false;
     }
-    
+
     // Debug logs
     print('DEBUG: Trabajo esTercero: ${widget.trabajo?.esTercero}');
     print('DEBUG: _esTercero inicializado a: $_esTercero');
     print('DEBUG: Trabajo cliente: ${widget.trabajo?.cliente}');
     print('DEBUG: Trabajo completo: ${widget.trabajo?.toJson()}');
-    
+
     // Cargar datos necesarios para los selectores
     Future.microtask(() => _loadDataForSelectors());
   }
@@ -130,14 +144,16 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       try {
         _tiposTrabajo = await TipoTrabajoService.getTiposTrabajo();
         print('Tipos de trabajo cargados: ${_tiposTrabajo.length}');
-        
+
         // Si el trabajo tiene tipoTrabajoNombre pero no idTipoTrabajo, buscar el ID
-        if (widget.trabajo != null && 
-            widget.trabajo!.idTipoTrabajo == null && 
+        if (widget.trabajo != null &&
+            widget.trabajo!.idTipoTrabajo == null &&
             widget.trabajo!.tipoTrabajoNombre != null) {
           final tipoEncontrado = _tiposTrabajo.firstWhere(
             (tipo) => tipo.trabajo == widget.trabajo!.tipoTrabajoNombre,
-            orElse: () => _tiposTrabajo.isNotEmpty ? _tiposTrabajo.first : TipoTrabajo(id: 0, trabajo: ''),
+            orElse: () => _tiposTrabajo.isNotEmpty
+                ? _tiposTrabajo.first
+                : TipoTrabajo(id: 0, trabajo: ''),
           );
           if (tipoEncontrado.id != 0) {
             setState(() {
@@ -200,38 +216,35 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       // Seleccionar elementos existentes del trabajo
       if (widget.trabajo != null) {
         // Seleccionar cliente si es servicio contratado o trabajo a terceros
-        if ((_servicioContratado || _esTercero) && widget.trabajo!.cliente != null) {
-          try {
-            _clienteSeleccionado = _clientes.firstWhere(
-              (cliente) => cliente.nombre == widget.trabajo!.cliente,
-            );
-          } catch (e) {
-            // Si no se encuentra el cliente, dejar _clienteSeleccionado como null
-            _clienteSeleccionado = null;
-            print('DEBUG: Cliente no encontrado: ${widget.trabajo!.cliente}');
-          }
+        if ((_servicioContratado || _esTercero) &&
+            widget.trabajo!.cliente != null) {
+          final found =
+              _clientes.where((c) => c.nombre == widget.trabajo!.cliente);
+          _clienteSeleccionado = found.isNotEmpty ? found.first : null;
         }
 
         // Seleccionar campo
-        try {
-          _campoSeleccionado = _camposFiltrados.firstWhere(
-            (campo) => campo.id == widget.trabajo!.idCampo,
-          );
-        } catch (e) {
-          // Si no se encuentra el campo, seleccionar el primero disponible o null
-          _campoSeleccionado = _camposFiltrados.isNotEmpty ? _camposFiltrados.first : null;
-          print('DEBUG: Campo no encontrado: ${widget.trabajo!.idCampo}');
+        if (widget.trabajo!.idCampo != null) {
+          final found =
+              _camposFiltrados.where((c) => c.id == widget.trabajo!.idCampo);
+          _campoSeleccionado = found.isNotEmpty ? found.first : null;
         }
 
         // Seleccionar máquinas
-        _maquinasSeleccionadas = _maquinas.where(
-          (maquina) => widget.trabajo!.idMaquinas.contains(maquina.id),
-        ).toList();
+        _maquinasSeleccionadas = _maquinas
+            .where(
+              (maquina) =>
+                  (widget.trabajo!.idMaquinas as List).contains(maquina.id),
+            )
+            .toList();
 
         // Seleccionar personal
-        _personalSeleccionado = _personal.where(
-          (persona) => widget.trabajo!.idPersonal.contains(persona.id),
-        ).toList();
+        _personalSeleccionado = _personal
+            .where(
+              (persona) =>
+                  (widget.trabajo!.idPersonal as List).contains(persona.id),
+            )
+            .toList();
       }
     } catch (e) {
       // Manejar errores silenciosamente
@@ -245,13 +258,16 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
 
   // Método para aplicar filtros de campos según el cliente seleccionado
   Future<void> _aplicarFiltrosCampos() async {
-    print('DEBUG: _aplicarFiltrosCampos - _servicioContratado: $_servicioContratado, _esTercero: $_esTercero, _clienteSeleccionado: $_clienteSeleccionado');
-    
+    print(
+        'DEBUG: _aplicarFiltrosCampos - _servicioContratado: $_servicioContratado, _esTercero: $_esTercero, _clienteSeleccionado: $_clienteSeleccionado');
+
     if ((_servicioContratado || _esTercero) && _clienteSeleccionado != null) {
       // Si es servicio contratado o trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
-      print('DEBUG: Cargando campos del cliente ${_clienteSeleccionado!.nombre}');
+      print(
+          'DEBUG: Cargando campos del cliente ${_clienteSeleccionado!.nombre}');
       try {
-        _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
+        _camposFiltrados =
+            await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
         print('DEBUG: Campos del cliente cargados: ${_camposFiltrados.length}');
       } catch (e) {
         print('Error cargando campos del cliente: $e');
@@ -263,8 +279,9 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       _camposFiltrados = List.from(_campos);
       print('DEBUG: Campos propios cargados: ${_camposFiltrados.length}');
     }
-    
-    print('DEBUG: _aplicarFiltrosCampos completado. Campos filtrados: ${_camposFiltrados.length}');
+
+    print(
+        'DEBUG: _aplicarFiltrosCampos completado. Campos filtrados: ${_camposFiltrados.length}');
   }
 
   void _showClienteForm() async {
@@ -272,14 +289,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       context: context,
       builder: (context) => const ClienteFormDialog(),
     );
-    
+
     if (result != null) {
       // Recargar clientes y seleccionar el nuevo
       try {
         _clientes = await ClienteService.getClientes();
         setState(() {
           _clienteSeleccionado = result;
-          _clienteController.text = result.nombre;
+          _clienteController.text = result.nombre ?? '';
         });
         // Aplicar filtros de campos para el nuevo cliente
         await _aplicarFiltrosCampos();
@@ -293,7 +310,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   Widget build(BuildContext context) {
     if (_isLoadingData) {
       return AlertDialog(
-        title: Text(widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo'),
+        title:
+            Text(widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo'),
         content: const SizedBox(
           height: 200,
           child: Center(
@@ -368,8 +386,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16),
-                
-                
+
                 // Selector de Estado
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
@@ -378,10 +395,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                   value: _estadoSeleccionado,
                   items: const [
-                    DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
-                    DropdownMenuItem(value: 'En progreso', child: Text('En progreso')),
-                    DropdownMenuItem(value: 'Completado', child: Text('Completado')),
-                    DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
+                    DropdownMenuItem(
+                        value: 'Pendiente', child: Text('Pendiente')),
+                    DropdownMenuItem(
+                        value: 'En progreso', child: Text('En progreso')),
+                    DropdownMenuItem(
+                        value: 'Completado', child: Text('Completado')),
+                    DropdownMenuItem(
+                        value: 'Cancelado', child: Text('Cancelado')),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -390,7 +411,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Toggle Servicio Contratado
                 Row(
                   children: [
@@ -417,7 +438,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Toggle Es Tercero
                 Row(
                   children: [
@@ -428,59 +449,65 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       onChanged: (value) async {
                         print('DEBUG: Switch cambiado a: $value');
                         print('DEBUG: _esTercero antes: $_esTercero');
-                        
+
                         // Actualizar el estado ANTES del setState
                         _esTercero = value;
                         print('DEBUG: _esTercero actualizado a: $_esTercero');
-                        
+
                         // Si se activa trabajo a terceros, desactivar servicio contratado
                         if (value) {
                           _servicioContratado = false;
                         }
-                        
+
                         // Limpiar selecciones si se desactiva "a terceros"
                         if (!value) {
-                          print('DEBUG: Limpiando selecciones porque esTercero = false');
+                          print(
+                              'DEBUG: Limpiando selecciones porque esTercero = false');
                           _clienteSeleccionado = null;
                           _clienteController.clear();
                           _campoSeleccionado = null;
                         } else {
                           // Si se activa "a terceros", asegurar que _clienteSeleccionado sea válido
-                          if (_clienteSeleccionado != null && !_clientes.contains(_clienteSeleccionado)) {
-                            print('DEBUG: Limpiando cliente seleccionado porque no está en la lista');
+                          if (_clienteSeleccionado != null &&
+                              !_clientes.contains(_clienteSeleccionado)) {
+                            print(
+                                'DEBUG: Limpiando cliente seleccionado porque no está en la lista');
                             _clienteSeleccionado = null;
                             _clienteController.clear();
                           }
                         }
-                        
+
                         // Forzar rebuild del widget
                         setState(() {
                           print('DEBUG: setState ejecutado');
                           // El estado ya se actualizó arriba
                         });
-                        
+
                         print('DEBUG: setState completado');
-                        
+
                         print('DEBUG: Aplicando filtros de campos...');
                         // Aplicar filtros de campos
                         await _aplicarFiltrosCampos();
-                        print('DEBUG: Filtros aplicados. _esTercero final: $_esTercero');
+                        print(
+                            'DEBUG: Filtros aplicados. _esTercero final: $_esTercero');
                       },
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Selector de Cliente (solo visible si es a terceros)
                 // Debug log
                 Builder(builder: (context) {
-                  print('DEBUG: Renderizando formulario - _esTercero: $_esTercero');
+                  print(
+                      'DEBUG: Renderizando formulario - _esTercero: $_esTercero');
                   print('DEBUG: _clienteSeleccionado: $_clienteSeleccionado');
                   print('DEBUG: _clientes.length: ${_clientes.length}');
-                  print('DEBUG: _clientes: ${_clientes.map((c) => '${c.id}:${c.nombre}').join(', ')}');
+                  print(
+                      'DEBUG: _clientes: ${_clientes.map((c) => '${c.id}:${c.nombre}').join(', ')}');
                   return Container();
                 }),
-                
+
                 // TEST: Mostrar estado actual
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -494,7 +521,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                
+
                 // Selector de Cliente (solo visible si es trabajo a terceros)
                 if (_esTercero) ...[
                   DropdownButtonFormField<Cliente>(
@@ -503,8 +530,10 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       border: OutlineInputBorder(),
                       hintText: 'Seleccione un cliente',
                     ),
-                    value: _clienteSeleccionado != null && _clientes.any((c) => c.id == _clienteSeleccionado!.id) 
-                        ? _clienteSeleccionado 
+                    value: _clienteSeleccionado != null &&
+                            _clientes
+                                .any((c) => c.id == _clienteSeleccionado!.id)
+                        ? _clienteSeleccionado
                         : null,
                     items: [
                       // Opción para crear nuevo cliente
@@ -516,7 +545,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       ..._clientes.map((cliente) {
                         return DropdownMenuItem<Cliente>(
                           value: cliente,
-                          child: Text(cliente.nombre),
+                          child: Text(cliente.nombre ?? 'Sin nombre'),
                         );
                       }).toList(),
                     ],
@@ -527,8 +556,9 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       } else {
                         setState(() {
                           _clienteSeleccionado = newValue;
-                          _clienteController.text = newValue.nombre;
-                          _campoSeleccionado = null; // Limpiar campo seleccionado
+                          _clienteController.text = newValue.nombre ?? '';
+                          _campoSeleccionado =
+                              null; // Limpiar campo seleccionado
                         });
                         // Aplicar filtros de campos para el cliente seleccionado
                         await _aplicarFiltrosCampos();
@@ -549,7 +579,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                
+
                 if (_servicioContratado) ...[
                   // Selector de Cliente con dropdown
                   Row(
@@ -557,12 +587,18 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       Expanded(
                         child: DropdownButtonFormField<Cliente>(
                           decoration: InputDecoration(
-                            labelText: _servicioContratado ? 'Prestador de servicio' : 'Cliente',
+                            labelText: _servicioContratado
+                                ? 'Prestador de servicio'
+                                : 'Cliente',
                             border: const OutlineInputBorder(),
-                            hintText: _servicioContratado ? 'Seleccione un prestador' : 'Seleccione un cliente',
+                            hintText: _servicioContratado
+                                ? 'Seleccione un prestador'
+                                : 'Seleccione un cliente',
                           ),
-                          value: _clienteSeleccionado != null && _clientes.any((c) => c.id == _clienteSeleccionado!.id) 
-                              ? _clienteSeleccionado 
+                          value: _clienteSeleccionado != null &&
+                                  _clientes.any(
+                                      (c) => c.id == _clienteSeleccionado!.id)
+                              ? _clienteSeleccionado
                               : null,
                           items: [
                             // Opción para crear nuevo cliente
@@ -585,7 +621,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                             ..._clientes.map((cliente) {
                               return DropdownMenuItem<Cliente>(
                                 value: cliente,
-                                child: Text(cliente.nombre),
+                                child: Text(cliente.nombre ?? 'Sin nombre'),
                               );
                             }).toList(),
                           ],
@@ -597,8 +633,9 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                               // Usuario seleccionó un cliente existente
                               setState(() {
                                 _clienteSeleccionado = cliente;
-                                _clienteController.text = cliente.nombre;
-                                _campoSeleccionado = null; // Limpiar campo seleccionado
+                                _clienteController.text = cliente.nombre ?? '';
+                                _campoSeleccionado =
+                                    null; // Limpiar campo seleccionado
                               });
                               // Aplicar filtros de campos para el cliente seleccionado
                               _aplicarFiltrosCampos();
@@ -622,7 +659,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                
+
                 // Toggle Cobrado
                 Row(
                   children: [
@@ -639,7 +676,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Campo Monto Cobrado (solo si está cobrado)
                 if (_cobrado) ...[
                   TextFormField(
@@ -659,7 +696,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                
+
                 // Selector de Campo
                 Row(
                   children: [
@@ -695,13 +732,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('Nuevo'),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Selector de Máquinas (múltiple)
                 Card(
                   child: Padding(
@@ -722,7 +760,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                               icon: const Icon(Icons.add, size: 18),
                               label: const Text('Nueva'),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                               ),
                             ),
                           ],
@@ -748,7 +787,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: _maquinas.map((maquina) {
-                                  final isSelected = _maquinasSeleccionadas.contains(maquina);
+                                  final isSelected =
+                                      _maquinasSeleccionadas.contains(maquina);
                                   return FilterChip(
                                     label: Text(maquina.nombre),
                                     selected: isSelected,
@@ -757,12 +797,16 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                                         if (selected) {
                                           _maquinasSeleccionadas.add(maquina);
                                         } else {
-                                          _maquinasSeleccionadas.remove(maquina);
+                                          _maquinasSeleccionadas
+                                              .remove(maquina);
                                         }
                                       });
                                     },
-                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                    checkmarkColor: Theme.of(context).primaryColor,
+                                    selectedColor: Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.2),
+                                    checkmarkColor:
+                                        Theme.of(context).primaryColor,
                                   );
                                 }).toList(),
                               ),
@@ -773,7 +817,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Selector de Personal (múltiple)
                 Card(
                   child: Padding(
@@ -794,7 +838,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                               icon: const Icon(Icons.add, size: 18),
                               label: const Text('Nuevo'),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                               ),
                             ),
                           ],
@@ -820,7 +865,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: _personal.map((persona) {
-                                  final isSelected = _personalSeleccionado.contains(persona);
+                                  final isSelected =
+                                      _personalSeleccionado.contains(persona);
                                   return FilterChip(
                                     label: Text(persona.nombre),
                                     selected: isSelected,
@@ -833,8 +879,11 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                                         }
                                       });
                                     },
-                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                    checkmarkColor: Theme.of(context).primaryColor,
+                                    selectedColor: Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.2),
+                                    checkmarkColor:
+                                        Theme.of(context).primaryColor,
                                   );
                                 }).toList(),
                               ),
@@ -863,7 +912,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                     if (date != null) {
                       setState(() {
                         _fechaInicio = date;
-                        _fechaInicioController.text = '${date.day}/${date.month}/${date.year}';
+                        _fechaInicioController.text =
+                            '${date.day}/${date.month}/${date.year}';
                       });
                     }
                   },
@@ -887,7 +937,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                     if (date != null) {
                       setState(() {
                         _fechaFin = date;
-                        _fechaFinController.text = '${date.day}/${date.month}/${date.year}';
+                        _fechaFinController.text =
+                            '${date.day}/${date.month}/${date.year}';
                       });
                     }
                   },
@@ -936,78 +987,102 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       print('🔵 Validación del formulario exitosa (Dialog)');
       try {
         print('🔵 Iniciando construcción del request... (Dialog)');
+        // Obtener listas de IDs
+        final List<int> idMaquinas =
+            _maquinasSeleccionadas.map((m) => m.id!).toList();
+        final List<int> idPersonal =
+            _personalSeleccionado.map((p) => p.id!).toList();
+
         // Construir el request según el formato requerido por el endpoint
         final data = <String, dynamic>{
           'id_tipo_trabajo': _tipoTrabajoSeleccionado,
-          'cliente': (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
-              ? _clienteSeleccionado!.nombre 
+          'cliente': (_servicioContratado || _esTercero) &&
+                  _clienteSeleccionado != null
+              ? _clienteSeleccionado!.nombre
               : null,
-          'fecha_inicio': _fechaInicio?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'fecha_inicio': _fechaInicio != null
+              ? DateFormat('yyyy-MM-dd').format(_fechaInicio!)
+              : null,
           'id_campo': _campoSeleccionado?.id,
+          'campo_id':
+              _campoSeleccionado?.id, // Enviamos ambos por compatibilidad
           'cultivo': _cultivoController.text,
-          'observaciones': _descripcionController.text.isNotEmpty 
-              ? _descripcionController.text 
+          'observaciones': _descripcionController.text.isNotEmpty
+              ? _descripcionController.text
               : null,
           'estado': _estadoSeleccionado ?? 'Pendiente',
           'a_terceros': _esTercero,
           'servicio_contratado': _servicioContratado,
-          'fecha_fin': _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'fecha_fin': _fechaFin != null
+              ? DateFormat('yyyy-MM-dd').format(_fechaFin!)
+              : null,
+          'id_maquinas': idMaquinas,
+          'id_personal': idPersonal,
+          'cobrado': _cobrado,
+          'monto_cobrado': _cobrado
+              ? double.tryParse(
+                  _montoCobradoController.text.replaceAll(',', '.'))
+              : 0.0,
         };
-        
+
         // Agregar campos de cosecha: si es cosecha (id = 1) usar valores ingresados, sino enviar 0
         if (_tipoTrabajoSeleccionado == 1) {
           // Para cosecha, usar valores ingresados (o null si están vacíos)
           if (_rindeCosechaController.text.isNotEmpty) {
-            data['rinde_cosecha'] = double.tryParse(_rindeCosechaController.text);
+            data['rinde_cosecha'] =
+                double.tryParse(_rindeCosechaController.text);
           }
           if (_humedadCosechaController.text.isNotEmpty) {
-            data['humedad_cosecha'] = double.tryParse(_humedadCosechaController.text);
+            data['humedad_cosecha'] =
+                double.tryParse(_humedadCosechaController.text);
           }
         } else {
           // Para otros tipos de trabajo, enviar 0 por defecto
           data['rinde_cosecha'] = 0.0;
           data['humedad_cosecha'] = 0.0;
         }
-        
+
         // Agregar horas trabajadas
         if (_horasTrabajadasController.text.isNotEmpty) {
-          data['horas_trabajadas'] = double.tryParse(_horasTrabajadasController.text);
+          data['horas_trabajadas'] = double.tryParse(
+              _horasTrabajadasController.text.replaceAll(',', '.'));
         }
 
         // Imprimir el body del request por consola
-        debugPrint('═══════════════════════════════════════════════════════════════');
-        debugPrint('📤 REQUEST BODY - ${widget.trabajo == null ? "CREAR" : "ACTUALIZAR"} TRABAJO (Dialog)');
-        debugPrint('═══════════════════════════════════════════════════════════════');
-        try {
-          final jsonString = JsonEncoder.withIndent('  ').convert(data);
-          debugPrint(jsonString);
-          print(jsonString); // También usar print normal
-        } catch (e) {
-          debugPrint('Error al convertir a JSON: $e');
-          debugPrint('Data raw: $data');
-          print('Error al convertir a JSON: $e');
-          print('Data raw: $data');
-        }
-        debugPrint('═══════════════════════════════════════════════════════════════');
+        debugPrint(
+            '═══════════════════════════════════════════════════════════════');
 
         if (widget.trabajo == null) {
           await ref.read(trabajosProvider.notifier).createTrabajo(data);
         } else {
-          await ref.read(trabajosProvider.notifier).updateTrabajo(widget.trabajo.id, data);
+          final int? id = (widget.trabajo is Trabajo)
+              ? widget.trabajo.id
+              : (widget.trabajo is Map
+                  ? widget.trabajo['id']
+                  : widget.trabajo.id);
+          if (id != null) {
+            await ref.read(trabajosProvider.notifier).updateTrabajo(id, data);
+          }
         }
 
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.trabajo == null ? 'Trabajo creado exitosamente' : 'Trabajo actualizado exitosamente'),
+              content: Text(widget.trabajo == null
+                  ? 'Trabajo creado exitosamente'
+                  : 'Trabajo actualizado exitosamente'),
+              backgroundColor: Colors.green,
             ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -1019,7 +1094,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       context: context,
       builder: (context) => const CampoFormDialog(),
     );
-    
+
     if (result != null) {
       // Recargar campos y seleccionar el nuevo
       await _loadDataForSelectors();
@@ -1034,7 +1109,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       context: context,
       builder: (context) => const MaquinaFormDialog(),
     );
-    
+
     if (result != null) {
       // Recargar máquinas y seleccionar la nueva
       await _loadDataForSelectors();
@@ -1049,7 +1124,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       context: context,
       builder: (context) => const PersonalFormDialog(),
     );
-    
+
     if (result != null) {
       // Recargar personal y seleccionar el nuevo
       await _loadDataForSelectors();
@@ -1058,13 +1133,12 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       });
     }
   }
-
 }
 
 /// Formulario para crear/editar clientes
 class ClienteFormDialog extends StatefulWidget {
   final Cliente? cliente;
-  
+
   const ClienteFormDialog({Key? key, this.cliente}) : super(key: key);
 
   @override
@@ -1083,12 +1157,16 @@ class _ClienteFormDialogState extends State<ClienteFormDialog> {
   @override
   void initState() {
     super.initState();
-    _nombreController = TextEditingController(text: widget.cliente?.nombre ?? '');
+    _nombreController =
+        TextEditingController(text: widget.cliente?.nombre ?? '');
     _emailController = TextEditingController(text: widget.cliente?.email ?? '');
-    _telefonoController = TextEditingController(text: widget.cliente?.telefono ?? '');
-    _direccionController = TextEditingController(text: widget.cliente?.direccion ?? '');
+    _telefonoController =
+        TextEditingController(text: widget.cliente?.telefono ?? '');
+    _direccionController =
+        TextEditingController(text: widget.cliente?.direccion ?? '');
     _cuitController = TextEditingController(text: widget.cliente?.cuit ?? '');
-    _observacionesController = TextEditingController(text: widget.cliente?.observaciones ?? '');
+    _observacionesController =
+        TextEditingController(text: widget.cliente?.observaciones ?? '');
   }
 
   @override
@@ -1107,18 +1185,26 @@ class _ClienteFormDialogState extends State<ClienteFormDialog> {
       try {
         final data = {
           'nombre': _nombreController.text,
-          'email': _emailController.text.isNotEmpty ? _emailController.text : null,
-          'telefono': _telefonoController.text.isNotEmpty ? _telefonoController.text : null,
-          'direccion': _direccionController.text.isNotEmpty ? _direccionController.text : null,
+          'email':
+              _emailController.text.isNotEmpty ? _emailController.text : null,
+          'telefono': _telefonoController.text.isNotEmpty
+              ? _telefonoController.text
+              : null,
+          'direccion': _direccionController.text.isNotEmpty
+              ? _direccionController.text
+              : null,
           'cuit': _cuitController.text.isNotEmpty ? _cuitController.text : null,
-          'observaciones': _observacionesController.text.isNotEmpty ? _observacionesController.text : null,
+          'observaciones': _observacionesController.text.isNotEmpty
+              ? _observacionesController.text
+              : null,
         };
 
         Cliente cliente;
         if (widget.cliente == null) {
           cliente = await ClienteService.createCliente(data);
         } else {
-          cliente = await ClienteService.updateCliente(widget.cliente!.id!, data);
+          cliente =
+              await ClienteService.updateCliente(widget.cliente!.id!, data);
         }
 
         Navigator.pop(context, cliente);
@@ -1153,10 +1239,10 @@ class _ClienteFormDialogState extends State<ClienteFormDialog> {
                     prefixIcon: Icon(Icons.person),
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) => Validators.validateRequired(value, 'Nombre'),
+                  validator: (value) =>
+                      Validators.validateRequired(value, 'Nombre'),
                 ),
                 const SizedBox(height: 16),
-                
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -1168,7 +1254,6 @@ class _ClienteFormDialogState extends State<ClienteFormDialog> {
                   validator: (value) => Validators.validateEmail(value),
                 ),
                 const SizedBox(height: 16),
-                
                 TextFormField(
                   controller: _telefonoController,
                   decoration: const InputDecoration(
@@ -1179,7 +1264,6 @@ class _ClienteFormDialogState extends State<ClienteFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
                 TextFormField(
                   controller: _direccionController,
                   decoration: const InputDecoration(
@@ -1190,7 +1274,6 @@ class _ClienteFormDialogState extends State<ClienteFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
                 TextFormField(
                   controller: _cuitController,
                   decoration: const InputDecoration(
@@ -1201,7 +1284,6 @@ class _ClienteFormDialogState extends State<ClienteFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
                 TextFormField(
                   controller: _observacionesController,
                   decoration: const InputDecoration(

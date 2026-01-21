@@ -17,20 +17,22 @@ import 'optimized_screens.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
-  
+
   const OptimizedDashboardScreen({
     Key? key,
     this.onNavigateToIndex,
   }) : super(key: key);
 
   @override
-  ConsumerState<OptimizedDashboardScreen> createState() => _OptimizedDashboardScreenState();
+  ConsumerState<OptimizedDashboardScreen> createState() =>
+      _OptimizedDashboardScreenState();
 }
 
-class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScreen> {
+class _OptimizedDashboardScreenState
+    extends ConsumerState<OptimizedDashboardScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  
+
   // Estados para datos reales
   List<Trabajo> _trabajos = [];
   List<Maquina> _maquinas = [];
@@ -38,11 +40,11 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   List<Mantenimiento> _mantenimientos = [];
   bool _isLoading = true;
   String? _errorMessage;
-  
+
   // Mapas por fecha para el calendario
   Map<DateTime, List<Trabajo>> _trabajosPorFecha = {};
   Map<DateTime, List<Mantenimiento>> _mantenimientosPorFecha = {};
-  
+
   final ApiService _apiService = ApiService();
   final AppLogger _logger = AppLogger.instance;
 
@@ -61,18 +63,18 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       });
 
       _logger.info('🔄 Cargando datos del dashboard...');
-      
+
       // Inicializar el servicio API solo si no está inicializado
       if (!_apiService.isInitialized) {
         await _apiService.initialize();
       }
-      
+
       // Cargar datos usando el endpoint del dashboard que contiene toda la información
       // Usar manejo individual de errores para que si uno falla, los otros continúen
       List<Trabajo> trabajos = [];
       Map<String, dynamic> dashboardResponse = {};
       List<Mantenimiento> mantenimientos = [];
-      
+
       // Cargar trabajos
       try {
         trabajos = await _apiService.getTrabajos();
@@ -81,7 +83,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
         _logger.error('❌ Error cargando trabajos: $e');
         trabajos = [];
       }
-      
+
       // Cargar resumen del dashboard
       try {
         final response = await _apiService.get('/api/dashboard/resumen');
@@ -93,7 +95,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
         _logger.error('❌ Error cargando dashboard resumen: $e');
         dashboardResponse = {};
       }
-      
+
       // Cargar mantenimientos (este puede fallar con 500, pero ya está manejado en el servicio)
       try {
         mantenimientos = await _apiService.getMantenimientos();
@@ -105,62 +107,66 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
 
       setState(() {
         _trabajos = trabajos;
-        
+
         // Procesar datos del resumen del dashboard
         // Extraer máquinas del resumen
         if (dashboardResponse['maquinas'] != null) {
           final maquinasData = dashboardResponse['maquinas'] as List<dynamic>;
-          _maquinas = maquinasData.map((json) => Maquina.fromJson(json)).toList();
+          _maquinas =
+              maquinasData.map((json) => Maquina.fromJson(json)).toList();
         } else {
           _maquinas = [];
         }
-        
+
         // Ordenar máquinas por hectáreas (mayor a menor)
         _maquinas.sort((a, b) {
           final haA = a.superficieTotalHa ?? 0.0;
           final haB = b.superficieTotalHa ?? 0.0;
           return haB.compareTo(haA); // Orden descendente
         });
-        
+
         // Extraer personal del resumen
         if (dashboardResponse['personal'] != null) {
           final personalData = dashboardResponse['personal'] as List<dynamic>;
-          _personal = personalData.map((json) => Personal.fromJson(json)).toList();
+          _personal =
+              personalData.map((json) => Personal.fromJson(json)).toList();
         } else {
           _personal = [];
         }
-        
+
         // Ordenar personal por hectáreas (mayor a menor)
         _personal.sort((a, b) {
           final haA = a.superficieTotalHa ?? 0.0;
           final haB = b.superficieTotalHa ?? 0.0;
           return haB.compareTo(haA); // Orden descendente
         });
-        
+
         // Asignar mantenimientos (ya viene como List<Mantenimiento> del método getMantenimientos)
         _mantenimientos = mantenimientos;
-        
+
         _isLoading = false;
       });
 
-      _logger.info('✅ Datos del dashboard cargados: ${_trabajos.length} trabajos, ${_maquinas.length} máquinas, ${_personal.length} personal, ${_mantenimientos.length} mantenimientos');
-      
+      _logger.info(
+          '✅ Datos del dashboard cargados: ${_trabajos.length} trabajos, ${_maquinas.length} máquinas, ${_personal.length} personal, ${_mantenimientos.length} mantenimientos');
+
       // Mostrar datos detallados de los endpoints específicos
       _logger.info('📊 Datos de máquinas desde endpoint específico:');
       for (int i = 0; i < _maquinas.length; i++) {
         final maquina = _maquinas[i];
-        _logger.info('   Máquina $i: id=${maquina.id}, nombre=${maquina.nombre}, superficieTotalHa=${maquina.superficieTotalHa}, horasTrabajadas=${maquina.horasTrabajadas}');
+        _logger.info(
+            '   Máquina $i: id=${maquina.id}, nombre=${maquina.nombre}, superficieTotalHa=${maquina.superficieTotalHa}, horasTrabajadas=${maquina.horasTrabajadas}');
       }
-      
+
       _logger.info('📊 Datos de personal desde endpoint específico:');
       for (int i = 0; i < _personal.length; i++) {
         final operario = _personal[i];
-        _logger.info('   Operario $i: id=${operario.id}, nombre=${operario.nombre}, superficieTotalHa=${operario.superficieTotalHa}, horasTrabajadas=${operario.horasTrabajadas}, trabajosCompletados=${operario.trabajosCompletados}');
+        _logger.info(
+            '   Operario $i: id=${operario.id}, nombre=${operario.nombre}, superficieTotalHa=${operario.superficieTotalHa}, horasTrabajadas=${operario.horasTrabajadas}, trabajosCompletados=${operario.trabajosCompletados}');
       }
-      
+
       // Probar los nuevos endpoints específicos
       await _testNewEndpoints();
-      
     } catch (e) {
       _logger.error('❌ Error cargando datos del dashboard: $e');
       setState(() {
@@ -174,15 +180,16 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   Future<void> _testNewEndpoints() async {
     try {
       _logger.info('🧪 Probando endpoint /api/dashboard/resumen...');
-      
+
       final dashboardResponse = await _apiService.get('/api/dashboard/resumen');
       _logger.info('📊 Respuesta del dashboard resumen:');
       _logger.info('   Tipo: ${dashboardResponse.runtimeType}');
       _logger.info('   Contenido: $dashboardResponse');
-      
+
       if (dashboardResponse is Map<String, dynamic>) {
-        _logger.info('   Campos disponibles: ${dashboardResponse.keys.toList()}');
-        
+        _logger
+            .info('   Campos disponibles: ${dashboardResponse.keys.toList()}');
+
         if (dashboardResponse['maquinas'] != null) {
           final maquinas = dashboardResponse['maquinas'];
           _logger.info('   Máquinas: $maquinas');
@@ -190,7 +197,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             _logger.info('   Cantidad de máquinas: ${maquinas.length}');
           }
         }
-        
+
         if (dashboardResponse['personal'] != null) {
           final personal = dashboardResponse['personal'];
           _logger.info('   Personal: $personal');
@@ -199,7 +206,6 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           }
         }
       }
-      
     } catch (e) {
       _logger.error('❌ Error en endpoint dashboard/resumen: $e');
     }
@@ -274,67 +280,249 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       );
     }
 
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final appBarBackground = theme.appBarTheme.backgroundColor ?? colorScheme.surfaceVariant;
-    final titleBaseStyle = theme.appBarTheme.titleTextStyle ?? theme.textTheme.titleLarge ?? const TextStyle();
-    final appBarTitleStyle = titleBaseStyle.copyWith(
-      color: theme.appBarTheme.foregroundColor ?? colorScheme.primary,
-      letterSpacing: -0.41,
-    );
-
-    final background = theme.colorScheme.background;
+    final background = const Color(0xFFF9FAFC);
     return Scaffold(
       backgroundColor: background,
       body: RefreshIndicator(
         backgroundColor: background,
-        color: theme.colorScheme.primary,
+        color: const Color(0xFF00E676),
         onRefresh: _refreshDashboard,
-        child: Container(
-          color: background,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-            // AppBar moderno estilo iOS
-            SliverAppBar(
-              expandedHeight: 56,
-              floating: false,
-              pinned: true,
-              backgroundColor: appBarBackground,
-              foregroundColor: theme.appBarTheme.foregroundColor,
-              elevation: 0,
-              toolbarHeight: 56,
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  'Inicio',
-                  style: appBarTitleStyle,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // Header personalizado estilo imagen 1
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: const Color(0xFF00E676), width: 2),
+                        image: const DecorationImage(
+                          image: NetworkImage(
+                              'https://i.pravatar.cc/150?u=carlos'),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Buenos días,',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF8E8E93),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            'Carlos Méndez',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1C1C1E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.notifications_outlined, size: 24),
+                    ),
+                  ],
                 ),
-                centerTitle: false,
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
               ),
             ),
-            
-            // Contenido
+
+            // Selector de fecha horizontal estilo imagen 1
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Octubre 2023',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1C1C1E),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00E676).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'Semana 42',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF00E676),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 85,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 7,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final days = [
+                            'Lun',
+                            'Mar',
+                            'Mié',
+                            'Jue',
+                            'Vie',
+                            'Sáb',
+                            'Dom'
+                          ];
+                          final isSelected =
+                              index == 2; // Simular miércoles 25 seleccionado
+                          return Container(
+                            width: 60,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF00E676)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF00E676)
+                                            .withOpacity(0.3),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 5),
+                                      )
+                                    ]
+                                  : [],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  days[index],
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white70
+                                        : const Color(0xFF8E8E93),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${23 + index}',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : const Color(0xFF1C1C1E),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  const Icon(Icons.circle,
+                                      size: 4, color: Colors.white),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Contenido principal
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Lista de trabajos por estado
-                    _buildTrabajosSection(_trabajos),
-                    const SizedBox(height: 24),
+                    // Resumen de Tareas
+                    const Text(
+                      'Resumen de Tareas',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1C1C1E),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTrabajosCards(_trabajos),
+                    const SizedBox(height: 32),
 
-                    // Calendario de trabajos y mantenimientos
-                    _buildCalendarioTrabajosYMantenimientos(_trabajos, _mantenimientos),
-                    const SizedBox(height: 24),
-
-                    // Superficies de máquinas
-                    _buildMaquinasSection(_maquinas),
-                    const SizedBox(height: 24),
-
-                    // Superficies y horas de operadores
+                    // Productividad Ranking Personal
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Productividad',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1C1C1E),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text(
+                            'Ver todo',
+                            style: TextStyle(
+                                color: Color(0xFF00E676),
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Text(
+                      'RANKING DE PERSONAL',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF8E8E93),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     _buildPersonalSection(_personal),
+                    const SizedBox(height: 24),
+
+                    // Productividad Ranking Maquinaria (Reemplaza Estado Maquinaria)
+                    _buildMaquinasSection(_maquinas),
                   ],
                 ),
               ),
@@ -342,340 +530,120 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           ],
         ),
       ),
-    ),
-  );
-  }
-
-
-  /// Navega a la lista de trabajos filtrada por estado
-  void _navegarAListaTrabajosPorEstado(String estado) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OptimizedTrabajosListScreen(
-          showAppBar: true,
-          estadoFiltro: estado,
-        ),
-      ),
     );
   }
-
-  Widget _buildTrabajosSection(List<Trabajo> trabajos) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(AppConstants.primaryColor),
-                    const Color(AppConstants.primaryColor).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Estado de Trabajos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildTrabajosCards(trabajos),
-      ],
-    );
-  }
-
 
   Widget _buildTrabajosCards(List<Trabajo> trabajos) {
-    final pendientes = trabajos.where((t) => 
-      t.estado?.toLowerCase() == 'pendiente' || 
-      t.estado?.toLowerCase() == 'programado'
-    ).length;
-    final enCurso = trabajos.where((t) => 
-      t.estado?.toLowerCase() == 'en curso' || 
-      t.estado?.toLowerCase() == 'en ejecución' ||
-      t.estado?.toLowerCase() == 'ejecutando'
-    ).length;
-    final completados = trabajos.where((t) => 
-      t.estado?.toLowerCase() == 'completado' || 
-      t.estado?.toLowerCase() == 'finalizado'
-    ).length;
+    final pendientes = trabajos
+        .where((t) =>
+            t.estado?.toLowerCase() == 'pendiente' ||
+            t.estado?.toLowerCase() == 'programado')
+        .length;
+    final enCurso = trabajos
+        .where((t) =>
+            t.estado?.toLowerCase() == 'en curso' ||
+            t.estado?.toLowerCase() == 'en ejecución' ||
+            t.estado?.toLowerCase() == 'ejecutando')
+        .length;
+    final completados = trabajos
+        .where((t) =>
+            t.estado?.toLowerCase() == 'completado' ||
+            t.estado?.toLowerCase() == 'finalizado')
+        .length;
 
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard(
-            'Pendientes',
-            pendientes.toString(),
-            Icons.schedule,
-            const Color(AppConstants.infoColor),
-            onTap: () => _navegarAListaTrabajosPorEstado('Pendientes'),
+          child: _buildTaskStatCard(
+            'LISTAS',
+            completados.toString().padLeft(2, '0'),
+            Icons.check_circle_outline,
+            const Color(0xFF00E676),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildStatCard(
-            'En Curso',
-            enCurso.toString(),
-            Icons.play_circle,
-            const Color(AppConstants.accentColor),
-            onTap: () => _navegarAListaTrabajosPorEstado('En Curso'),
+          child: _buildTaskStatCard(
+            'PENDIENTES',
+            pendientes.toString().padLeft(2, '0'),
+            Icons.access_time,
+            const Color(0xFFFF9800),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildStatCard(
-            'Completados',
-            completados.toString(),
-            Icons.check_circle,
-            const Color(AppConstants.successColor),
-            onTap: () => _navegarAListaTrabajosPorEstado('Completados'),
+          child: _buildTaskStatCard(
+            'EN CURSO',
+            enCurso.toString().padLeft(2, '0'),
+            Icons.sync,
+            const Color(0xFF2196F3),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCalendarioTrabajosYMantenimientos(List<Trabajo> trabajos, List<Mantenimiento> mantenimientos) {
-    // Mostrar TODOS los trabajos sin importar el estado
-    final todosLosTrabajos = trabajos;
-    
-    // Crear mapa de fechas con trabajos
-    _trabajosPorFecha = {};
-    for (final trabajo in todosLosTrabajos) {
-      final fecha = DateTime(trabajo.fechaInicio.year, trabajo.fechaInicio.month, trabajo.fechaInicio.day);
-      _trabajosPorFecha[fecha] = [...(_trabajosPorFecha[fecha] ?? []), trabajo];
-    }
-    
-    // Crear mapa de fechas con mantenimientos próximos (solo pendientes y próximos)
-    _mantenimientosPorFecha = {};
-    final hoy = DateTime.now();
-    final proximosDias = hoy.add(const Duration(days: 30)); // Próximos 30 días
-    
-    for (final mantenimiento in mantenimientos) {
-      // Solo mostrar mantenimientos pendientes que estén próximos (hasta 30 días)
-      if (mantenimiento.estado.toLowerCase() == 'pendiente' && 
-          mantenimiento.fecha.isAfter(hoy.subtract(const Duration(days: 1))) &&
-          mantenimiento.fecha.isBefore(proximosDias)) {
-        final fecha = DateTime(mantenimiento.fecha.year, mantenimiento.fecha.month, mantenimiento.fecha.day);
-        _mantenimientosPorFecha[fecha] = [...(_mantenimientosPorFecha[fecha] ?? []), mantenimiento];
-      }
-    }
-
-    _logger.info('📅 Calendario: ${todosLosTrabajos.length} trabajos totales');
-    _logger.info('📅 Calendario: ${_trabajosPorFecha.length} fechas con trabajos');
-    _logger.info('📅 Calendario: ${mantenimientos.length} mantenimientos totales');
-    _logger.info('📅 Calendario: ${_mantenimientosPorFecha.length} fechas con mantenimientos próximos');
-    
-    // Debug: mostrar algunos trabajos
-    for (int i = 0; i < todosLosTrabajos.length && i < 3; i++) {
-      final trabajo = todosLosTrabajos[i];
-      _logger.info('📅 Trabajo $i: ${trabajo.tipo} - ${trabajo.cultivo} - ${DateFormat('dd/MM/yyyy').format(trabajo.fechaInicio)} - Estado: ${trabajo.estado}');
-    }
-    
-    // Debug: mostrar fechas con trabajos
-    _logger.info('📅 Fechas con trabajos:');
-    _trabajosPorFecha.forEach((fecha, trabajos) {
-      _logger.info('📅   ${DateFormat('dd/MM/yyyy').format(fecha)}: ${trabajos.length} trabajos');
-    });
-    
-    // Debug: mostrar algunos mantenimientos
-    for (int i = 0; i < mantenimientos.length && i < 3; i++) {
-      final mantenimiento = mantenimientos[i];
-      _logger.info('📅 Mantenimiento $i: ${mantenimiento.descripcion} - ${DateFormat('dd/MM/yyyy').format(mantenimiento.fecha)} - Estado: ${mantenimiento.estado}');
-    }
-    
-    // Debug: mostrar fechas con mantenimientos
-    _logger.info('📅 Fechas con mantenimientos próximos:');
-    _mantenimientosPorFecha.forEach((fecha, mantenimientos) {
-      _logger.info('📅   ${DateFormat('dd/MM/yyyy').format(fecha)}: ${mantenimientos.length} mantenimientos');
-    });
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(AppConstants.primaryColor),
-                    const Color(AppConstants.primaryColor).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Calendario de Trabajos y Mantenimientos',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // Leyenda de colores
-        _buildLeyendaColores(),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+  Widget _buildTaskStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: TableCalendar<Trabajo>(
-            firstDay: DateTime.now().subtract(const Duration(days: 365)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: _focusedDay,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              // Solo actualizar si es un día diferente
-              if (!isSameDay(_selectedDay, selectedDay)) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-                
-                // Normalizar la fecha seleccionada para comparar correctamente
-                final fechaNormalizada = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-                final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
-                final mantenimientosDelDia = _mantenimientosPorFecha[fechaNormalizada] ?? [];
-                
-                _logger.info('📅 Clic en día: ${DateFormat('dd/MM/yyyy').format(selectedDay)}');
-                _logger.info('📅 Fecha normalizada: ${DateFormat('dd/MM/yyyy').format(fechaNormalizada)}');
-                _logger.info('📅 Trabajos encontrados: ${trabajosDelDia.length}');
-                _logger.info('📅 Mantenimientos encontrados: ${mantenimientosDelDia.length}');
-                
-                _mostrarDetallesTrabajosYMantenimientos(context, trabajosDelDia, mantenimientosDelDia, selectedDay);
-              }
-            },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-              });
-            },
-            eventLoader: (day) {
-              final fechaNormalizada = DateTime(day.year, day.month, day.day);
-              final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
-              if (trabajosDelDia.isNotEmpty) {
-                _logger.info('📅 EventLoader - Día ${DateFormat('dd/MM/yyyy').format(day)}: ${trabajosDelDia.length} trabajos');
-              }
-              return trabajosDelDia;
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay);
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay, isSelected: true);
-              },
-              todayBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay, isToday: true);
-              },
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-            calendarStyle: CalendarStyle(
-              outsideDaysVisible: false,
-              weekendTextStyle: TextStyle(color: Colors.red[400]),
-              holidayTextStyle: TextStyle(color: Colors.red[400]),
-              defaultTextStyle: const TextStyle(color: Colors.black87),
-              selectedDecoration: BoxDecoration(
-                color: const Color(AppConstants.primaryColor).withOpacity(0.7),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(AppConstants.primaryColor),
-                  width: 2,
-                ),
-              ),
-              selectedTextStyle: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-              todayDecoration: BoxDecoration(
-                color: const Color(AppConstants.primaryColor).withOpacity(0.2),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(AppConstants.primaryColor).withOpacity(0.5),
-                  width: 1,
-                ),
-              ),
-              todayTextStyle: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w600,
-              ),
-              markersMaxCount: 0, // Desactivar los marcadores
-            ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-              leftChevronIcon: const Icon(
-                Icons.chevron_left,
-                color: Color(AppConstants.primaryColor),
-              ),
-              rightChevronIcon: const Icon(
-                Icons.chevron_right,
-                color: Color(AppConstants.primaryColor),
-              ),
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: TextStyle(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w600,
-              ),
-              weekendStyle: TextStyle(
-                color: Colors.red[400],
-                fontWeight: FontWeight.w600,
-              ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1C1C1E),
             ),
           ),
-        ),
-      ],
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF8E8E93),
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   /// Construye una celda del calendario con círculo de color según trabajos y mantenimientos
-  Widget _buildDayCell(DateTime day, DateTime focusedDay, {bool isSelected = false, bool isToday = false}) {
+  Widget _buildDayCell(DateTime day, DateTime focusedDay,
+      {bool isSelected = false, bool isToday = false}) {
     final fechaNormalizada = DateTime(day.year, day.month, day.day);
     final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
-    final mantenimientosDelDia = _mantenimientosPorFecha[fechaNormalizada] ?? [];
-    
+    final mantenimientosDelDia =
+        _mantenimientosPorFecha[fechaNormalizada] ?? [];
+
     // Determinar el color del círculo según trabajos y mantenimientos
     Color circleColor = Colors.transparent;
     Color textColor = Colors.black87;
-    
+
     if (mantenimientosDelDia.isNotEmpty) {
       // Si hay mantenimientos próximos, usar color amarillo
       circleColor = Colors.yellow[600]!;
@@ -692,7 +660,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       circleColor = const Color(AppConstants.primaryColor).withOpacity(0.2);
       textColor = Colors.black87;
     }
-    
+
     return Container(
       margin: const EdgeInsets.all(4),
       child: Center(
@@ -702,7 +670,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           decoration: BoxDecoration(
             color: circleColor,
             shape: BoxShape.circle,
-            border: isSelected 
+            border: isSelected
                 ? Border.all(
                     color: const Color(AppConstants.primaryColor),
                     width: 2,
@@ -727,25 +695,25 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   /// Obtiene el estado predominante de una lista de trabajos
   String _getEstadoPredominante(List<Trabajo> trabajos) {
     if (trabajos.isEmpty) return 'pendiente';
-    
+
     // Contar estados
     final Map<String, int> estadoCount = {};
     for (final trabajo in trabajos) {
       final estado = trabajo.estado?.toLowerCase() ?? 'pendiente';
       estadoCount[estado] = (estadoCount[estado] ?? 0) + 1;
     }
-    
+
     // Encontrar el estado con más trabajos
     String estadoPredominante = 'pendiente';
     int maxCount = 0;
-    
+
     estadoCount.forEach((estado, count) {
       if (count > maxCount) {
         maxCount = count;
         estadoPredominante = estado;
       }
     });
-    
+
     return estadoPredominante;
   }
 
@@ -766,7 +734,11 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     }
   }
 
-  void _mostrarDetallesTrabajosYMantenimientos(BuildContext context, List<Trabajo> trabajos, List<Mantenimiento> mantenimientos, DateTime fecha) {
+  void _mostrarDetallesTrabajosYMantenimientos(
+      BuildContext context,
+      List<Trabajo> trabajos,
+      List<Mantenimiento> mantenimientos,
+      DateTime fecha) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -827,7 +799,9 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ...trabajos.map((trabajo) => _buildTrabajoCard(trabajo)).toList(),
+                    ...trabajos
+                        .map((trabajo) => _buildTrabajoCard(trabajo))
+                        .toList(),
                   ],
                   if (mantenimientos.isNotEmpty) ...[
                     if (trabajos.isNotEmpty) const SizedBox(height: 16),
@@ -840,7 +814,10 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ...mantenimientos.map((mantenimiento) => _buildMantenimientoCard(mantenimiento)).toList(),
+                    ...mantenimientos
+                        .map((mantenimiento) =>
+                            _buildMantenimientoCard(mantenimiento))
+                        .toList(),
                   ],
                 ],
               ],
@@ -861,7 +838,8 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.yellow[600],
                 foregroundColor: Colors.black87,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
             ),
             ElevatedButton.icon(
@@ -874,7 +852,8 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(AppConstants.primaryColor),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
             ),
           ],
@@ -950,7 +929,8 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     // TODO: Implementar navegación a detalles de mantenimiento
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Detalles de mantenimiento: ${mantenimiento.descripcion}'),
+        content:
+            Text('Detalles de mantenimiento: ${mantenimiento.descripcion}'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -981,7 +961,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
     Color cardColor = Colors.grey.withOpacity(0.05);
     Color borderColor = Colors.grey.withOpacity(0.2);
     Color iconColor = Colors.grey;
-    
+
     final estado = trabajo.estado?.toLowerCase() ?? '';
     if (estado == 'pendiente' || estado == 'programado') {
       cardColor = Colors.blue.withOpacity(0.05);
@@ -996,7 +976,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       borderColor = Colors.green.withOpacity(0.2);
       iconColor = Colors.green;
     }
-    
+
     return InkWell(
       onTap: () => _navegarADetallesTrabajo(trabajo),
       borderRadius: BorderRadius.circular(12),
@@ -1008,157 +988,158 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor),
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.work,
-                color: iconColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${trabajo.tipo} - ${trabajo.cultivo}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (trabajo.cliente != null) ...[
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
                 Icon(
-                  Icons.person,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Cliente: ${trabajo.cliente}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-          ] else ...[
-            Row(
-              children: [
-                Icon(
-                  Icons.home,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Trabajo propio',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-          ],
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(
-                Icons.landscape,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Campo ID: ${trabajo.idCampo}',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Inicio: ${DateFormat('HH:mm').format(trabajo.fechaInicio)}',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          if (trabajo.fechaFin != null) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Fin: ${DateFormat('HH:mm').format(trabajo.fechaFin!)}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (trabajo.observaciones != null && trabajo.observaciones!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              trabajo.observaciones!,
-              style: TextStyle(
-                color: Colors.grey[700],
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-          // Estado del trabajo
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: iconColor,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Estado: ${trabajo.estado ?? 'Sin estado'}',
-                style: TextStyle(
+                  Icons.work,
                   color: iconColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${trabajo.tipo} - ${trabajo.cultivo}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (trabajo.cliente != null) ...[
+              Row(
+                children: [
+                  Icon(
+                    Icons.person,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Cliente: ${trabajo.cliente}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+            ] else ...[
+              Row(
+                children: [
+                  Icon(
+                    Icons.home,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Trabajo propio',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+            ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  Icons.landscape,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Campo ID: ${trabajo.idCampo}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Inicio: ${DateFormat('HH:mm').format(trabajo.fechaInicio)}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            if (trabajo.fechaFin != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    Icons.schedule,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Fin: ${DateFormat('HH:mm').format(trabajo.fechaFin!)}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (trabajo.observaciones != null &&
+                trabajo.observaciones!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                trabajo.observaciones!,
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ],
-          ),
-        ],
+            // Estado del trabajo
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: iconColor,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Estado: ${trabajo.estado ?? 'Sin estado'}',
+                  style: TextStyle(
+                    color: iconColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -1238,7 +1219,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
             ),
             const SizedBox(width: 12),
             const Text(
-              'Superficies por Máquina',
+              'Productividad',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -1246,6 +1227,16 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'RANKING DE MÁQUINAS',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF8E8E93),
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 16),
         _buildMaquinasContent(maquinas),
@@ -1295,76 +1286,111 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       );
     }
 
-    return Column(
-      children: maquinas.take(3).map((maquina) => 
-        Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    // Preparar datos para mostrar (máximo 3 máquinas)
+    final topMaquinas = maquinas.take(3).toList();
+    final maxHa = topMaquinas.fold(
+        0.0,
+        (max, m) => (m.superficieTotalHa ?? 0.0) > max
+            ? (m.superficieTotalHa ?? 0.0)
+            : max);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.build,
-                color: const Color(AppConstants.primaryColor),
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${maquina.marca} ${maquina.modelo}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
+        ],
+      ),
+      child: Column(
+        children: topMaquinas.asMap().entries.map((entry) {
+          final index = entry.key;
+          final maquina = entry.value;
+          final ha = maquina.superficieTotalHa ?? 0.0;
+          final percentage = maxHa > 0 ? (ha / maxHa) * 100 : 0.0;
+
+          return Padding(
+            padding: EdgeInsets.only(
+                bottom: index < topMaquinas.length - 1 ? 16 : 0),
+            child: Row(
+              children: [
+                // Ranking number
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: _getBarColor(index).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
                         fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: _getBarColor(index),
                       ),
                     ),
-                    Row(
-                      children: [
-                        Text(
-                          'Año: ${maquina.ano}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Machine info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${maquina.marca} ${maquina.modelo}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${maquina.superficieTotalHa?.toStringAsFixed(1) ?? '0.0'} ha',
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      // Progress bar
+                      Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: percentage / 100,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _getBarColor(index),
+                              borderRadius: BorderRadius.circular(3),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ).toList(),
+                const SizedBox(width: 12),
+                // Efficiency percentage
+                Text(
+                  '${percentage.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: _getBarColor(index),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -1469,9 +1495,9 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
       child: Column(
         children: [
           // Título del gráfico
-          
+
           const SizedBox(height: 16),
-          
+
           // Gráfico de torta
           Expanded(
             child: Row(
@@ -1493,9 +1519,11 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                         final index = entry.key;
                         final operario = entry.value;
                         final ha = operario.superficieTotalHa ?? 0.0;
-                        final totalHa = topOperadores.fold(0.0, (sum, p) => sum + (p.superficieTotalHa ?? 0.0));
-                        final percentage = totalHa > 0 ? (ha / totalHa) * 100 : 0.0;
-                        
+                        final totalHa = topOperadores.fold(0.0,
+                            (sum, p) => sum + (p.superficieTotalHa ?? 0.0));
+                        final percentage =
+                            totalHa > 0 ? (ha / totalHa) * 100 : 0.0;
+
                         return PieChartSectionData(
                           color: _getBarColor(index),
                           value: ha,
@@ -1511,7 +1539,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                     ),
                   ),
                 ),
-                
+
                 // Leyenda con nombres y valores
                 Expanded(
                   flex: 1,
@@ -1522,7 +1550,7 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
                       final index = entry.key;
                       final operario = entry.value;
                       final ha = operario.superficieTotalHa ?? 0.0;
-                      
+
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
@@ -1576,72 +1604,16 @@ class _OptimizedDashboardScreenState extends ConsumerState<OptimizedDashboardScr
   Color _getBarColor(int index) {
     final colors = [
       const Color(AppConstants.primaryColor), // Color primario de la app
-      Colors.deepOrange,                      // Naranja intenso
-      Colors.teal,                           // Verde azulado
-      Colors.purple,                         // Púrpura
-      Colors.red,                            // Rojo
-      Colors.indigo,                         // Índigo
-      Colors.amber,                          // Ámbar
-      Colors.pink,                           // Rosa
-      Colors.cyan,                           // Cian
-      Colors.lime,                           // Lima
+      Colors.deepOrange, // Naranja intenso
+      Colors.teal, // Verde azulado
+      Colors.purple, // Púrpura
+      Colors.red, // Rojo
+      Colors.indigo, // Índigo
+      Colors.amber, // Ámbar
+      Colors.pink, // Rosa
+      Colors.cyan, // Cian
+      Colors.lime, // Lima
     ];
     return colors[index % colors.length];
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, {VoidCallback? onTap}) {
-    final card = Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.1),
-          width: 0.5,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: color,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF8E8E93),
-              fontWeight: FontWeight.w500,
-              letterSpacing: -0.08,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: card,
-      );
-    }
-
-    return card;
   }
 }
