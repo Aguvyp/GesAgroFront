@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'optimized_screens.dart';
 import 'optimized_dashboard_screen.dart';
+
 // import 'finanzas/optimized_finanzas_screens.dart'; // Oculto temporalmente
 import 'mantenimientos/optimized_mantenimientos_screen.dart';
 import 'reportes/optimized_reportes_screen.dart';
@@ -10,8 +11,14 @@ import 'test_screen.dart';
 import 'personal/personal_list_screen.dart';
 import 'clientes/clientes_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
-import 'forms/forms_screens.dart';
 import 'costos/costos_main_screen.dart';
+import 'forms/trabajo_form_screen.dart';
+import 'forms/maquina_form_screen.dart';
+import 'forms/personal_form_screen.dart';
+import 'forms/mantenimiento_form_screen.dart';
+import 'forms/cliente_form_screen.dart';
+import 'forms/campo_form_screen.dart';
+import 'forms/costo_form_screen.dart';
 import '../providers/optimized_providers.dart';
 import '../providers/optimized_auth_provider.dart';
 
@@ -118,12 +125,18 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDashboard = _currentIndex == 0;
+    final navBackground = Colors.white;
+    final borderColor = Colors.grey.shade200;
+
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF5F5F7), // Light gray background
       body: PageView(
         controller: _pageController,
-        physics:
-            const NeverScrollableScrollPhysics(), // Deshabilitar swipe manual
+        physics: const NeverScrollableScrollPhysics(), // Disable swipe
         onPageChanged: (index) {
           setState(() {
             _currentIndex = index;
@@ -131,17 +144,287 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
         },
         children: _screens,
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      floatingActionButtonLocation: isDashboard
+          ? FloatingActionButtonLocation.centerDocked
+          : FloatingActionButtonLocation.endFloat,
+      floatingActionButton: isDashboard
+          ? FloatingActionButton(
+              onPressed: () => _showQuickActionMenu(context),
+              backgroundColor: const Color(0xFF2E7D32),
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add, color: Colors.white, size: 32),
+            )
+          : null,
+      bottomNavigationBar: isDashboard
+          ? _buildDashboardBottomAppBar(
+              theme, colorScheme, navBackground, borderColor)
+          : _buildStandardBottomNavBar(
+              theme, colorScheme, navBackground, borderColor),
+      resizeToAvoidBottomInset: false,
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final navBackground = theme.bottomNavigationBarTheme.backgroundColor ??
-        colorScheme.surfaceVariant;
-    final borderColor = theme.dividerColor.withOpacity(0.35);
+  /// Menú de acciones rápidas (botón +)
+  void _showQuickActionMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Crear Nuevo',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1C1C1E),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 24,
+              runSpacing: 24,
+              alignment: WrapAlignment.center,
+              children: [
+                _buildQuickActionItem(
+                  icon: Icons.work_outline_rounded,
+                  label: 'Trabajo',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const TrabajoFormScreen()),
+                    );
+                  },
+                ),
+                _buildQuickActionItem(
+                  icon: Icons.agriculture_rounded,
+                  label: 'Máquina',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const MaquinaFormScreen()),
+                    );
+                  },
+                ),
+                _buildQuickActionItem(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Personal',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const PersonalFormScreen()),
+                    );
+                  },
+                ),
+                _buildQuickActionItem(
+                  icon: Icons.build_circle_outlined,
+                  label: 'Mantenimiento',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const MantenimientoFormScreen()),
+                    );
+                  },
+                ),
+                _buildQuickActionItem(
+                  icon: Icons.people_outline_rounded,
+                  label: 'Cliente',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ClienteFormScreen()),
+                    );
+                  },
+                ),
+                _buildQuickActionItem(
+                  icon: Icons.landscape_outlined,
+                  label: 'Campo',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CampoFormScreen()),
+                    );
+                  },
+                ),
+                _buildQuickActionItem(
+                  icon: Icons.attach_money_rounded,
+                  label: 'Gasto/Cobro',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CostoFormScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildQuickActionItem({
+    required IconData icon,
+    // required Color color, // Usamos verde unificado
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    const color = Color(0xFF2E7D32);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: 80, // Ancho fijo para alineación en Wrap
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12, // User might have many items, smaller text
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Barra inferior con "Notch" para el Dashboard
+  Widget _buildDashboardBottomAppBar(ThemeData theme, ColorScheme colorScheme,
+      Color navBackground, Color borderColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        color: navBackground,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              // Left Group
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem(0, Icons.home_rounded, 'Inicio', true),
+                    _buildNavItem(1, Icons.landscape_rounded, 'Campos', false),
+                  ],
+                ),
+              ),
+              // Space for FAB
+              const SizedBox(width: 48),
+              // Right Group
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem(
+                        3, Icons.receipt_long_rounded, 'Finanzas', false),
+                    _buildNavItem(4, Icons.more_horiz_rounded, 'Más', false),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(
+      int index, IconData icon, String label, bool isSelected) {
+    final color = isSelected
+        ? const Color(0xFF2E7D32) // Green for active layout
+        : Colors.grey.withOpacity(0.6);
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+          _pageController.jumpToPage(index);
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Barra inferior estándar para otras pantallas
+  Widget _buildStandardBottomNavBar(ThemeData theme, ColorScheme colorScheme,
+      Color navBackground, Color borderColor) {
     return Container(
       decoration: BoxDecoration(
         color: navBackground,
@@ -227,9 +510,6 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
       ),
     );
   }
-
-  // Métodos removidos - ahora se usa Bottom Navigation Bar
-  // El drawer se movió a la pantalla "Más"
 }
 
 /// Pantalla de costos optimizada
@@ -514,6 +794,20 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                   _buildSectionCard(
                     'Gestión',
                     [
+                      _buildMoreItem(
+                        'Trabajos',
+                        Icons.work_rounded,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const OptimizedTrabajosListScreen(
+                                      showAppBar: true),
+                            ),
+                          );
+                        },
+                      ),
                       _buildMoreItem(
                         'Máquinas',
                         Icons.local_shipping_rounded,

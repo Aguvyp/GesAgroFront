@@ -15,7 +15,7 @@ import 'additional_forms.dart';
 /// Formulario para crear/editar campos
 class CampoFormDialog extends ConsumerStatefulWidget {
   final Campo? campo;
-  
+
   const CampoFormDialog({Key? key, this.campo}) : super(key: key);
 
   @override
@@ -34,10 +34,14 @@ class _CampoFormDialogState extends ConsumerState<CampoFormDialog> {
   void initState() {
     super.initState();
     _nombreController = TextEditingController(text: widget.campo?.nombre ?? '');
-    _superficieController = TextEditingController(text: widget.campo?.superficieHa.toString() ?? '');
-    _latitudController = TextEditingController(text: widget.campo?.latitud?.toString() ?? '');
-    _longitudController = TextEditingController(text: widget.campo?.longitud?.toString() ?? '');
-    _detallesController = TextEditingController(text: widget.campo?.detalles ?? '');
+    _superficieController = TextEditingController(
+        text: widget.campo?.superficieHa.toString() ?? '');
+    _latitudController =
+        TextEditingController(text: widget.campo?.latitud?.toString() ?? '');
+    _longitudController =
+        TextEditingController(text: widget.campo?.longitud?.toString() ?? '');
+    _detallesController =
+        TextEditingController(text: widget.campo?.detalles ?? '');
   }
 
   @override
@@ -71,8 +75,8 @@ class _CampoFormDialogState extends ConsumerState<CampoFormDialog> {
                       Text(
                         'Información Básica',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       OptimizedTextField(
@@ -116,8 +120,8 @@ class _CampoFormDialogState extends ConsumerState<CampoFormDialog> {
                       Text(
                         'Ubicación',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       Row(
@@ -155,8 +159,8 @@ class _CampoFormDialogState extends ConsumerState<CampoFormDialog> {
                       Text(
                         'Detalles Adicionales',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       OptimizedTextField(
@@ -193,22 +197,32 @@ class _CampoFormDialogState extends ConsumerState<CampoFormDialog> {
         final data = {
           'nombre': _nombreController.text,
           'superficie_ha': double.parse(_superficieController.text),
-          'latitud': _latitudController.text.isNotEmpty ? double.parse(_latitudController.text) : null,
-          'longitud': _longitudController.text.isNotEmpty ? double.parse(_longitudController.text) : null,
-          'detalles': _detallesController.text.isNotEmpty ? _detallesController.text : null,
+          'latitud': _latitudController.text.isNotEmpty
+              ? double.parse(_latitudController.text)
+              : null,
+          'longitud': _longitudController.text.isNotEmpty
+              ? double.parse(_longitudController.text)
+              : null,
+          'detalles': _detallesController.text.isNotEmpty
+              ? _detallesController.text
+              : null,
         };
 
         if (widget.campo == null) {
           await ref.read(camposProvider.notifier).createCampo(data);
         } else {
-          await ref.read(camposProvider.notifier).updateCampo(widget.campo!.id!, data);
+          await ref
+              .read(camposProvider.notifier)
+              .updateCampo(widget.campo!.id!, data);
         }
 
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.campo == null ? 'Campo creado exitosamente' : 'Campo actualizado exitosamente'),
+              content: Text(widget.campo == null
+                  ? 'Campo creado exitosamente'
+                  : 'Campo actualizado exitosamente'),
             ),
           );
         }
@@ -221,13 +235,12 @@ class _CampoFormDialogState extends ConsumerState<CampoFormDialog> {
       }
     }
   }
-
 }
 
 /// Formulario para crear/editar costos
 class CostoFormDialog extends ConsumerStatefulWidget {
   final dynamic costo;
-  
+
   const CostoFormDialog({Key? key, this.costo}) : super(key: key);
 
   @override
@@ -247,10 +260,14 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
   @override
   void initState() {
     super.initState();
-    _descripcionController = TextEditingController(text: widget.costo?.descripcion ?? '');
-    _montoController = TextEditingController(text: widget.costo?.monto?.toString() ?? '');
-    _categoriaController = TextEditingController(text: widget.costo?.categoria ?? '');
-    _fechaController = TextEditingController(text: widget.costo?.fecha?.toString() ?? '');
+    _descripcionController =
+        TextEditingController(text: widget.costo?.descripcion ?? '');
+    _montoController =
+        TextEditingController(text: widget.costo?.monto?.toString() ?? '');
+    _categoriaController =
+        TextEditingController(text: widget.costo?.categoria ?? '');
+    _fechaController =
+        TextEditingController(text: widget.costo?.fecha?.toString() ?? '');
     _fecha = widget.costo?.fecha ?? DateTime.now();
     _formaPago = widget.costo?.formaPago ?? 'Efectivo';
     _pagado = widget.costo?.pagado ?? false;
@@ -286,8 +303,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
                       Text(
                         'Información Básica',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       OptimizedTextField(
@@ -332,9 +349,12 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
                         children: [
                           Text(
                             'Fecha',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
@@ -359,7 +379,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
                               if (date != null) {
                                 setState(() {
                                   _fecha = date;
-                                  _fechaController.text = '${date.day}/${date.month}/${date.year}';
+                                  _fechaController.text =
+                                      '${date.day}/${date.month}/${date.year}';
                                 });
                               }
                             },
@@ -378,8 +399,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
                       Text(
                         'Información de Pago',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       DropdownButtonFormField<String>(
@@ -390,10 +411,15 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
                         ),
                         value: _formaPago,
                         items: const [
-                          DropdownMenuItem(value: 'Efectivo', child: Text('Efectivo')),
-                          DropdownMenuItem(value: 'Transferencia', child: Text('Transferencia')),
-                          DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
-                          DropdownMenuItem(value: 'Tarjeta', child: Text('Tarjeta')),
+                          DropdownMenuItem(
+                              value: 'Efectivo', child: Text('Efectivo')),
+                          DropdownMenuItem(
+                              value: 'Transferencia',
+                              child: Text('Transferencia')),
+                          DropdownMenuItem(
+                              value: 'Cheque', child: Text('Cheque')),
+                          DropdownMenuItem(
+                              value: 'Tarjeta', child: Text('Tarjeta')),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -404,7 +430,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
                       const SizedBox(height: 24),
                       SwitchListTile(
                         title: const Text('Pagado'),
-                        subtitle: const Text('Marcar si el costo ya fue pagado'),
+                        subtitle:
+                            const Text('Marcar si el costo ya fue pagado'),
                         value: _pagado,
                         onChanged: (value) {
                           setState(() {
@@ -440,7 +467,8 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
         final data = {
           'descripcion': _descripcionController.text,
           'monto': double.parse(_montoController.text),
-          'fecha': _fecha?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'fecha':
+              _fecha?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'destinatario': _categoriaController.text,
           'pagado': _pagado,
           'forma_pago': _formaPago ?? 'Efectivo',
@@ -454,14 +482,18 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
         if (widget.costo == null) {
           await ref.read(costosProvider.notifier).createCosto(data);
         } else {
-          await ref.read(costosProvider.notifier).updateCosto(widget.costo.id, data);
+          await ref
+              .read(costosProvider.notifier)
+              .updateCosto(widget.costo.id, data);
         }
 
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.costo == null ? 'Costo creado exitosamente' : 'Costo actualizado exitosamente'),
+              content: Text(widget.costo == null
+                  ? 'Costo creado exitosamente'
+                  : 'Costo actualizado exitosamente'),
             ),
           );
         }
@@ -474,13 +506,12 @@ class _CostoFormDialogState extends ConsumerState<CostoFormDialog> {
       }
     }
   }
-
 }
 
 /// Formulario para crear/editar trabajos
 class TrabajoFormDialog extends ConsumerStatefulWidget {
   final dynamic trabajo;
-  
+
   const TrabajoFormDialog({Key? key, this.trabajo}) : super(key: key);
 
   @override
@@ -501,26 +532,26 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   late TextEditingController _humedadCosechaController;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
-  
+
   // Estados adicionales
   String? _estadoSeleccionado;
   bool _esTercero = false;
   bool _cobrado = false;
   bool _servicioContratado = false;
-  
+
   // Selectores
   Campo? _campoSeleccionado;
   List<Maquina> _maquinasSeleccionadas = [];
   List<Personal> _personalSeleccionado = [];
   Cliente? _clienteSeleccionado;
-  
+
   // Listas para los selectores
   List<Campo> _campos = [];
   List<Campo> _camposFiltrados = []; // Campos filtrados por cliente
   List<Maquina> _maquinas = [];
   List<Personal> _personal = [];
   List<Cliente> _clientes = [];
-  
+
   bool _isLoadingData = false;
 
   @override
@@ -529,20 +560,28 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     // Si el trabajo tiene idTipoTrabajo, usarlo directamente
     // Si no, intentar encontrarlo por el nombre del tipo (se hará después de cargar los tipos)
     _tipoTrabajoSeleccionado = widget.trabajo?.idTipoTrabajo;
-    _cultivoController = TextEditingController(text: widget.trabajo?.cultivo ?? '');
-    _descripcionController = TextEditingController(text: widget.trabajo?.observaciones ?? '');
-    _fechaInicioController = TextEditingController(text: widget.trabajo?.fechaInicio?.toString() ?? '');
-    _fechaFinController = TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
-    _clienteController = TextEditingController(text: widget.trabajo?.cliente ?? '');
-    _montoCobradoController = TextEditingController(text: widget.trabajo?.montoCobrado?.toString() ?? '');
-    _rindeCosechaController = TextEditingController(text: widget.trabajo?.rindeCosecha?.toString() ?? '');
-    _humedadCosechaController = TextEditingController(text: widget.trabajo?.humedadCosecha?.toString() ?? '');
+    _cultivoController =
+        TextEditingController(text: widget.trabajo?.cultivo ?? '');
+    _descripcionController =
+        TextEditingController(text: widget.trabajo?.observaciones ?? '');
+    _fechaInicioController = TextEditingController(
+        text: widget.trabajo?.fechaInicio?.toString() ?? '');
+    _fechaFinController =
+        TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
+    _clienteController =
+        TextEditingController(text: widget.trabajo?.cliente ?? '');
+    _montoCobradoController = TextEditingController(
+        text: widget.trabajo?.montoCobrado?.toString() ?? '');
+    _rindeCosechaController = TextEditingController(
+        text: widget.trabajo?.rindeCosecha?.toString() ?? '');
+    _humedadCosechaController = TextEditingController(
+        text: widget.trabajo?.humedadCosecha?.toString() ?? '');
     _fechaInicio = widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
-    
+
     // Estados adicionales
     _estadoSeleccionado = widget.trabajo?.estado ?? 'Pendiente';
-    
+
     // Inicializar valores según el trabajo existente
     if (widget.trabajo != null) {
       _esTercero = widget.trabajo!.esTercero;
@@ -553,7 +592,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       _cobrado = false;
       _servicioContratado = false;
     }
-    
+
     // Cargar datos necesarios para los selectores
     Future.microtask(() => _loadDataForSelectors());
   }
@@ -580,14 +619,16 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       // Cargar tipos de trabajo
       try {
         _tiposTrabajo = await TipoTrabajoService.getTiposTrabajo();
-        
+
         // Si el trabajo tiene tipoTrabajoNombre pero no idTipoTrabajo, buscar el ID
-        if (widget.trabajo != null && 
-            widget.trabajo!.idTipoTrabajo == null && 
+        if (widget.trabajo != null &&
+            widget.trabajo!.idTipoTrabajo == null &&
             widget.trabajo!.tipoTrabajoNombre != null) {
           final tipoEncontrado = _tiposTrabajo.firstWhere(
             (tipo) => tipo.trabajo == widget.trabajo!.tipoTrabajoNombre,
-            orElse: () => _tiposTrabajo.isNotEmpty ? _tiposTrabajo.first : TipoTrabajo(id: 0, trabajo: ''),
+            orElse: () => _tiposTrabajo.isNotEmpty
+                ? _tiposTrabajo.first
+                : TipoTrabajo(id: 0, trabajo: ''),
           );
           if (tipoEncontrado.id != 0) {
             setState(() {
@@ -648,28 +689,37 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       // Seleccionar elementos existentes del trabajo
       if (widget.trabajo != null) {
         // Seleccionar cliente si es servicio contratado o trabajo a terceros
-        if ((_servicioContratado || _esTercero) && widget.trabajo!.cliente != null) {
+        if ((_servicioContratado || _esTercero) &&
+            widget.trabajo!.cliente != null) {
           _clienteSeleccionado = _clientes.firstWhere(
             (cliente) => cliente.nombre == widget.trabajo!.cliente,
-            orElse: () => _clientes.isNotEmpty ? _clientes.first : Cliente(id: 0, nombre: ''),
+            orElse: () => _clientes.isNotEmpty
+                ? _clientes.first
+                : Cliente(id: 0, nombre: ''),
           );
         }
 
         // Seleccionar campo
         _campoSeleccionado = _camposFiltrados.firstWhere(
           (campo) => campo.id == widget.trabajo!.idCampo,
-          orElse: () => _camposFiltrados.isNotEmpty ? _camposFiltrados.first : Campo(id: 0, nombre: '', superficieHa: 0),
+          orElse: () => _camposFiltrados.isNotEmpty
+              ? _camposFiltrados.first
+              : Campo(id: 0, nombre: '', superficieHa: 0),
         );
 
         // Seleccionar máquinas
-        _maquinasSeleccionadas = _maquinas.where(
-          (maquina) => widget.trabajo!.idMaquinas.contains(maquina.id),
-        ).toList();
+        _maquinasSeleccionadas = _maquinas
+            .where(
+              (maquina) => widget.trabajo!.idMaquinas.contains(maquina.id),
+            )
+            .toList();
 
         // Seleccionar personal
-        _personalSeleccionado = _personal.where(
-          (persona) => widget.trabajo!.idPersonal.contains(persona.id),
-        ).toList();
+        _personalSeleccionado = _personal
+            .where(
+              (persona) => widget.trabajo!.idPersonal.contains(persona.id),
+            )
+            .toList();
       }
     } catch (e) {
       // Manejar errores silenciosamente
@@ -685,7 +735,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
     if ((_servicioContratado || _esTercero) && _clienteSeleccionado != null) {
       // Si es servicio contratado o trabajo a terceros y hay cliente seleccionado, cargar solo sus campos
       try {
-        _camposFiltrados = await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
+        _camposFiltrados =
+            await ClienteService.getCamposByCliente(_clienteSeleccionado!.id!);
       } catch (e) {
         _camposFiltrados = [];
       }
@@ -699,7 +750,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
   Widget build(BuildContext context) {
     if (_isLoadingData) {
       return AlertDialog(
-        title: Text(widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo'),
+        title:
+            Text(widget.trabajo == null ? 'Nuevo Trabajo' : 'Editar Trabajo'),
         content: const SizedBox(
           height: 200,
           child: Center(
@@ -736,8 +788,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       Text(
                         'Información General',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       DropdownButtonFormField<int>(
@@ -809,7 +861,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Sección: Configuración
                 OptimizedCard(
                   padding: const EdgeInsets.all(20),
@@ -819,13 +871,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       Text(
                         'Configuración',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       SwitchListTile(
                         title: const Text('Servicio Contratado'),
-                        subtitle: const Text('Trabajo realizado por un prestador externo'),
+                        subtitle: const Text(
+                            'Trabajo realizado por un prestador externo'),
                         value: _servicioContratado,
                         onChanged: (value) {
                           setState(() {
@@ -845,7 +898,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       const Divider(),
                       SwitchListTile(
                         title: const Text('Trabajo a Terceros'),
-                        subtitle: const Text('Trabajo realizado para un cliente'),
+                        subtitle:
+                            const Text('Trabajo realizado para un cliente'),
                         value: _esTercero,
                         onChanged: (value) async {
                           setState(() {
@@ -875,10 +929,14 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                         ),
                         value: _estadoSeleccionado,
                         items: const [
-                          DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
-                          DropdownMenuItem(value: 'En progreso', child: Text('En progreso')),
-                          DropdownMenuItem(value: 'Completado', child: Text('Completado')),
-                          DropdownMenuItem(value: 'Cancelado', child: Text('Cancelado')),
+                          DropdownMenuItem(
+                              value: 'Pendiente', child: Text('Pendiente')),
+                          DropdownMenuItem(
+                              value: 'En progreso', child: Text('En progreso')),
+                          DropdownMenuItem(
+                              value: 'Completado', child: Text('Completado')),
+                          DropdownMenuItem(
+                              value: 'Cancelado', child: Text('Cancelado')),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -889,7 +947,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       const SizedBox(height: 16),
                       SwitchListTile(
                         title: const Text('Cobrado'),
-                        subtitle: const Text('Marcar si el trabajo ya fue cobrado'),
+                        subtitle:
+                            const Text('Marcar si el trabajo ya fue cobrado'),
                         value: _cobrado,
                         onChanged: (value) {
                           setState(() {
@@ -918,7 +977,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Sección: Cliente y Campo
                 OptimizedCard(
                   padding: const EdgeInsets.all(20),
@@ -928,8 +987,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       Text(
                         'Cliente y Campo',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       if (_esTercero) ...[
@@ -944,7 +1003,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           items: _clientes.map((cliente) {
                             return DropdownMenuItem<Cliente>(
                               value: cliente,
-                              child: Text(cliente.nombre),
+                              child: Text(cliente.nombre ?? ''),
                             );
                           }).toList(),
                           onChanged: (Cliente? newValue) async {
@@ -979,7 +1038,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           items: _clientes.map((cliente) {
                             return DropdownMenuItem<Cliente>(
                               value: cliente,
-                              child: Text(cliente.nombre),
+                              child: Text(cliente.nombre ?? ''),
                             );
                           }).toList(),
                           onChanged: (Cliente? cliente) async {
@@ -1037,7 +1096,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                             icon: const Icon(Icons.add, size: 18),
                             label: const Text('Nuevo'),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                             ),
                           ),
                         ],
@@ -1046,7 +1106,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Sección: Recursos
                 OptimizedCard(
                   padding: const EdgeInsets.all(20),
@@ -1056,8 +1116,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       Text(
                         'Recursos',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       // Máquinas
@@ -1066,16 +1126,20 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           Expanded(
                             child: Text(
                               'Máquinas',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                           Text(
                             '${_maquinasSeleccionadas.length} seleccionadas',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).primaryColor,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).primaryColor,
+                                    ),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
@@ -1083,7 +1147,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                             icon: const Icon(Icons.add, size: 18),
                             label: const Text('Nueva'),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                             ),
                           ),
                         ],
@@ -1101,9 +1166,12 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           padding: const EdgeInsets.all(16),
                           child: Text(
                             'No hay máquinas disponibles',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey,
+                                ),
                           ),
                         )
                       else
@@ -1114,7 +1182,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                               spacing: 12,
                               runSpacing: 12,
                               children: _maquinas.map((maquina) {
-                                final isSelected = _maquinasSeleccionadas.any((m) => m.id == maquina.id);
+                                final isSelected = _maquinasSeleccionadas
+                                    .any((m) => m.id == maquina.id);
                                 return FilterChip(
                                   label: Text(maquina.nombre),
                                   selected: isSelected,
@@ -1123,13 +1192,18 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                                       if (selected) {
                                         _maquinasSeleccionadas.add(maquina);
                                       } else {
-                                        _maquinasSeleccionadas.removeWhere((m) => m.id == maquina.id);
+                                        _maquinasSeleccionadas.removeWhere(
+                                            (m) => m.id == maquina.id);
                                       }
                                     });
                                   },
-                                  selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                  checkmarkColor: Theme.of(context).primaryColor,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  selectedColor: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.2),
+                                  checkmarkColor:
+                                      Theme.of(context).primaryColor,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
                                 );
                               }).toList(),
                             ),
@@ -1144,16 +1218,20 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           Expanded(
                             child: Text(
                               'Operarios',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                           Text(
                             '${_personalSeleccionado.length} seleccionados',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).primaryColor,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).primaryColor,
+                                    ),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
@@ -1161,7 +1239,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                             icon: const Icon(Icons.add, size: 18),
                             label: const Text('Nuevo'),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                             ),
                           ),
                         ],
@@ -1179,9 +1258,12 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                           padding: const EdgeInsets.all(16),
                           child: Text(
                             'No hay operarios disponibles',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey,
+                                ),
                           ),
                         )
                       else
@@ -1192,7 +1274,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                               spacing: 12,
                               runSpacing: 12,
                               children: _personal.map((persona) {
-                                final isSelected = _personalSeleccionado.any((p) => p.id == persona.id);
+                                final isSelected = _personalSeleccionado
+                                    .any((p) => p.id == persona.id);
                                 return FilterChip(
                                   label: Text(persona.nombre),
                                   selected: isSelected,
@@ -1201,13 +1284,18 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                                       if (selected) {
                                         _personalSeleccionado.add(persona);
                                       } else {
-                                        _personalSeleccionado.removeWhere((p) => p.id == persona.id);
+                                        _personalSeleccionado.removeWhere(
+                                            (p) => p.id == persona.id);
                                       }
                                     });
                                   },
-                                  selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                  checkmarkColor: Theme.of(context).primaryColor,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  selectedColor: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.2),
+                                  checkmarkColor:
+                                      Theme.of(context).primaryColor,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
                                 );
                               }).toList(),
                             ),
@@ -1217,7 +1305,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Sección: Fechas
                 OptimizedCard(
                   padding: const EdgeInsets.all(20),
@@ -1227,8 +1315,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                       Text(
                         'Fechas',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       Column(
@@ -1236,9 +1324,12 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                         children: [
                           Text(
                             'Fecha de Inicio',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
@@ -1263,7 +1354,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                               if (date != null) {
                                 setState(() {
                                   _fechaInicio = date;
-                                  _fechaInicioController.text = '${date.day}/${date.month}/${date.year}';
+                                  _fechaInicioController.text =
+                                      '${date.day}/${date.month}/${date.year}';
                                 });
                               }
                             },
@@ -1276,9 +1368,12 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                         children: [
                           Text(
                             'Fecha de Fin',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
@@ -1303,7 +1398,8 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
                               if (date != null) {
                                 setState(() {
                                   _fechaFin = date;
-                                  _fechaFinController.text = '${date.day}/${date.month}/${date.year}';
+                                  _fechaFinController.text =
+                                      '${date.day}/${date.month}/${date.year}';
                                 });
                               }
                             },
@@ -1340,29 +1436,35 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
         // Construir el request según el formato requerido por el endpoint
         final data = <String, dynamic>{
           'id_tipo_trabajo': _tipoTrabajoSeleccionado,
-          'cliente': (_servicioContratado || _esTercero) && _clienteSeleccionado != null 
-              ? _clienteSeleccionado!.nombre 
+          'cliente': (_servicioContratado || _esTercero) &&
+                  _clienteSeleccionado != null
+              ? _clienteSeleccionado!.nombre
               : null,
-          'fecha_inicio': _fechaInicio?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'fecha_inicio': _fechaInicio
+              ?.toIso8601String()
+              .split('T')[0], // Formato YYYY-MM-DD
           'id_campo': _campoSeleccionado?.id,
           'cultivo': _cultivoController.text,
-          'observaciones': _descripcionController.text.isNotEmpty 
-              ? _descripcionController.text 
+          'observaciones': _descripcionController.text.isNotEmpty
+              ? _descripcionController.text
               : null,
           'estado': _estadoSeleccionado ?? 'Pendiente',
           'a_terceros': _esTercero,
           'servicio_contratado': _servicioContratado,
-          'fecha_fin': _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'fecha_fin':
+              _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
         };
-        
+
         // Agregar campos de cosecha: si es cosecha (id = 1) usar valores ingresados, sino enviar 0
         if (_tipoTrabajoSeleccionado == 1) {
           // Para cosecha, usar valores ingresados (o null si están vacíos)
           if (_rindeCosechaController.text.isNotEmpty) {
-            data['rinde_cosecha'] = double.tryParse(_rindeCosechaController.text);
+            data['rinde_cosecha'] =
+                double.tryParse(_rindeCosechaController.text);
           }
           if (_humedadCosechaController.text.isNotEmpty) {
-            data['humedad_cosecha'] = double.tryParse(_humedadCosechaController.text);
+            data['humedad_cosecha'] =
+                double.tryParse(_humedadCosechaController.text);
           }
         } else {
           // Para otros tipos de trabajo, enviar 0 por defecto
@@ -1371,9 +1473,12 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
         }
 
         // Imprimir el body del request por consola
-        debugPrint('═══════════════════════════════════════════════════════════════');
-        debugPrint('📤 REQUEST BODY - ${widget.trabajo == null ? "CREAR" : "ACTUALIZAR"} TRABAJO');
-        debugPrint('═══════════════════════════════════════════════════════════════');
+        debugPrint(
+            '═══════════════════════════════════════════════════════════════');
+        debugPrint(
+            '📤 REQUEST BODY - ${widget.trabajo == null ? "CREAR" : "ACTUALIZAR"} TRABAJO');
+        debugPrint(
+            '═══════════════════════════════════════════════════════════════');
         try {
           final jsonString = JsonEncoder.withIndent('  ').convert(data);
           debugPrint(jsonString);
@@ -1384,19 +1489,24 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
           print('Error al convertir a JSON: $e');
           print('Data raw: $data');
         }
-        debugPrint('═══════════════════════════════════════════════════════════════');
+        debugPrint(
+            '═══════════════════════════════════════════════════════════════');
 
         if (widget.trabajo == null) {
           await ref.read(trabajosProvider.notifier).createTrabajo(data);
         } else {
-          await ref.read(trabajosProvider.notifier).updateTrabajo(widget.trabajo.id, data);
+          await ref
+              .read(trabajosProvider.notifier)
+              .updateTrabajo(widget.trabajo.id, data);
         }
 
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.trabajo == null ? 'Trabajo creado exitosamente' : 'Trabajo actualizado exitosamente'),
+              content: Text(widget.trabajo == null
+                  ? 'Trabajo creado exitosamente'
+                  : 'Trabajo actualizado exitosamente'),
             ),
           );
         }
@@ -1415,7 +1525,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       context: context,
       builder: (context) => const CampoFormDialog(),
     );
-    
+
     if (result != null) {
       // Recargar campos y seleccionar el nuevo
       await _loadDataForSelectors();
@@ -1430,7 +1540,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       context: context,
       builder: (context) => const MaquinaFormDialog(),
     );
-    
+
     if (result != null) {
       // Recargar máquinas y seleccionar la nueva
       await _loadDataForSelectors();
@@ -1445,7 +1555,7 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       context: context,
       builder: (context) => const PersonalFormDialog(),
     );
-    
+
     if (result != null) {
       // Recargar personal y seleccionar el nuevo
       await _loadDataForSelectors();
@@ -1454,6 +1564,4 @@ class _TrabajoFormDialogState extends ConsumerState<TrabajoFormDialog> {
       });
     }
   }
-
-
 }
