@@ -1,6 +1,6 @@
 class AppConstants {
   // API Configuration
-  static const String apiBaseUrl = 'https://a51de0863b5c.ngrok-free.app';
+  static const String apiBaseUrl = 'http://200.58.96.143';
   static const int apiTimeoutSeconds = 30;
   static const Map<String, String> headers = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -87,7 +87,7 @@ class AppConstants {
     'Cheque',
     'Tarjeta de Crédito',
     'Tarjeta de Débito',
-    'Otros'
+    'Otros',
   ];
 
   // Cost Categories
@@ -97,7 +97,7 @@ class AppConstants {
     'Combustible',
     'Mano de obra',
     'Maquinaria',
-    'Otros'
+    'Otros',
   ];
 
   // Estados de mantenimiento
