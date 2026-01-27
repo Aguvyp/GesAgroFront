@@ -380,155 +380,120 @@ class _OptimizedDashboardScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(AppConstants.primaryColor),
-                    const Color(AppConstants.primaryColor).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Estado de Trabajos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildTrabajosCards(trabajos),
-        const SizedBox(height: 24),
-        _buildListaTrabajosPendientes(trabajos),
-      ],
-    );
-  }
-
-  Widget _buildTrabajosCards(List<Trabajo> trabajos) {
-    final pendientes = trabajos
-        .where((t) =>
-            t.estado?.toLowerCase() == 'pendiente' ||
-            t.estado?.toLowerCase() == 'programado')
-        .length;
-    final enCurso = trabajos
-        .where((t) =>
-            t.estado?.toLowerCase() == 'en curso' ||
-            t.estado?.toLowerCase() == 'en ejecución' ||
-            t.estado?.toLowerCase() == 'ejecutando')
-        .length;
-    final completados = trabajos
-        .where((t) =>
-            t.estado?.toLowerCase() == 'completado' ||
-            t.estado?.toLowerCase() == 'finalizado')
-        .length;
-
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Pendientes',
-            pendientes.toString(),
-            Icons.schedule,
-            const Color(AppConstants.infoColor),
-            onTap: () => _navegarAListaTrabajosPorEstado('Pendientes'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'En Curso',
-            enCurso.toString(),
-            Icons.play_circle,
-            const Color(AppConstants.accentColor),
-            onTap: () => _navegarAListaTrabajosPorEstado('En Curso'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Completos',
-            completados.toString(),
-            Icons.check_circle,
-            const Color(AppConstants.successColor),
-            onTap: () => _navegarAListaTrabajosPorEstado('Completados'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildListaTrabajosPendientes(List<Trabajo> trabajos) {
-    // Filtrar trabajos activos (pendientes o en curso)
-    final activeJobs = trabajos.where((t) {
-      final estado = t.estado?.toLowerCase().trim() ?? '';
-      return [
-        'pendiente',
-        'en curso',
-        'en_curso',
-        'en progreso',
-        'en_progreso',
-        'ejecutando'
-      ].contains(estado);
-    }).toList();
-
-    if (activeJobs.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Trabajos Activos',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+            Row(
+              children: [
+                Container(
+                  height: 24,
+                  width: 4,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(AppConstants.primaryColor),
+                        const Color(AppConstants.primaryColor).withOpacity(0.7),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Trabajos',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
             IconButton(
               icon: const Icon(Icons.arrow_forward_ios, size: 16),
-              onPressed: () => _navegarAListaTrabajosPorEstado('En Curso'),
+              onPressed: () => _navegarAListaTrabajosPorEstado('Todos'),
               tooltip: 'Ver todos',
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount:
-              activeJobs.length > 5 ? 5 : activeJobs.length, // Mostrar max 5
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final trabajo = activeJobs[index];
-            return _buildActiveTrabajoCard(trabajo);
-          },
-        ),
+        const SizedBox(height: 16),
+        _buildTrabajosList(trabajos),
       ],
     );
   }
 
+  Widget _buildTrabajosList(List<Trabajo> trabajos) {
+    List<Trabajo> enCurso = [];
+    List<Trabajo> pendientes = [];
+    List<Trabajo> completados = [];
+
+    for (var t in trabajos) {
+      final estado = t.estado?.toLowerCase().trim() ?? '';
+      if ([
+        'en curso',
+        'en_curso',
+        'en progreso',
+        'en_progreso',
+        'ejecutando',
+        'en ejecución'
+      ].contains(estado)) {
+        enCurso.add(t);
+      } else if (['pendiente', 'programado'].contains(estado)) {
+        pendientes.add(t);
+      } else {
+        completados.add(t);
+      }
+    }
+
+    // Sort priority
+    List<Trabajo> sorted = [...enCurso, ...pendientes, ...completados];
+    final displayList = sorted.take(5).toList();
+
+    if (displayList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text("No hay trabajos recientes."),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: displayList.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        return _buildActiveTrabajoCard(displayList[index]);
+      },
+    );
+  }
+
   Widget _buildActiveTrabajoCard(Trabajo trabajo) {
+    final estado = trabajo.estado?.toLowerCase().trim() ?? '';
     final isEnCurso = [
       'en curso',
       'en_curso',
       'en progreso',
       'en_progreso',
-      'ejecutando'
-    ].contains(trabajo.estado?.toLowerCase().trim());
+      'ejecutando',
+      'en ejecución'
+    ].contains(estado);
+
+    final isCompletado = ['completado', 'finalizado'].contains(estado);
+
+    Color statusColor;
+    IconData statusIcon;
+
+    if (isEnCurso) {
+      statusColor = const Color(AppConstants.accentColor);
+      statusIcon = Icons.play_arrow_rounded;
+    } else if (isCompletado) {
+      statusColor = const Color(AppConstants.successColor);
+      statusIcon = Icons.check_circle_rounded;
+    } else {
+      statusColor = const Color(AppConstants.infoColor);
+      statusIcon = Icons.schedule_rounded;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -542,9 +507,7 @@ class _OptimizedDashboardScreenState
           ),
         ],
         border: Border.all(
-          color: isEnCurso
-              ? const Color(AppConstants.accentColor).withOpacity(0.3)
-              : Colors.grey.withOpacity(0.2),
+          color: statusColor.withOpacity(0.3),
         ),
       ),
       child: ListTile(
@@ -552,17 +515,12 @@ class _OptimizedDashboardScreenState
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: (isEnCurso
-                    ? const Color(AppConstants.accentColor)
-                    : const Color(AppConstants.infoColor))
-                .withOpacity(0.1),
+            color: statusColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
-            isEnCurso ? Icons.play_arrow_rounded : Icons.schedule_rounded,
-            color: isEnCurso
-                ? const Color(AppConstants.accentColor)
-                : const Color(AppConstants.infoColor),
+            statusIcon,
+            color: statusColor,
           ),
         ),
         title: Text(
@@ -594,10 +552,7 @@ class _OptimizedDashboardScreenState
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: (isEnCurso
-                        ? const Color(AppConstants.accentColor)
-                        : const Color(AppConstants.infoColor))
-                    .withOpacity(0.1),
+                color: statusColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -605,30 +560,30 @@ class _OptimizedDashboardScreenState
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: isEnCurso
-                      ? const Color(AppConstants.accentColor)
-                      : const Color(AppConstants.infoColor),
+                  color: statusColor,
                 ),
               ),
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.add_circle, size: 32),
-          color: Colors.green, // Botón verde solicitado
-          tooltip: 'Registrar Horas',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RegistrarHorasForm(
-                  trabajoId: trabajo.id!,
-                  trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
-                ),
-              ),
-            );
-          },
-        ),
+        trailing: isEnCurso
+            ? IconButton(
+                icon: const Icon(Icons.add_circle, size: 32),
+                color: Colors.green, // Botón verde solicitado
+                tooltip: 'Registrar Horas',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RegistrarHorasForm(
+                        trabajoId: trabajo.id!,
+                        trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
+                      ),
+                    ),
+                  );
+                },
+              )
+            : null,
         onTap: () {
           Navigator.push(
             context,
@@ -1163,65 +1118,67 @@ class _OptimizedDashboardScreenState
           ),
           content: SizedBox(
             width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (trabajos.isEmpty && mantenimientos.isEmpty) ...[
-                  Icon(
-                    Icons.event_busy,
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No hay trabajos ni mantenimientos',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (trabajos.isEmpty && mantenimientos.isEmpty) ...[
+                    Icon(
+                      Icons.event_busy,
+                      size: 48,
+                      color: Colors.grey[400],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'programados para esta fecha',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 14,
-                    ),
-                  ),
-                ] else ...[
-                  if (trabajos.isNotEmpty) ...[
+                    const SizedBox(height: 16),
                     Text(
-                      '${trabajos.length} trabajo${trabajos.length > 1 ? 's' : ''} programado${trabajos.length > 1 ? 's' : ''}',
+                      'No hay trabajos ni mantenimientos',
                       style: TextStyle(
                         color: Colors.grey[600],
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    ...trabajos
-                        .map((trabajo) => _buildTrabajoCard(trabajo))
-                        .toList(),
-                  ],
-                  if (mantenimientos.isNotEmpty) ...[
-                    if (trabajos.isNotEmpty) const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Text(
-                      '${mantenimientos.length} mantenimiento${mantenimientos.length > 1 ? 's' : ''} próximo${mantenimientos.length > 1 ? 's' : ''}',
+                      'programados para esta fecha',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: Colors.grey[500],
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    ...mantenimientos
-                        .map((mantenimiento) =>
-                            _buildMantenimientoCard(mantenimiento))
-                        .toList(),
+                  ] else ...[
+                    if (trabajos.isNotEmpty) ...[
+                      Text(
+                        '${trabajos.length} trabajo${trabajos.length > 1 ? 's' : ''} programado${trabajos.length > 1 ? 's' : ''}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...trabajos
+                          .map((trabajo) => _buildTrabajoCard(trabajo))
+                          .toList(),
+                    ],
+                    if (mantenimientos.isNotEmpty) ...[
+                      if (trabajos.isNotEmpty) const SizedBox(height: 16),
+                      Text(
+                        '${mantenimientos.length} mantenimiento${mantenimientos.length > 1 ? 's' : ''} próximo${mantenimientos.length > 1 ? 's' : ''}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...mantenimientos
+                          .map((mantenimiento) =>
+                              _buildMantenimientoCard(mantenimiento))
+                          .toList(),
+                    ],
                   ],
                 ],
-              ],
+              ),
             ),
           ),
           actions: [
@@ -1975,63 +1932,6 @@ class _OptimizedDashboardScreenState
       Colors.lime, // Lima
     ];
     return colors[index % colors.length];
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color,
-      {VoidCallback? onTap}) {
-    final card = Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.1),
-          width: 0.5,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: color,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF8E8E93),
-              fontWeight: FontWeight.w500,
-              letterSpacing: -0.08,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: card,
-      );
-    }
-
-    return card;
   }
 
   /// Nuevo Calendario con vista semanal personalizada

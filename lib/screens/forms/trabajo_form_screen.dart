@@ -96,10 +96,18 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         TextEditingController(text: widget.trabajo?.cultivo ?? '');
     _descripcionController =
         TextEditingController(text: widget.trabajo?.observaciones ?? '');
+    _fechaInicio =
+        widget.fechaInicial ?? widget.trabajo?.fechaInicio ?? DateTime.now();
+    _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
+
     _fechaInicioController = TextEditingController(
-        text: widget.trabajo?.fechaInicio?.toString() ?? '');
-    _fechaFinController =
-        TextEditingController(text: widget.trabajo?.fechaFin?.toString() ?? '');
+        text: DateFormat('dd/MM/yyyy').format(_fechaInicio!));
+
+    _fechaFinController = TextEditingController(
+        text: widget.trabajo?.fechaFin != null
+            ? DateFormat('dd/MM/yyyy').format(widget.trabajo!.fechaFin!)
+            : '');
+
     _clienteController =
         TextEditingController(text: widget.trabajo?.cliente ?? '');
     _montoCobradoController = TextEditingController(
@@ -110,17 +118,6 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         text: widget.trabajo?.humedadCosecha?.toString() ?? '');
     _horasTrabajadasController = TextEditingController(
         text: widget.trabajo?.horasTrabajadas?.toString() ?? '');
-
-    // Usar fecha inicial si se proporciona, sino usar fecha del trabajo o fecha actual
-    _fechaInicio =
-        widget.fechaInicial ?? widget.trabajo?.fechaInicio ?? DateTime.now();
-    _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
-
-    // Actualizar el controlador de fecha inicio si se proporciona fecha inicial
-    if (widget.fechaInicial != null) {
-      _fechaInicioController.text =
-          DateFormat('dd/MM/yyyy').format(widget.fechaInicial!);
-    }
 
     // Estados adicionales
     _estadoSeleccionado = widget.trabajo?.estado ?? 'Pendiente';
