@@ -410,16 +410,42 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     try {
       setState(() {
         _camposFiltrados = [];
+        _isLoadingData =
+            true; // Show loading indicator specifically for filtering if needed, or just rely on fast local filter
       });
-      final campos = await ClienteService.getCamposByCliente(clienteId);
+
+      // 1. Intentar filtrar localmente de _campos
+      // Esto es más rápido y funciona si camposProvider ya tiene todos los campos
+      final camposLocales =
+          _campos.where((c) => c.clienteId == clienteId).toList();
+
+      if (camposLocales.isNotEmpty) {
+        print(
+            'Encontrados ${camposLocales.length} campos locales para cliente $clienteId');
+        setState(() {
+          _camposFiltrados = camposLocales;
+          _campoSeleccionado = null;
+          _isLoadingData = false;
+        });
+        return;
+      }
+
+      print(
+          'No se encontraron campos locales. Consultando API para cliente $clienteId...');
+
+      // 2. Si no hay locales, consultar API
+      final camposApi = await ClienteService.getCamposByCliente(clienteId);
+
       setState(() {
-        _camposFiltrados = campos;
-        _campoSeleccionado =
-            null; // Reset campo seleccionado al cambiar cliente
+        _camposFiltrados = camposApi;
+        _campoSeleccionado = null;
+        _isLoadingData = false;
       });
     } catch (e) {
+      print('Error filtrando campos: $e');
       setState(() {
         _camposFiltrados = [];
+        _isLoadingData = false;
       });
     }
   }
@@ -1874,8 +1900,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
           'a_terceros': esTercero,
           'servicio_contratado': servicioContratado,
           'cobrado': cobrado,
-          'fecha_fin':
-              _fechaFin?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'fecha_fin': (_fechaFin ?? _fechaInicio)
+              ?.toIso8601String()
+              .split('T')[0], // Formato YYYY-MM-DD
         };
 
         // Agregar monto cobrado si está cobrado
@@ -1987,6 +2014,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     );
 
     if (result != null) {
+      // Invalidar provider para forzar recarga de datos frescos
+      ref.invalidate(camposProvider);
       // Recargar campos para que el nuevo aparezca en la lista
       await _loadDataForSelectors();
       // No se auto-selecciona. El usuario debe elegirlo.
@@ -2002,6 +2031,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     );
 
     if (result != null) {
+      ref.invalidate(maquinasProvider);
       // Recargar máquinas y seleccionar la nueva
       await _loadDataForSelectors();
       setState(() {
@@ -2019,6 +2049,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     );
 
     if (result != null) {
+      ref.invalidate(personalProvider);
       // Recargar personal y seleccionar el nuevo
       await _loadDataForSelectors();
       setState(() {
