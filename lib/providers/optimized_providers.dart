@@ -954,3 +954,6 @@ class CreditosNotifier extends StateNotifier<BaseState> {
     }
   }
 }
+
+/// ==================== DASHBOARD REFRESH PROVIDER ====================
+final dashboardRefreshProvider = StateProvider<int>((ref) => 0);

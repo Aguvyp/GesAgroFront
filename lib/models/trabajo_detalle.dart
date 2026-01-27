@@ -14,19 +14,19 @@ class TrabajoDetalle {
   final DateTime fechaInicio;
   final DateTime? fechaFin;
   final int campoId;
-  
+
   // Información del campo
   final Campo? campo;
-  
+
   // Información del cliente
   final ClienteInfo? clienteInfo;
-  
+
   // Máquinas utilizadas
   final List<MaquinaTrabajo> maquinas;
-  
+
   // Personal con sus hectáreas trabajadas
   final List<PersonalTrabajo> personal;
-  
+
   // Información de cobro
   final bool cobrado;
   final double? montoCobrado;
@@ -59,37 +59,49 @@ class TrabajoDetalle {
       observaciones: json['observaciones'],
       estado: json['estado'],
       aTerceros: _parseBoolean(json['a_terceros']),
-      fechaInicio: json['fecha_inicio'] != null 
+      fechaInicio: json['fecha_inicio'] != null
           ? DateTime.parse(json['fecha_inicio'])
           : DateTime.now(),
-      fechaFin: json['fecha_fin'] != null ? DateTime.parse(json['fecha_fin']) : null,
+      fechaFin:
+          json['fecha_fin'] != null ? DateTime.parse(json['fecha_fin']) : null,
       campoId: json['campo_id'] ?? 0,
-      
+
       // Campo completo
-      campo: json['campo'] != null ? Campo.fromJson(json['campo']) : null,
-      
+      campo: json['campo'] is Map<String, dynamic>
+          ? Campo.fromJson(json['campo'])
+          : null,
+
       // Información del cliente
-      clienteInfo: json['cliente_info'] != null ? ClienteInfo.fromJson(json['cliente_info']) : null,
-      
+      clienteInfo: json['cliente_info'] is Map<String, dynamic>
+          ? ClienteInfo.fromJson(json['cliente_info'])
+          : null,
+
       // Máquinas
-      maquinas: json['maquinas'] != null 
+      // Máquinas
+      maquinas: json['maquinas'] != null
           ? (json['maquinas'] as List)
+              .where((item) => item is Map<String, dynamic>)
               .map((maq) => MaquinaTrabajo.fromJson(maq))
               .toList()
           : [],
-      
+
       // Personal con hectáreas
-      personal: json['personal'] != null 
+      personal: json['personal'] != null
           ? (json['personal'] as List)
+              .where((item) => item is Map<String, dynamic>)
               .map((per) => PersonalTrabajo.fromJson(per))
               .toList()
           : [],
-      
+
       // Información de cobro
       cobrado: (json['cobrado'] ?? false) == true || (json['cobrado'] == 1),
-      montoCobrado: json['monto_cobrado'] != null
-          ? (json['monto_cobrado'] as num).toDouble()
-          : null,
+      montoCobrado: () {
+        final val = json['monto_cobrado'];
+        if (val == null) return null;
+        if (val is num) return val.toDouble();
+        if (val is String) return double.tryParse(val);
+        return null;
+      }(),
     );
   }
 
@@ -111,7 +123,8 @@ class TrabajoDetalle {
       'estado': estado,
       'a_terceros': aTerceros,
       'fecha_inicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
-      'fecha_fin': fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
+      'fecha_fin':
+          fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
       'campo_id': campoId,
       'campo': campo?.toJson(),
       'cliente_info': clienteInfo?.toJson(),
@@ -146,7 +159,8 @@ class TrabajoDetalle {
   // Información del campo
   String get campoNombre => campo?.nombre ?? 'Campo no especificado';
   double get campoHectareas => campo?.superficieHa ?? 0.0;
-  String get campoInfo => '${campoNombre} - ${campoHectareas.toStringAsFixed(1)} ha';
+  String get campoInfo =>
+      '${campoNombre} - ${campoHectareas.toStringAsFixed(1)} ha';
 
   // Información del cliente
   String get clienteNombre => clienteInfo?.nombreRazonSocial ?? cliente;
@@ -159,7 +173,8 @@ class TrabajoDetalle {
 
   // Información de personal
   int get totalPersonal => personal.length;
-  double get totalHectareasPersonal => personal.fold(0.0, (sum, per) => sum + per.ha);
+  double get totalHectareasPersonal =>
+      personal.fold(0.0, (sum, per) => sum + per.ha);
   String get personalInfo {
     if (personal.isEmpty) return 'Sin personal asignado';
     return '${personal.length} operario${personal.length > 1 ? 's' : ''} - ${totalHectareasPersonal.toStringAsFixed(1)} ha';
@@ -351,7 +366,13 @@ class PersonalTrabajo {
       nombre: json['nombre'] ?? '',
       dni: json['dni'] ?? '',
       rol: json['rol'],
-      ha: (json['ha'] ?? 0.0).toDouble(),
+      ha: () {
+        final val = json['hectareas'] ?? json['ha'];
+        if (val == null) return 0.0;
+        if (val is num) return val.toDouble();
+        if (val is String) return double.tryParse(val) ?? 0.0;
+        return 0.0;
+      }(),
     );
   }
 

@@ -27,6 +27,7 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
   final _horaInicioController = TextEditingController();
   final _horaFinController = TextEditingController();
   final _horasTrabajadasController = TextEditingController();
+  final _hectareasController = TextEditingController();
 
   // Estado
   Personal? _selectedPersonal;
@@ -52,6 +53,7 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
     _horaInicioController.dispose();
     _horaFinController.dispose();
     _horasTrabajadasController.dispose();
+    _hectareasController.dispose();
     super.dispose();
   }
 
@@ -154,6 +156,7 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
             : null,
         'horas_trabajadas':
             double.tryParse(_horasTrabajadasController.text) ?? 0,
+        'hectareas': double.tryParse(_hectareasController.text) ?? 0,
       };
 
       await ref.read(trabajosProvider.notifier).registrarHoras(data);
@@ -303,6 +306,17 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
                     const TextInputType.numberWithOptions(decimal: true),
                 prefixIcon: const Icon(Icons.timer),
                 validator: (v) => v!.isEmpty ? 'Requerido' : null,
+              ),
+
+              const SizedBox(height: 16),
+
+              OptimizedTextField(
+                controller: _hectareasController,
+                label: 'Hectáreas',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                prefixIcon: const Icon(
+                    Icons.confirmation_number), // Or appropriate icon
               ),
 
               const SizedBox(height: 32),

@@ -17,6 +17,7 @@ import 'forms/mantenimiento_form_screen.dart';
 import 'forms/registrar_horas_form.dart';
 import 'optimized_screens.dart';
 import '../providers/optimized_auth_provider.dart';
+import '../providers/optimized_providers.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -227,6 +228,11 @@ class _OptimizedDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Escuchar cambios en el dashboardRefreshProvider para recargar datos
+    ref.listen<int>(dashboardRefreshProvider, (previous, next) {
+      _refreshDashboard();
+    });
+
     if (_isLoading) {
       return Scaffold(
         body: Center(
@@ -1042,7 +1048,9 @@ class _OptimizedDashboardScreenState
     }
 
     // Obtener nombre del usuario o usar fallback
-    final userName = user?['username'] ?? user?['nombre'] ?? 'Pepito Juarez';
+    // Prioridad: nombre, username, email
+    final userName =
+        user?['nombre'] ?? user?['username'] ?? user?['email'] ?? 'Usuario';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),

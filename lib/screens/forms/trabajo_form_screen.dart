@@ -1933,6 +1933,22 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               double.tryParse(_horasTrabajadasController.text);
         }
 
+        // Agregar máquinas
+        if (_maquinasSeleccionadas.isNotEmpty) {
+          data['id_maquinas'] =
+              _maquinasSeleccionadas.map((m) => m.id).toList();
+        }
+
+        // Agregar personal con hectáreas
+        if (_personalSeleccionado.isNotEmpty) {
+          data['personal_hectareas'] = _personalSeleccionado.map((p) {
+            return {
+              'id': p.id,
+              'ha': p.hectareas,
+            };
+          }).toList();
+        }
+
         // Imprimir el body del request por consola
         debugPrint(
             '═══════════════════════════════════════════════════════════════');
@@ -1960,6 +1976,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               .read(trabajosProvider.notifier)
               .updateTrabajo(widget.trabajo.id, data);
         }
+
+        // Actualizar el provider para invalidar el dashboard
+        ref.read(dashboardRefreshProvider.notifier).state++;
 
         if (mounted) {
           Navigator.pop(context);
