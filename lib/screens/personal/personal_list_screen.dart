@@ -226,69 +226,82 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
   Widget _buildPersonalCard(Personal personal) {
     return OptimizedCard(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: Text(
-            personal.initials,
-            style: TextStyle(
+      padding: EdgeInsets.zero,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
               color: Theme.of(context).primaryColor,
+              width: 4,
+            ),
+          ),
+        ),
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+            child: Text(
+              personal.initials,
+              style: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          title: Text(
+            personal.nombre,
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
           ),
-        ),
-        title: Text(
-          personal.nombre,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text('DNI: ${personal.dni}'),
+              if (personal.telefono != null && personal.telefono!.isNotEmpty)
+                Text('Tel: ${personal.telefono}'),
+            ],
           ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text('DNI: ${personal.dni}'),
-            if (personal.telefono != null && personal.telefono!.isNotEmpty)
-              Text('Tel: ${personal.telefono}'),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value, personal),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'view',
-              child: Row(
-                children: [
-                  Icon(Icons.visibility),
-                  SizedBox(width: 8),
-                  Text('Ver detalles'),
-                ],
+          trailing: PopupMenuButton<String>(
+            onSelected: (value) => _handleMenuAction(value, personal),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'view',
+                child: Row(
+                  children: [
+                    Icon(Icons.visibility),
+                    SizedBox(width: 8),
+                    Text('Ver detalles'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Editar'),
-                ],
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit),
+                    SizedBox(width: 8),
+                    Text('Editar'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Eliminar', style: TextStyle(color: Colors.red)),
-                ],
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Eliminar', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          onTap: () => _navigateToDetail(personal),
         ),
-        onTap: () => _navigateToDetail(personal),
       ),
     );
   }

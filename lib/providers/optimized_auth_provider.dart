@@ -6,7 +6,7 @@ import '../services/optimized_auth_service.dart';
 /// Estados de autenticación
 abstract class AuthState extends Equatable {
   const AuthState();
-  
+
   @override
   List<Object?> get props => [];
 }
@@ -23,13 +23,13 @@ class AuthenticatedState extends AuthState {
   final String token;
   final String role;
   final Map<String, dynamic> user;
-  
+
   const AuthenticatedState({
     required this.token,
     required this.role,
     required this.user,
   });
-  
+
   @override
   List<Object?> get props => [token, role, user];
 }
@@ -40,9 +40,9 @@ class UnauthenticatedState extends AuthState {
 
 class ErrorAuthState extends AuthState {
   final String message;
-  
+
   const ErrorAuthState(this.message);
-  
+
   @override
   List<Object?> get props => [message];
 }
@@ -63,23 +63,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _checkAuthStatus() async {
     try {
       state = const LoadingAuthState();
-      
+
       final authService = AuthService();
       await authService.initialize();
       final isAuthenticated = await authService.checkAuthStatus();
-      
+
       if (isAuthenticated) {
         final authInfo = await authService.getAuthInfo();
         final token = await authService.getToken() ?? '';
         final role = await authService.getUserRole() ?? '';
         final user = await authService.getCurrentUser() ?? {};
-        
+
         state = AuthenticatedState(
           token: token,
           role: role,
           user: user,
         );
-        
+
         _logger.auth('STATUS_CHECK_SUCCESS', role: role);
       } else {
         state = const UnauthenticatedState();
@@ -95,42 +95,44 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> login(String email, String password) async {
     try {
       state = const LoadingAuthState();
-      
+
       final authService = AuthService();
       await authService.initialize();
       final response = await authService.login(email, password);
-      
+
       // Extraer datos de la respuesta según la estructura de la API
       final token = response['access_token'] ?? '';
       final role = response['role'] ?? '';
       final userId = response['user_id'];
       final username = response['username'] ?? email;
-      
+
       final user = {
         'email': email,
         'username': username,
         'user_id': userId,
+        'nombre': response['nombre'] ?? username,
       };
-      
+
       state = AuthenticatedState(
         token: token,
         role: role,
         user: user,
       );
-      
+
       _logger.auth('LOGIN_SUCCESS', userId: email, role: role);
     } catch (e) {
       // Manejar errores específicos de la API
       String errorMessage = 'Error al iniciar sesión';
-      
+
       if (e.toString().contains('401')) {
-        errorMessage = 'Credenciales inválidas. Verifique su usuario y contraseña.';
+        errorMessage =
+            'Credenciales inválidas. Verifique su usuario y contraseña.';
       } else if (e.toString().contains('403')) {
         errorMessage = 'Usuario inactivo. Contacte al administrador.';
       } else {
         errorMessage = e.toString();
       }
-      
+
       state = ErrorAuthState(errorMessage);
       _logger.error('Login error', e);
       rethrow;
@@ -147,7 +149,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     try {
       state = const LoadingAuthState();
-      
+
       final authService = AuthService();
       await authService.initialize();
       await authService.register(
@@ -157,10 +159,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: email,
         password: password,
       );
-      
+
       // Después del registro exitoso, hacer login automático
       await login(email, password);
-      
+
       _logger.auth('REGISTER_SUCCESS', userId: email);
     } catch (e) {
       state = ErrorAuthState('Error al registrarse: $e');
@@ -173,13 +175,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     try {
       state = const LoadingAuthState();
-      
+
       final authService = AuthService();
       await authService.initialize();
       await authService.logout();
-      
+
       state = const UnauthenticatedState();
-      
+
       _logger.auth('LOGOUT_SUCCESS');
     } catch (e) {
       state = ErrorAuthState('Error al cerrar sesión: $e');

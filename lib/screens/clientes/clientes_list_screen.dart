@@ -61,35 +61,80 @@ class _ClientesListScreenState extends ConsumerState<ClientesListScreen> {
       body: Column(
         children: [
           // Barra de búsqueda
+          // Barra de búsqueda y botón de nuevo cliente
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar clientes...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar clientes...',
+                      hintStyle:
+                          TextStyle(color: Colors.grey[500], fontSize: 15),
+                      prefixIcon:
+                          Icon(Icons.search_rounded, color: Colors.grey[400]),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 20),
+                              color: Colors.grey[400],
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0, horizontal: 16),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 15),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
+                    },
+                  ),
                 ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    onPressed: () => _showAddClienteDialog(),
+                    icon: const Icon(Icons.add_rounded, color: Colors.white),
+                    tooltip: 'Agregar Cliente',
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -98,11 +143,6 @@ class _ClientesListScreenState extends ConsumerState<ClientesListScreen> {
             child: _buildClientesList(clientesState),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddClienteDialog(),
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -229,72 +269,87 @@ class _ClientesListScreenState extends ConsumerState<ClientesListScreen> {
   Widget _buildClienteCard(Cliente cliente) {
     return OptimizedCard(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: Text(
-            cliente.initials,
-            style: TextStyle(
+      padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
               color: Theme.of(context).primaryColor,
+              width: 4,
+            ),
+          ),
+        ),
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+            child: Text(
+              cliente.initials,
+              style: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          title: Text(
+            cliente.nombre ?? 'Sin nombre',
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
           ),
-        ),
-        title: Text(
-          cliente.nombre ?? 'Sin nombre',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              if (cliente.email != null && cliente.email!.isNotEmpty)
+                Text('Email: ${cliente.email}'),
+              if (cliente.telefono != null && cliente.telefono!.isNotEmpty)
+                Text('Tel: ${cliente.telefono}'),
+              if (cliente.cuit != null && cliente.cuit!.isNotEmpty)
+                Text('CUIT: ${cliente.cuit}'),
+            ],
           ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            if (cliente.email != null && cliente.email!.isNotEmpty)
-              Text('Email: ${cliente.email}'),
-            if (cliente.telefono != null && cliente.telefono!.isNotEmpty)
-              Text('Tel: ${cliente.telefono}'),
-            if (cliente.cuit != null && cliente.cuit!.isNotEmpty)
-              Text('CUIT: ${cliente.cuit}'),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value, cliente),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'view',
-              child: Row(
-                children: [
-                  Icon(Icons.visibility),
-                  SizedBox(width: 8),
-                  Text('Ver detalles'),
-                ],
+          trailing: PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded, color: Colors.grey[500]),
+            onSelected: (value) => _handleMenuAction(value, cliente),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'view',
+                child: Row(
+                  children: [
+                    Icon(Icons.visibility),
+                    SizedBox(width: 8),
+                    Text('Ver detalles'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Editar'),
-                ],
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit),
+                    SizedBox(width: 8),
+                    Text('Editar'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Eliminar', style: TextStyle(color: Colors.red)),
-                ],
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Eliminar', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          onTap: () => _navigateToDetail(cliente),
         ),
-        onTap: () => _navigateToDetail(cliente),
       ),
     );
   }

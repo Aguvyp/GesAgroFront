@@ -18,6 +18,7 @@ import 'forms/registrar_horas_form.dart';
 import 'optimized_screens.dart';
 import '../providers/optimized_auth_provider.dart';
 import '../providers/optimized_providers.dart';
+import '../widgets/optimized_widgets.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -328,6 +329,7 @@ class _OptimizedDashboardScreenState
                     children: [
                       // Saludo y Perfil
                       _buildGreetingSection(ref.watch(currentUserProvider)),
+                      const SizedBox(height: 24),
 
                       // Calendario (ahora arriba)
                       _buildCalendarioTrabajosYMantenimientos(
@@ -417,7 +419,7 @@ class _OptimizedDashboardScreenState
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 0),
         _buildTrabajosList(trabajos),
       ],
     );
@@ -495,103 +497,127 @@ class _OptimizedDashboardScreenState
       statusIcon = Icons.schedule_rounded;
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border.all(
-          color: statusColor.withOpacity(0.3),
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            statusIcon,
-            color: statusColor,
+    String ownershipInfo = 'Propio';
+    if (trabajo.esTercero) {
+      ownershipInfo = trabajo.cliente != null && trabajo.cliente!.isNotEmpty
+          ? 'Cliente: ${trabajo.cliente}'
+          : 'A terceros';
+    } else if (trabajo.servicioContratado) {
+      ownershipInfo = 'Servicio Contratado';
+    }
+
+    return OptimizedCard(
+      margin: EdgeInsets.zero,
+      padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: statusColor,
+              width: 4,
+            ),
           ),
         ),
-        title: Text(
-          '${trabajo.tipo} - ${trabajo.cultivo}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              statusIcon,
+              color: statusColor,
+            ),
           ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.landscape_rounded,
-                    size: 14, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    trabajo.campoInfo,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                    overflow: TextOverflow.ellipsis,
+          title: Text(
+            '${trabajo.tipo} - ${trabajo.cultivo}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      ownershipInfo,
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[800],
+                          fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Icon(Icons.landscape_rounded,
+                      size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      trabajo.campoInfo,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  trabajo.estado ?? 'Desconocido',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: statusColor,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
               ),
-              child: Text(
-                trabajo.estado ?? 'Desconocido',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: statusColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        trailing: isEnCurso
-            ? IconButton(
-                icon: const Icon(Icons.add_circle, size: 32),
-                color: Colors.green, // Botón verde solicitado
-                tooltip: 'Registrar Horas',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RegistrarHorasForm(
-                        trabajoId: trabajo.id!,
-                        trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
+            ],
+          ),
+          trailing: isEnCurso
+              ? IconButton(
+                  icon: const Icon(Icons.add_circle, size: 32),
+                  color: Colors.green, // Botón verde solicitado
+                  tooltip: 'Registrar Horas',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RegistrarHorasForm(
+                          trabajoId: trabajo.id!,
+                          trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
+                        ),
                       ),
-                    ),
-                  );
-                },
-              )
-            : null,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
-            ),
-          );
-        },
+                    );
+                  },
+                )
+              : null,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -769,6 +795,7 @@ class _OptimizedDashboardScreenState
             firstDay: DateTime.now().subtract(const Duration(days: 365)),
             lastDay: DateTime.now().add(const Duration(days: 365)),
             focusedDay: _focusedDay,
+            rowHeight: 52,
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             onDaySelected: (selectedDay, focusedDay) {
               // Solo actualizar si es un día diferente
@@ -831,7 +858,7 @@ class _OptimizedDashboardScreenState
               defaultTextStyle: const TextStyle(color: Colors.black87),
               selectedDecoration: BoxDecoration(
                 color: const Color(AppConstants.primaryColor).withOpacity(0.7),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: const Color(AppConstants.primaryColor),
                   width: 2,
@@ -843,7 +870,7 @@ class _OptimizedDashboardScreenState
               ),
               todayDecoration: BoxDecoration(
                 color: const Color(AppConstants.primaryColor).withOpacity(0.2),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color:
                       const Color(AppConstants.primaryColor).withOpacity(0.5),
@@ -919,14 +946,15 @@ class _OptimizedDashboardScreenState
     }
 
     return Container(
-      margin: const EdgeInsets.all(4),
+      margin: const EdgeInsets.all(2),
       child: Center(
         child: Container(
-          width: 32,
-          height: 32,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: circleColor,
-            shape: BoxShape.circle,
+            borderRadius:
+                BorderRadius.circular(8), // Square with rounded corners
             border: isSelected
                 ? Border.all(
                     color: const Color(AppConstants.primaryColor),
@@ -1004,6 +1032,7 @@ class _OptimizedDashboardScreenState
 
     // Obtener nombre del usuario o usar fallback
     // Prioridad: nombre, username, email
+    // Use the name from the passed user map (which comes from AuthProvider)
     final userName =
         user?['nombre'] ?? user?['username'] ?? user?['email'] ?? 'Usuario';
 
@@ -1060,29 +1089,6 @@ class _OptimizedDashboardScreenState
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('No tienes nuevas notificaciones')),
-                );
-              },
-              icon: const Icon(Icons.notifications_none_rounded),
-              color: Colors.black87,
             ),
           ),
         ],

@@ -351,6 +351,7 @@ class PersonalTrabajo {
   final String dni;
   final String? rol;
   final double ha; // Hectáreas trabajadas en este trabajo específico
+  final double horas; // Horas trabajadas
 
   PersonalTrabajo({
     required this.id,
@@ -358,6 +359,7 @@ class PersonalTrabajo {
     required this.dni,
     this.rol,
     required this.ha,
+    required this.horas,
   });
 
   factory PersonalTrabajo.fromJson(Map<String, dynamic> json) {
@@ -373,6 +375,13 @@ class PersonalTrabajo {
         if (val is String) return double.tryParse(val) ?? 0.0;
         return 0.0;
       }(),
+      horas: () {
+        final val = json['horas_trabajadas'] ?? json['horas'];
+        if (val == null) return 0.0;
+        if (val is num) return val.toDouble();
+        if (val is String) return double.tryParse(val) ?? 0.0;
+        return 0.0;
+      }(),
     );
   }
 
@@ -383,6 +392,7 @@ class PersonalTrabajo {
       'dni': dni,
       'rol': rol,
       'ha': ha,
+      'horas': horas,
     };
   }
 
@@ -392,6 +402,7 @@ class PersonalTrabajo {
     String? dni,
     String? rol,
     double? ha,
+    double? horas,
   }) {
     return PersonalTrabajo(
       id: id ?? this.id,
@@ -399,12 +410,13 @@ class PersonalTrabajo {
       dni: dni ?? this.dni,
       rol: rol ?? this.rol,
       ha: ha ?? this.ha,
+      horas: horas ?? this.horas,
     );
   }
 
   @override
   String toString() {
-    return 'PersonalTrabajo(id: $id, nombre: $nombre, ha: $ha)';
+    return 'PersonalTrabajo(id: $id, nombre: $nombre, ha: $ha, horas: $horas)';
   }
 
   @override

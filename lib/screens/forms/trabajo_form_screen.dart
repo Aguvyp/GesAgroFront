@@ -304,7 +304,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 id: persona.id!,
                 nombre: persona.nombre,
                 dni: persona.dni,
-                ha: _campoSeleccionado?.superficieHa ?? 0.0),
+                ha: _campoSeleccionado?.superficieHa ?? 0.0,
+                horas: 0.0),
           );
 
           return PersonalConHectareas(

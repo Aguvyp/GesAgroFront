@@ -4,6 +4,7 @@ import '../../providers/optimized_providers.dart';
 import '../../models/maquina.dart';
 import '../forms/maquina_form_screen.dart';
 import 'maquina_detail_screen.dart';
+import '../../widgets/optimized_widgets.dart';
 
 /// Pantalla de lista de máquinas
 class OptimizedMaquinasListScreen extends ConsumerStatefulWidget {
@@ -116,8 +117,8 @@ class _OptimizedMaquinasListScreenState
         onPressed: () {
           _showMaquinaForm(context);
         },
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF2E7D32),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -221,16 +222,21 @@ class _OptimizedMaquinasListScreenState
   }
 
   Widget _buildMaquinaCard(Maquina maquina) {
-    return Card(
+    return OptimizedCard(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      padding: EdgeInsets.zero,
       child: InkWell(
         onTap: () => _showMaquinaDetail(maquina),
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: _getEstadoColor(maquina.estado ?? 'Activo'),
+                width: 4,
+              ),
+            ),
+          ),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,12 +246,13 @@ class _OptimizedMaquinasListScreenState
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color: _getEstadoColor(maquina.estado ?? 'Activo')
+                          .withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.build,
-                      color: Theme.of(context).primaryColor,
+                      color: _getEstadoColor(maquina.estado ?? 'Activo'),
                       size: 24,
                     ),
                   ),

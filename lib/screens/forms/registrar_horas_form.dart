@@ -24,16 +24,12 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
 
   // Controladores
   final _fechaController = TextEditingController();
-  final _horaInicioController = TextEditingController();
-  final _horaFinController = TextEditingController();
   final _horasTrabajadasController = TextEditingController();
   final _hectareasController = TextEditingController();
 
   // Estado
   Personal? _selectedPersonal;
   DateTime _selectedDate = DateTime.now();
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
   bool _isLoading = false;
 
   @override
@@ -50,8 +46,6 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
   @override
   void dispose() {
     _fechaController.dispose();
-    _horaInicioController.dispose();
-    _horaFinController.dispose();
     _horasTrabajadasController.dispose();
     _hectareasController.dispose();
     super.dispose();
@@ -84,54 +78,6 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
     }
   }
 
-  Future<void> _selectTime(BuildContext context, bool isStart) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        if (isStart) {
-          _startTime = picked;
-          _horaInicioController.text = picked.format(context);
-        } else {
-          _endTime = picked;
-          _horaFinController.text = picked.format(context);
-        }
-        _calculateHours();
-      });
-    }
-  }
-
-  void _calculateHours() {
-    if (_startTime != null && _endTime != null) {
-      final start = DateTime(2024, 1, 1, _startTime!.hour, _startTime!.minute);
-      var end = DateTime(2024, 1, 1, _endTime!.hour, _endTime!.minute);
-
-      if (end.isBefore(start)) {
-        end = end.add(const Duration(days: 1));
-      }
-
-      final diff = end.difference(start);
-      final hours = diff.inMinutes / 60.0;
-
-      _horasTrabajadasController.text = hours.toStringAsFixed(2);
-    }
-  }
-
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedPersonal == null) {
@@ -148,12 +94,8 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
         'trabajo': widget.trabajoId,
         'personal': _selectedPersonal!.id,
         'fecha': _fechaController.text,
-        'hora_inicio': _startTime != null
-            ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}'
-            : null,
-        'hora_fin': _endTime != null
-            ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'
-            : null,
+        'hora_inicio': null,
+        'hora_fin': null,
         'horas_trabajadas':
             double.tryParse(_horasTrabajadasController.text) ?? 0,
         'hectareas': double.tryParse(_hectareasController.text) ?? 0,
@@ -266,36 +208,6 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
               ),
 
               const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _selectTime(context, true),
-                      child: AbsorbPointer(
-                        child: OptimizedTextField(
-                          controller: _horaInicioController,
-                          label: 'Inicio',
-                          prefixIcon: const Icon(Icons.access_time),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _selectTime(context, false),
-                      child: AbsorbPointer(
-                        child: OptimizedTextField(
-                          controller: _horaFinController,
-                          label: 'Fin',
-                          prefixIcon: const Icon(Icons.access_time_filled),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
 
               const SizedBox(height: 16),
 

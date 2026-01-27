@@ -7,6 +7,7 @@ import 'trabajos/trabajo_detail_screen.dart';
 import 'forms/forms_screens.dart';
 import 'forms/registrar_horas_form.dart';
 import '../utils/constants.dart';
+import 'package:intl/intl.dart';
 
 /// ==================== CAMPOS LIST SCREEN OPTIMIZADA ====================
 
@@ -83,7 +84,7 @@ class _OptimizedCamposListScreenState
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 56,
+              expandedHeight: 120,
               floating: false,
               pinned: true,
               backgroundColor: Colors.white,
@@ -100,7 +101,41 @@ class _OptimizedCamposListScreenState
                   ),
                 ),
                 centerTitle: false,
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 60),
+                background: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.only(top: 60, left: 16, right: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF2F2F7),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (value) =>
+                                setState(() => _searchQuery = value),
+                            decoration: const InputDecoration(
+                              hintText: 'Buscar campo...',
+                              hintStyle: TextStyle(
+                                  fontSize: 15, color: Color(0xFF8E8E93)),
+                              prefixIcon: Icon(Icons.search_rounded,
+                                  color: Color(0xFF8E8E93), size: 20),
+                              border: InputBorder.none,
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildClienteFilterIcon(),
+                    ],
+                  ),
+                ),
               ),
             ),
           ];
@@ -112,8 +147,97 @@ class _OptimizedCamposListScreenState
           _showCampoForm(context);
         },
         backgroundColor: const Color(0xFF2E7D32),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
+    );
+  }
+
+  int? _selectedClienteId;
+
+  Widget _buildClienteFilterIcon() {
+    final clientesState = ref.watch(clientesProvider);
+    return Container(
+      decoration: BoxDecoration(
+        color: _selectedClienteId != null
+            ? const Color(0xFF2E7D32).withOpacity(0.1)
+            : const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: IconButton(
+        icon: Icon(
+          Icons.person_outline_rounded,
+          color: _selectedClienteId != null
+              ? const Color(0xFF2E7D32)
+              : const Color(0xFF8E8E93),
+          size: 20,
+        ),
+        onPressed: () {
+          if (clientesState is LoadedState<List<dynamic>>) {
+            _showClienteFilterDialog(clientesState.data);
+          }
+        },
+      ),
+    );
+  }
+
+  void _showClienteFilterDialog(List<dynamic> clientes) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Filtrar por Cliente',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() => _selectedClienteId = null);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Limpiar'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: clientes.length,
+                    itemBuilder: (context, index) {
+                      final cliente = clientes[index];
+                      final isSelected = _selectedClienteId == cliente.id;
+                      return ListTile(
+                        title: Text(cliente.nombre),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle,
+                                color: Color(0xFF2E7D32))
+                            : null,
+                        onTap: () {
+                          setState(() => _selectedClienteId = cliente.id);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+      },
     );
   }
 
@@ -142,14 +266,21 @@ class _OptimizedCamposListScreenState
         );
       }
 
-      final filteredCampos = _searchQuery.isEmpty
-          ? campos
-          : campos.where((campo) {
-              return campo.nombre
-                      .toLowerCase()
-                      .contains(_searchQuery.toLowerCase()) ||
-                  campo.superficieHa.toString().contains(_searchQuery);
-            }).toList();
+      var filteredCampos = campos;
+
+      if (_selectedClienteId != null) {
+        filteredCampos = filteredCampos
+            .where((campo) => campo.clienteId == _selectedClienteId)
+            .toList();
+      }
+
+      if (_searchQuery.isNotEmpty) {
+        filteredCampos = filteredCampos.where((campo) {
+          final query = _searchQuery.toLowerCase();
+          return campo.nombre.toLowerCase().contains(query) ||
+              (campo.detalles ?? '').toLowerCase().contains(query);
+        }).toList();
+      }
 
       return ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -159,86 +290,97 @@ class _OptimizedCamposListScreenState
           final campo = filteredCampos[index];
           return OptimizedCard(
             margin: EdgeInsets.zero,
+            padding: EdgeInsets.zero,
             borderRadius: BorderRadius.circular(16),
-            child: ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2E7D32).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.landscape_rounded,
-                    color: Color(0xFF2E7D32), size: 24),
-              ),
-              title: Text(
-                campo.nombre,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1C1C1E),
-                  letterSpacing: -0.41,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: const Color(0xFF2E7D32),
+                    width: 4,
+                  ),
                 ),
               ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '${campo.superficieHa.toStringAsFixed(2)} hectáreas',
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2E7D32).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.landscape_rounded,
+                      color: Color(0xFF2E7D32), size: 24),
+                ),
+                title: Text(
+                  campo.nombre,
                   style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF8E8E93),
-                    letterSpacing: -0.24,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1C1C1E),
+                    letterSpacing: -0.41,
                   ),
                 ),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CampoDetailScreen(campo: campo),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '${campo.superficieHa.toStringAsFixed(2)} hectáreas',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF8E8E93),
+                      letterSpacing: -0.24,
+                    ),
                   ),
-                );
-              },
-              trailing: PopupMenuButton(
-                icon: const Icon(Icons.more_vert_rounded,
-                    color: Color(0xFF8E8E93)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: const Row(
-                      children: [
-                        Icon(Icons.edit_rounded,
-                            size: 20, color: Color(0xFF1C1C1E)),
-                        SizedBox(width: 12),
-                        Text('Editar', style: TextStyle(fontSize: 17)),
-                      ],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CampoDetailScreen(campo: campo),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: const Row(
-                      children: [
-                        Icon(Icons.delete_rounded,
-                            size: 20, color: Color(0xFFFF3B30)),
-                        SizedBox(width: 12),
-                        Text('Eliminar',
-                            style: TextStyle(
-                                fontSize: 17, color: Color(0xFFFF3B30))),
-                      ],
-                    ),
-                  ),
-                ],
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showCampoForm(context, campo: campo);
-                  } else if (value == 'delete') {
-                    _showDeleteConfirmation(context, campo);
-                  }
+                  );
                 },
+                trailing: PopupMenuButton(
+                  icon: const Icon(Icons.more_vert_rounded,
+                      color: Color(0xFF8E8E93)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: const Row(
+                        children: [
+                          Icon(Icons.edit_rounded,
+                              size: 20, color: Color(0xFF1C1C1E)),
+                          SizedBox(width: 12),
+                          Text('Editar', style: TextStyle(fontSize: 17)),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: const Row(
+                        children: [
+                          Icon(Icons.delete_rounded,
+                              size: 20, color: Color(0xFFFF3B30)),
+                          SizedBox(width: 12),
+                          Text('Eliminar',
+                              style: TextStyle(
+                                  fontSize: 17, color: Color(0xFFFF3B30))),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showCampoForm(context, campo: campo);
+                    } else if (value == 'delete') {
+                      _showDeleteConfirmation(context, campo);
+                    }
+                  },
+                ),
               ),
             ),
           );
@@ -314,6 +456,15 @@ class _OptimizedTrabajosListScreenState
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // Filtros
+  DateTime? _fechaFiltro;
+  int? _clienteIdFiltro;
+  String? _ownershipFiltro; // 'propio', 'tercero', 'contratado'
+  String? _statusFiltro;
+  String? _tipoFiltro;
+  String? _cultivoFiltro;
+  int? _campoIdFiltro;
+
   @override
   void initState() {
     super.initState();
@@ -334,46 +485,13 @@ class _OptimizedTrabajosListScreenState
 
     final body = _buildTrabajosList(trabajosState);
 
-    if (widget.showAppBar ?? false) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
-        appBar: AppBar(
-          title: Text(
-            widget.estadoFiltro != null
-                ? 'Trabajos - ${widget.estadoFiltro}'
-                : 'Trabajos',
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1C1C1E),
-            ),
-          ),
-          elevation: 0,
-          backgroundColor: Colors.white,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-            color: const Color(0xFF1C1C1E),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: body,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            _showTrabajoForm(context);
-          },
-          backgroundColor: const Color(0xFF2E7D32),
-          child: const Icon(Icons.add),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 56,
+              expandedHeight: 120,
               toolbarHeight: 56,
               floating: false,
               pinned: true,
@@ -392,7 +510,41 @@ class _OptimizedTrabajosListScreenState
                   ),
                 ),
                 centerTitle: false,
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 60),
+                background: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.only(top: 60, left: 16, right: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF2F2F7),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (value) =>
+                                setState(() => _searchQuery = value),
+                            decoration: const InputDecoration(
+                              hintText: 'Buscar trabajo...',
+                              hintStyle: TextStyle(
+                                  fontSize: 15, color: Color(0xFF8E8E93)),
+                              prefixIcon: Icon(Icons.search_rounded,
+                                  color: Color(0xFF8E8E93), size: 20),
+                              border: InputBorder.none,
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterButtons(),
+                    ],
+                  ),
+                ),
               ),
             ),
           ];
@@ -404,7 +556,293 @@ class _OptimizedTrabajosListScreenState
           _showTrabajoForm(context);
         },
         backgroundColor: const Color(0xFF2E7D32),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildFilterButtons() {
+    bool hasActiveFilters = _fechaFiltro != null ||
+        _clienteIdFiltro != null ||
+        _ownershipFiltro != null ||
+        _statusFiltro != null ||
+        _tipoFiltro != null ||
+        _cultivoFiltro != null ||
+        _campoIdFiltro != null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: hasActiveFilters
+            ? const Color(0xFF2E7D32).withOpacity(0.1)
+            : const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: IconButton(
+        icon: Icon(
+          hasActiveFilters
+              ? Icons.filter_alt_rounded
+              : Icons.filter_alt_outlined,
+          color: hasActiveFilters
+              ? const Color(0xFF2E7D32)
+              : const Color(0xFF8E8E93),
+          size: 20,
+        ),
+        onPressed: () => _showFilterSheet(trabajosState),
+      ),
+    );
+  }
+
+  void _showFilterSheet(BaseState trabajosState) {
+    final clientesState = ref.read(clientesProvider);
+    final camposState = ref.read(camposProvider);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Filtros de Trabajos',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _fechaFiltro = null;
+                            _clienteIdFiltro = null;
+                            _ownershipFiltro = null;
+                            _statusFiltro = null;
+                            _tipoFiltro = null;
+                            _cultivoFiltro = null;
+                            _campoIdFiltro = null;
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Limpiar'),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+
+                  // Fecha
+                  _buildFilterTitle('Fecha'),
+                  ListTile(
+                    title: Text(_fechaFiltro == null
+                        ? 'Cualquier fecha'
+                        : DateFormat('dd/MM/yyyy').format(_fechaFiltro!)),
+                    trailing:
+                        const Icon(Icons.calendar_today_rounded, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _fechaFiltro ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                      );
+                      if (picked != null) {
+                        setModalState(() => _fechaFiltro = picked);
+                        setState(() => _fechaFiltro = picked);
+                      }
+                    },
+                  ),
+
+                  // Propiedad
+                  _buildFilterTitle('Propiedad'),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _buildFilterChip('Propio', _ownershipFiltro == 'propio',
+                          () {
+                        setModalState(() => _ownershipFiltro = 'propio');
+                        setState(() => _ownershipFiltro = 'propio');
+                      }),
+                      _buildFilterChip(
+                          'De Terceros', _ownershipFiltro == 'tercero', () {
+                        setModalState(() => _ownershipFiltro = 'tercero');
+                        setState(() => _ownershipFiltro = 'tercero');
+                      }),
+                      _buildFilterChip(
+                          'Contratado', _ownershipFiltro == 'contratado', () {
+                        setModalState(() => _ownershipFiltro = 'contratado');
+                        setState(() => _ownershipFiltro = 'contratado');
+                      }),
+                    ],
+                  ),
+
+                  // Estado
+                  _buildFilterTitle('Estado'),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _buildFilterChip(
+                          'Pendiente', _statusFiltro == 'pendiente', () {
+                        setModalState(() => _statusFiltro = 'pendiente');
+                        setState(() => _statusFiltro = 'pendiente');
+                      }),
+                      _buildFilterChip('En Curso', _statusFiltro == 'en curso',
+                          () {
+                        setModalState(() => _statusFiltro = 'en curso');
+                        setState(() => _statusFiltro = 'en curso');
+                      }),
+                      _buildFilterChip(
+                          'Completado', _statusFiltro == 'completado', () {
+                        setModalState(() => _statusFiltro = 'completado');
+                        setState(() => _statusFiltro = 'completado');
+                      }),
+                    ],
+                  ),
+
+                  if (clientesState is LoadedState<List<dynamic>>) ...[
+                    _buildFilterTitle('Cliente'),
+                    SizedBox(
+                      height: 50,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: clientesState.data.length,
+                        itemBuilder: (context, index) {
+                          final cliente = clientesState.data[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildFilterChip(
+                                cliente.nombre, _clienteIdFiltro == cliente.id,
+                                () {
+                              setModalState(
+                                  () => _clienteIdFiltro = cliente.id);
+                              setState(() => _clienteIdFiltro = cliente.id);
+                            }),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+
+                  if (camposState is LoadedState<List<dynamic>>) ...[
+                    _buildFilterTitle('Campo'),
+                    SizedBox(
+                      height: 50,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: camposState.data.length,
+                        itemBuilder: (context, index) {
+                          final campo = camposState.data[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildFilterChip(
+                                campo.nombre, _campoIdFiltro == campo.id, () {
+                              setModalState(() => _campoIdFiltro = campo.id);
+                              setState(() => _campoIdFiltro = campo.id);
+                            }),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+
+                  if (trabajosState is LoadedState<List<dynamic>>) ...[
+                    // Tipo
+                    _buildFilterTitle('Tipo de Trabajo'),
+                    Wrap(
+                      spacing: 8,
+                      children: trabajosState.data
+                          .map((t) => t.tipo.toString())
+                          .toSet()
+                          .map((tipo) =>
+                              _buildFilterChip(tipo, _tipoFiltro == tipo, () {
+                                setModalState(() => _tipoFiltro =
+                                    _tipoFiltro == tipo ? null : tipo);
+                                setState(() => _tipoFiltro =
+                                    _tipoFiltro == tipo ? null : tipo);
+                              }))
+                          .toList(),
+                    ),
+
+                    // Cultivo
+                    _buildFilterTitle('Cultivo'),
+                    Wrap(
+                      spacing: 8,
+                      children: trabajosState.data
+                          .map((t) => t.cultivo.toString())
+                          .where((c) => c.isNotEmpty)
+                          .toSet()
+                          .map((cultivo) => _buildFilterChip(
+                                  cultivo, _cultivoFiltro == cultivo, () {
+                                setModalState(() => _cultivoFiltro =
+                                    _cultivoFiltro == cultivo ? null : cultivo);
+                                setState(() => _cultivoFiltro =
+                                    _cultivoFiltro == cultivo ? null : cultivo);
+                              }))
+                          .toList(),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Aplicar Filtros'),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  Widget _buildFilterTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[700],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => onTap(),
+      selectedColor: const Color(0xFF2E7D32).withOpacity(0.2),
+      checkmarkColor: const Color(0xFF2E7D32),
+      labelStyle: TextStyle(
+        color: isSelected ? const Color(0xFF2E7D32) : Colors.black87,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
   }
@@ -436,8 +874,75 @@ class _OptimizedTrabajosListScreenState
 
       var filteredTrabajos = trabajos;
 
-      // Aplicar filtro por estado si existe
-      if (widget.estadoFiltro != null) {
+      // Filtros de búsqueda (texto libre)
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        filteredTrabajos = filteredTrabajos.where((t) {
+          return (t.tipo ?? '').toLowerCase().contains(query) ||
+              (t.cultivo ?? '').toLowerCase().contains(query) ||
+              (t.campoNombre ?? '').toLowerCase().contains(query) ||
+              (t.cliente ?? '').toLowerCase().contains(query);
+        }).toList();
+      }
+
+      // Filtro de fecha
+      if (_fechaFiltro != null) {
+        filteredTrabajos = filteredTrabajos.where((t) {
+          return t.fechaInicio.year == _fechaFiltro!.year &&
+              t.fechaInicio.month == _fechaFiltro!.month &&
+              t.fechaInicio.day == _fechaFiltro!.day;
+        }).toList();
+      }
+
+      // Filtro de propiedad
+      if (_ownershipFiltro != null) {
+        filteredTrabajos = filteredTrabajos.where((t) {
+          if (_ownershipFiltro == 'propio')
+            return !t.esTercero && !t.servicioContratado;
+          if (_ownershipFiltro == 'tercero') return t.esTercero;
+          if (_ownershipFiltro == 'contratado') return t.servicioContratado;
+          return true;
+        }).toList();
+      }
+
+      // Filtro de estado (avanzado)
+      if (_statusFiltro != null) {
+        filteredTrabajos = filteredTrabajos.where((t) {
+          final est = (t.estado ?? '').toLowerCase();
+          if (_statusFiltro == 'pendiente')
+            return est == 'pendiente' || est == 'programado';
+          if (_statusFiltro == 'en curso')
+            return est.contains('curso') ||
+                est.contains('ejecución') ||
+                est.contains('progreso');
+          if (_statusFiltro == 'completado')
+            return est == 'completado' || est == 'finalizado';
+          return true;
+        }).toList();
+      }
+
+      // Filtro de cliente
+      if (_clienteIdFiltro != null) {
+        final clienteState = ref.read(clientesProvider);
+        if (clienteState is LoadedState<List<dynamic>>) {
+          final cliente = clienteState.data
+              .firstWhere((c) => c.id == _clienteIdFiltro, orElse: () => null);
+          if (cliente != null) {
+            filteredTrabajos = filteredTrabajos.where((t) {
+              return t.cliente == cliente.nombre;
+            }).toList();
+          }
+        }
+      }
+
+      // Filtro de campo
+      if (_campoIdFiltro != null) {
+        filteredTrabajos =
+            filteredTrabajos.where((t) => t.idCampo == _campoIdFiltro).toList();
+      }
+
+      // Aplicar filtro por estado si existe (del widget - legacy)
+      if (widget.estadoFiltro != null && _statusFiltro == null) {
         filteredTrabajos = filteredTrabajos.where((trabajo) {
           final estado = (trabajo.estado ?? '').toLowerCase();
           final filtro = widget.estadoFiltro!.toLowerCase();
@@ -455,21 +960,6 @@ class _OptimizedTrabajosListScreenState
             return true;
           }
           return estado == filtro;
-        }).toList();
-      }
-
-      // Aplicar filtro de búsqueda
-      if (_searchQuery.isNotEmpty) {
-        filteredTrabajos = filteredTrabajos.where((trabajo) {
-          return trabajo.tipo
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase()) ||
-              trabajo.cultivo
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase()) ||
-              (trabajo.estado ?? '')
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase());
         }).toList();
       }
 
@@ -504,121 +994,146 @@ class _OptimizedTrabajosListScreenState
             statusIcon = Icons.schedule_rounded;
           }
 
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-              border: Border.all(
-                color: statusColor.withOpacity(0.3),
-              ),
-            ),
-            child: ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  statusIcon,
-                  color: statusColor,
+          String ownershipInfo = 'Propio';
+          if (trabajo.esTercero) {
+            ownershipInfo =
+                trabajo.cliente != null && trabajo.cliente!.isNotEmpty
+                    ? 'Cliente: ${trabajo.cliente}'
+                    : 'A terceros';
+          } else if (trabajo.servicioContratado) {
+            ownershipInfo = 'Servicio Contratado';
+          }
+
+          return OptimizedCard(
+            margin: EdgeInsets.zero,
+            padding: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: statusColor,
+                    width: 4,
+                  ),
                 ),
               ),
-              title: Text(
-                '${trabajo.tipo} - ${trabajo.cultivo}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    statusIcon,
+                    color: statusColor,
+                  ),
                 ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.landscape_rounded,
-                          size: 14, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          trabajo.campoInfo,
-                          style:
-                              TextStyle(fontSize: 13, color: Colors.grey[600]),
-                          overflow: TextOverflow.ellipsis,
+                title: Text(
+                  '${trabajo.tipo} - ${trabajo.cultivo}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            ownershipInfo,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.w500),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(Icons.landscape_rounded,
+                            size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            trabajo.campoInfo,
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[600]),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        trabajo.estado ?? 'Desconocido',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: statusColor,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(
-                      trabajo.estado ?? 'Desconocido',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: statusColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isEnCurso)
-                    IconButton(
-                      icon: const Icon(Icons.add_circle, size: 28),
-                      color: Colors.green,
-                      tooltip: 'Registrar Horas',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RegistrarHorasForm(
-                              trabajoId: trabajo.id,
-                              trabajoTitulo:
-                                  '${trabajo.tipo} - ${trabajo.cultivo}',
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isEnCurso)
+                      IconButton(
+                        icon: const Icon(Icons.add_circle, size: 28),
+                        color: Colors.green,
+                        tooltip: 'Registrar Horas',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RegistrarHorasForm(
+                                trabajoId: trabajo.id,
+                                trabajoTitulo:
+                                    '${trabajo.tipo} - ${trabajo.cultivo}',
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
+                    PopupMenuButton(
+                      icon: const Icon(Icons.more_vert_rounded,
+                          color: Color(0xFF8E8E93)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      itemBuilder: (context) => _buildTrabajoMenuItems(trabajo),
+                      onSelected: (value) =>
+                          _handleTrabajoMenuAction(value, trabajo),
                     ),
-                  PopupMenuButton(
-                    icon: const Icon(Icons.more_vert_rounded,
-                        color: Color(0xFF8E8E93)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          TrabajoDetailScreen(trabajo: trabajo),
                     ),
-                    itemBuilder: (context) => _buildTrabajoMenuItems(trabajo),
-                    onSelected: (value) =>
-                        _handleTrabajoMenuAction(value, trabajo),
-                  ),
-                ],
+                  );
+                },
               ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
-                  ),
-                );
-              },
             ),
           );
         },

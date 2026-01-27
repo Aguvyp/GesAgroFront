@@ -17,7 +17,8 @@ class TrabajoDetailScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<TrabajoDetailScreen> createState() => _TrabajoDetailScreenState();
+  ConsumerState<TrabajoDetailScreen> createState() =>
+      _TrabajoDetailScreenState();
 }
 
 class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
@@ -27,7 +28,9 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
     // Cargar los detalles completos del trabajo usando el nuevo endpoint
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.trabajo.id != null) {
-        ref.read(trabajoDetalleProvider.notifier).loadTrabajoDetalle(widget.trabajo.id!);
+        ref
+            .read(trabajoDetalleProvider.notifier)
+            .loadTrabajoDetalle(widget.trabajo.id!);
       }
     });
   }
@@ -35,12 +38,23 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final trabajoDetalleState = ref.watch(trabajoDetalleProvider);
-    
+
+    // Determinar el color basado en el estado (priorizando el detalle cargado)
+    final estadoColor = trabajoDetalleState.maybeWhen(
+      data: (detalle) =>
+          _getTrabajoColor(detalle?.estado ?? widget.trabajo.estado),
+      orElse: () => _getTrabajoColor(widget.trabajo.estado),
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalles del Trabajo'),
-        backgroundColor: const Color(AppConstants.primaryColor),
-        foregroundColor: Colors.white,
+        backgroundColor: estadoColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded,
+              color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: trabajoDetalleState.when(
         data: (trabajoDetalle) {
@@ -65,7 +79,9 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
               ElevatedButton(
                 onPressed: () {
                   if (widget.trabajo.id != null) {
-                    ref.read(trabajoDetalleProvider.notifier).loadTrabajoDetalle(widget.trabajo.id!);
+                    ref
+                        .read(trabajoDetalleProvider.notifier)
+                        .loadTrabajoDetalle(widget.trabajo.id!);
                   }
                 },
                 child: const Text('Reintentar'),
@@ -95,13 +111,15 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
                   icon: const Icon(Icons.edit),
                   label: const Text('Editar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(AppConstants.primaryColor).withOpacity(0.1),
+                    backgroundColor:
+                        const Color(AppConstants.primaryColor).withOpacity(0.1),
                     foregroundColor: const Color(AppConstants.primaryColor),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: const Color(AppConstants.primaryColor).withOpacity(0.3),
+                        color: const Color(AppConstants.primaryColor)
+                            .withOpacity(0.3),
                         width: 1,
                       ),
                     ),
@@ -152,6 +170,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
               trabajoDetalle.campoInfo,
               style: const TextStyle(fontSize: 16),
             ),
+            estado: trabajoDetalle.estado,
           ),
           const SizedBox(height: 24),
 
@@ -184,11 +203,13 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Monto cobrado: \$${NumberFormat('#,##0.00').format(trabajoDetalle.montoCobrado)}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],
               ],
             ),
+            estado: trabajoDetalle.estado,
           ),
           const SizedBox(height: 24),
 
@@ -201,12 +222,15 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
                 children: [
                   Text(
                     '${trabajoDetalle.totalPersonal} operario${trabajoDetalle.totalPersonal > 1 ? 's' : ''} - ${trabajoDetalle.totalHectareasPersonal.toStringAsFixed(1)} ha',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 12),
-                  ...trabajoDetalle.personal.map((personal) => _buildPersonalItem(personal)),
+                  ...trabajoDetalle.personal.map((personal) =>
+                      _buildPersonalItem(personal, trabajoDetalle.estado)),
                 ],
               ),
+              estado: trabajoDetalle.estado,
             ),
             const SizedBox(height: 24),
           ],
@@ -220,12 +244,15 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
                 children: [
                   Text(
                     '${trabajoDetalle.totalMaquinas} máquina${trabajoDetalle.totalMaquinas > 1 ? 's' : ''}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 12),
-                  ...trabajoDetalle.maquinas.map((maquina) => _buildMaquinaItem(maquina)),
+                  ...trabajoDetalle.maquinas.map((maquina) =>
+                      _buildMaquinaItem(maquina, trabajoDetalle.estado)),
                 ],
               ),
+              estado: trabajoDetalle.estado,
             ),
             const SizedBox(height: 24),
           ],
@@ -238,6 +265,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
                 trabajoDetalle.observaciones!,
                 style: const TextStyle(fontSize: 16),
               ),
+              estado: trabajoDetalle.estado,
             ),
             const SizedBox(height: 24),
           ],
@@ -248,18 +276,20 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
     );
   }
 
-  Widget _buildPersonalItem(PersonalTrabajo personal) {
+  Widget _buildPersonalItem(PersonalTrabajo personal, String? estado) {
+    final color = _getTrabajoColor(estado);
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.person, size: 20, color: Colors.blue),
+          Icon(Icons.person, size: 20, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -267,7 +297,8 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
               children: [
                 Text(
                   personal.nombre,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
                 Text(
                   'DNI: ${personal.dni}',
@@ -284,11 +315,11 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.blue,
+              color: color,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '${personal.ha.toStringAsFixed(1)} ha',
+              '${personal.horas.toStringAsFixed(0)}hs / ${personal.ha.toStringAsFixed(0)}ha',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -301,18 +332,20 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
     );
   }
 
-  Widget _buildMaquinaItem(MaquinaTrabajo maquina) {
+  Widget _buildMaquinaItem(MaquinaTrabajo maquina, String? estado) {
+    final color = _getTrabajoColor(estado);
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.build, size: 20, color: Colors.green),
+          Icon(Icons.build, size: 20, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -320,7 +353,8 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
               children: [
                 Text(
                   maquina.nombre,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
                 Text(
                   '${maquina.marca} ${maquina.modelo}',
@@ -335,14 +369,15 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   }
 
   Widget _buildHeader(TrabajoDetalle trabajoDetalle) {
-    final fechaInicio = DateFormat('dd/MM/yyyy').format(trabajoDetalle.fechaInicio);
-    final fechaFin = trabajoDetalle.fechaFin != null 
+    final fechaInicio =
+        DateFormat('dd/MM/yyyy').format(trabajoDetalle.fechaInicio);
+    final fechaFin = trabajoDetalle.fechaFin != null
         ? DateFormat('dd/MM/yyyy').format(trabajoDetalle.fechaFin!)
         : 'En curso';
-    final duracion = trabajoDetalle.durationDays > 0 
+    final duracion = trabajoDetalle.durationDays > 0
         ? ' (${trabajoDetalle.durationDays} días)'
         : '';
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -356,7 +391,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        
+
         // Fechas
         Text(
           '$fechaInicio - $fechaFin$duracion',
@@ -367,7 +402,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        
+
         // Estado
         Text(
           trabajoDetalle.estado ?? 'Pendiente',
@@ -378,7 +413,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Línea elegante con gradiente
         Container(
           height: 3,
@@ -386,9 +421,9 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(AppConstants.primaryColor).withOpacity(0.3),
-                const Color(AppConstants.primaryColor),
-                const Color(AppConstants.primaryColor).withOpacity(0.3),
+                _getTrabajoColor(trabajoDetalle.estado).withOpacity(0.3),
+                _getTrabajoColor(trabajoDetalle.estado),
+                _getTrabajoColor(trabajoDetalle.estado).withOpacity(0.3),
               ],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
@@ -403,7 +438,10 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   Widget _buildSection({
     required String title,
     required Widget content,
+    String? estado, // Nuevo parámetro para el color
   }) {
+    final color = _getTrabajoColor(estado);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -416,8 +454,8 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(AppConstants.primaryColor),
-                    const Color(AppConstants.primaryColor).withOpacity(0.7),
+                    color,
+                    color.withOpacity(0.7),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -439,7 +477,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Contenido
         content,
       ],
@@ -454,7 +492,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
       case 'en progreso':
         return const Color(AppConstants.accentColor);
       case 'pendiente':
-        return const Color(AppConstants.infoColor);
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -482,7 +520,8 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar Eliminación'),
-        content: const Text('¿Estás seguro de que quieres eliminar este trabajo? Esta acción no se puede deshacer.'),
+        content: const Text(
+            '¿Estás seguro de que quieres eliminar este trabajo? Esta acción no se puede deshacer.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
