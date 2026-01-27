@@ -2267,7 +2267,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
           'fecha_inicio': _fechaInicio
               ?.toIso8601String()
               .split('T')[0], // Formato YYYY-MM-DD
-          'id_campo': _campoSeleccionado?.id,
+          'campo_id': _campoSeleccionado?.id,
           'cultivo': _cultivoController.text,
           'observaciones': _descripcionController.text.isNotEmpty
               ? _descripcionController.text

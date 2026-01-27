@@ -9,7 +9,7 @@ import '../../utils/validators.dart';
 /// Pantalla completa para crear/editar máquinas
 class MaquinaFormScreen extends ConsumerStatefulWidget {
   final Maquina? maquina;
-  
+
   const MaquinaFormScreen({Key? key, this.maquina}) : super(key: key);
 
   @override
@@ -25,19 +25,25 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
   late TextEditingController _anchoTrabajoController;
   late TextEditingController _horasTrabajadasController;
   late TextEditingController _detallesController;
-  
+
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _nombreController = TextEditingController(text: widget.maquina?.nombre ?? '');
+    _nombreController =
+        TextEditingController(text: widget.maquina?.nombre ?? '');
     _marcaController = TextEditingController(text: widget.maquina?.marca ?? '');
-    _modeloController = TextEditingController(text: widget.maquina?.modelo ?? '');
-    _anioController = TextEditingController(text: widget.maquina?.ano.toString() ?? '');
-    _anchoTrabajoController = TextEditingController(text: widget.maquina?.anchoTrabajo?.toString() ?? '');
-    _horasTrabajadasController = TextEditingController(text: widget.maquina?.horasTrabajadas?.toString() ?? '');
-    _detallesController = TextEditingController(text: widget.maquina?.detalles ?? '');
+    _modeloController =
+        TextEditingController(text: widget.maquina?.modelo ?? '');
+    _anioController =
+        TextEditingController(text: widget.maquina?.ano.toString() ?? '');
+    _anchoTrabajoController = TextEditingController(
+        text: widget.maquina?.anchoTrabajo?.toString() ?? '');
+    _horasTrabajadasController = TextEditingController(
+        text: widget.maquina?.horasTrabajadas?.toString() ?? '');
+    _detallesController =
+        TextEditingController(text: widget.maquina?.detalles ?? '');
   }
 
   @override
@@ -80,18 +86,18 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text(
-                  'Guardar',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text(
+                    'Guardar',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
           ),
         ],
       ),
@@ -122,7 +128,8 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
                       label: 'Nombre',
                       hint: 'Nombre identificativo de la máquina',
                       prefixIcon: const Icon(Icons.build),
-                      validator: (value) => Validators.validateRequired(value, 'Nombre'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Nombre'),
                     ),
                     const SizedBox(height: 16),
                     OptimizedTextField(
@@ -179,7 +186,8 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
                       label: 'Horas de Uso',
                       hint: 'Horas totales trabajadas',
                       prefixIcon: const Icon(Icons.access_time),
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
                     ),
                   ],
                 ),
@@ -218,7 +226,8 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isSaving ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _isSaving ? null : () => Navigator.pop(context),
                       child: const Text('Cancelar'),
                     ),
                   ),
@@ -226,13 +235,15 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _submitForm,
-                      child: _isSaving 
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(widget.maquina == null ? 'Crear Máquina' : 'Actualizar Máquina'),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(widget.maquina == null
+                              ? 'Crear Máquina'
+                              : 'Actualizar Máquina'),
                     ),
                   ),
                 ],
@@ -257,28 +268,43 @@ class _MaquinaFormScreenState extends ConsumerState<MaquinaFormScreen> {
           nombre: _nombreController.text,
           marca: _marcaController.text,
           modelo: _modeloController.text,
-          ano: _anioController.text.isNotEmpty ? int.parse(_anioController.text) : DateTime.now().year,
-          anchoTrabajo: _anchoTrabajoController.text.isNotEmpty ? double.parse(_anchoTrabajoController.text) : null,
-          horasTrabajadas: _horasTrabajadasController.text.isNotEmpty ? double.parse(_horasTrabajadasController.text) : null,
-          detalles: _detallesController.text.isNotEmpty ? _detallesController.text : null,
+          ano: _anioController.text.isNotEmpty
+              ? int.parse(_anioController.text)
+              : DateTime.now().year,
+          anchoTrabajo: _anchoTrabajoController.text.isNotEmpty
+              ? double.parse(_anchoTrabajoController.text)
+              : null,
+          horasTrabajadas: _horasTrabajadasController.text.isNotEmpty
+              ? double.parse(_horasTrabajadasController.text)
+              : null,
+          detalles: _detallesController.text.isNotEmpty
+              ? _detallesController.text
+              : null,
         );
 
         if (widget.maquina == null) {
-          await ref.read(maquinasProvider.notifier).createMaquina(maquina);
+          final newMaquina =
+              await ref.read(maquinasProvider.notifier).createMaquina(maquina);
+          if (mounted) {
+            Navigator.pop(context, newMaquina);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Máquina creada exitosamente')),
+            );
+          }
         } else {
           // Para actualizar, convertir a Map (mantener compatibilidad con updateMaquina)
           final data = maquina.toJson();
           data.remove('id'); // No enviar el id en el update
-          await ref.read(maquinasProvider.notifier).updateMaquina(widget.maquina!.id!, data);
-        }
-
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(widget.maquina == null ? 'Máquina creada exitosamente' : 'Máquina actualizada exitosamente'),
-            ),
-          );
+          await ref
+              .read(maquinasProvider.notifier)
+              .updateMaquina(widget.maquina!.id!, data);
+          if (mounted) {
+            Navigator.pop(
+                context, widget.maquina); // Return edited (conceptually)
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Máquina actualizada exitosamente')),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {

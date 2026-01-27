@@ -11,11 +11,11 @@ import 'core/logger/app_logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     // Inicializar todos los gestores de manera optimizada
     await _initializeApp();
-    
+
     runApp(
       const ProviderScope(
         child: OptimizedGesAgroApp(),
@@ -53,15 +53,15 @@ void main() async {
 Future<void> _initializeApp() async {
   final logger = AppLogger.instance;
   logger.initialize();
-  
+
   logger.info('🚀 Iniciando GesAgro Ultra Optimizado...');
-  
+
   // Inicializar Hive para almacenamiento local
   await Hive.initFlutter();
-  
+
   // Inicializar configuración de la aplicación
   await AppConfig.instance.initialize();
-  
+
   logger.info('✅ Inicialización completada exitosamente');
 }
 
@@ -74,22 +74,22 @@ class OptimizedGesAgroApp extends ConsumerWidget {
       title: 'GesAgro Ultra Optimizado',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      
+      themeMode: ThemeMode.light,
+
       // Configuraciones de rendimiento
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaleFactor: MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2),
+            textScaleFactor:
+                MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2),
           ),
           child: child!,
         );
       },
-      
+
       // Pantalla inicial - Login
       home: const OptimizedLoginScreen(),
-      
+
       // Rutas optimizadas
       routes: {
         '/main': (context) => const OptimizedMainScreen(),
@@ -97,7 +97,7 @@ class OptimizedGesAgroApp extends ConsumerWidget {
         '/dashboard': (context) => const OptimizedDashboardScreen(),
         '/campos': (context) => const OptimizedCamposListScreen(),
       },
-      
+
       // Configuración de navegación
       onGenerateRoute: (settings) {
         switch (settings.name) {

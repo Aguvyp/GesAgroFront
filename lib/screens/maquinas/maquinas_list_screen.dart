@@ -187,7 +187,7 @@ class _OptimizedMaquinasListScreenState
             Text(
               _searchQuery.isNotEmpty
                   ? 'No se encontraron máquinas'
-                  : 'No hay máquinas registradas',
+                  : 'No hay máquinas guardadas',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),

@@ -185,7 +185,7 @@ class _ClientesListScreenState extends ConsumerState<ClientesListScreen> {
               const SizedBox(height: 16),
               Text(
                 _searchQuery.isEmpty
-                    ? 'No hay clientes registrados'
+                    ? 'No hay clientes guardados'
                     : 'No se encontraron resultados',
                 style: TextStyle(
                   fontSize: 18,

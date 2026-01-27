@@ -320,18 +320,29 @@ class _ClienteFormScreenState extends ConsumerState<ClienteFormScreen> {
               widget.cliente!.id!,
               clienteData,
             );
+        if (mounted) {
+          Navigator.pop(
+              context,
+              widget
+                  .cliente); // Return edited client (conceptually, though fields might not be updated in object)
+          // Actually better to return null or fetch updated, but for now we focus on CREATE case as requested.
+          // For update, the list refreshes anyway.
+          OptimizedSnackBar.showSuccess(
+            context,
+            message: 'Cliente actualizado exitosamente',
+          );
+        }
       } else {
-        await ref.read(clientesProvider.notifier).createCliente(clienteData);
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        OptimizedSnackBar.showSuccess(
-          context,
-          message: _isEditing
-              ? 'Cliente actualizado exitosamente'
-              : 'Cliente creado exitosamente',
-        );
+        final newCliente = await ref
+            .read(clientesProvider.notifier)
+            .createCliente(clienteData);
+        if (mounted) {
+          Navigator.pop(context, newCliente);
+          OptimizedSnackBar.showSuccess(
+            context,
+            message: 'Cliente creado exitosamente',
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

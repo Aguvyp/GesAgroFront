@@ -6,15 +6,18 @@ class AppTheme {
   static const Color primaryGreen = Color(0xFF2E7D32); // Verde agrícola
   static const Color secondaryGreen = Color(0xFF4CAF50); // Verde claro
   static const Color accentOrange = Color(0xFFFF9800); // Naranja
-  static const Color backgroundLight = Color(0xFFF5F5F5); // Fondo muy claro estilo iOS
+  static const Color backgroundLight =
+      Color(0xFFF5F5F5); // Fondo muy claro estilo iOS
   static const Color surfaceLight = Color(0xFFFFFFFF); // Superficie blanca
   static const Color appBarLightSurface = Color(0xFFF1F7F2); // Header suave
-  static const Color bottomNavLightSurface = Color(0xFFF7FBF7); // Barra inferior diferenciada
+  static const Color bottomNavLightSurface =
+      Color(0xFFF7FBF7); // Barra inferior diferenciada
   static const Color appBarDarkSurface = Color(0xFF121716); // Header oscuro
-  static const Color bottomNavDarkSurface = Color(0xFF151B15); // Barra inferior oscura
+  static const Color bottomNavDarkSurface =
+      Color(0xFF151B15); // Barra inferior oscura
   static const Color textPrimary = Color(0xFF1C1C1E); // Texto principal iOS
   static const Color textSecondary = Color(0xFF8E8E93); // Texto secundario iOS
-  
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -36,7 +39,7 @@ class AppTheme {
         onError: Colors.white,
         brightness: Brightness.light,
       ),
-      
+
       // AppBar estilo iOS (más delgado y con color suave)
       appBarTheme: AppBarTheme(
         backgroundColor: appBarLightSurface,
@@ -66,10 +69,10 @@ class AppTheme {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
         ),
       ),
-      
+
       // Scaffold background
       scaffoldBackgroundColor: backgroundLight,
-      
+
       // Cards minimalistas estilo iOS
       cardTheme: CardThemeData(
         elevation: 0,
@@ -83,7 +86,7 @@ class AppTheme {
         ),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
-      
+
       // Botones estilo iOS (más planos)
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -102,7 +105,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryGreen,
@@ -118,7 +121,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryGreen,
@@ -133,12 +136,13 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Inputs estilo Cupertino
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceLight,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
@@ -169,7 +173,7 @@ class AppTheme {
           fontSize: 17,
         ),
       ),
-      
+
       // Bottom Navigation Bar estilo iOS con superficie diferenciada
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: bottomNavLightSurface,
@@ -198,7 +202,7 @@ class AppTheme {
           size: 26,
         ),
       ),
-      
+
       // Floating Action Button
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryGreen,
@@ -208,7 +212,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      
+
       // Chips estilo iOS
       chipTheme: ChipThemeData(
         backgroundColor: Colors.grey.withOpacity(0.1),
@@ -223,14 +227,14 @@ class AppTheme {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      
+
       // Dividers sutiles
       dividerTheme: DividerThemeData(
         color: Colors.grey.withOpacity(0.2),
         thickness: 0.5,
         space: 1,
       ),
-      
+
       // ListTile estilo iOS
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -247,7 +251,7 @@ class AppTheme {
           color: textSecondary,
         ),
       ),
-      
+
       // Tipografía estilo iOS (SF Pro)
       textTheme: const TextTheme(
         displayLarge: TextStyle(
@@ -351,137 +355,6 @@ class AppTheme {
           fontWeight: FontWeight.w400,
           color: textSecondary,
           letterSpacing: -0.08,
-        ),
-      ),
-    );
-  }
-
-  static ThemeData get darkTheme {
-    const Color darkBackground = Color(0xFF000000);
-    const Color darkSurface = Color(0xFF1C1C1E);
-    const Color darkTextPrimary = Color(0xFFFFFFFF);
-    const Color darkTextSecondary = Color(0xFF8E8E93);
-    
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.dark(
-        primary: primaryGreen,
-        secondary: secondaryGreen,
-        tertiary: accentOrange,
-        surface: darkSurface,
-        surfaceVariant: appBarDarkSurface,
-        background: darkBackground,
-        error: const Color(0xFFFF453A),
-        outline: const Color(0xFF2E7D32),
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: darkTextPrimary,
-        onSurfaceVariant: darkTextPrimary,
-        onBackground: darkTextPrimary,
-        onError: Colors.white,
-        brightness: Brightness.dark,
-      ),
-      
-      appBarTheme: AppBarTheme(
-        backgroundColor: appBarDarkSurface,
-        foregroundColor: primaryGreen,
-        surfaceTintColor: appBarDarkSurface,
-        elevation: 0,
-        centerTitle: false,
-        titleSpacing: 20,
-        titleTextStyle: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: primaryGreen,
-          letterSpacing: -0.41,
-        ),
-        toolbarTextStyle: const TextStyle(
-          color: primaryGreen,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-        toolbarHeight: 54,
-        iconTheme: const IconThemeData(
-          color: primaryGreen,
-          size: 26,
-        ),
-        shadowColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
-        ),
-      ),
-      
-      scaffoldBackgroundColor: darkBackground,
-      
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: darkSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-            width: 0.5,
-          ),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-      
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: bottomNavDarkSurface,
-        selectedItemColor: primaryGreen,
-        unselectedItemColor: darkTextSecondary,
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.24,
-          color: primaryGreen,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          letterSpacing: -0.24,
-          color: darkTextSecondary,
-        ),
-        selectedIconTheme: const IconThemeData(
-          size: 28,
-        ),
-        unselectedIconTheme: const IconThemeData(
-          size: 26,
-        ),
-      ),
-      
-      // Replicar otros temas para dark mode
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryGreen,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        ),
-      ),
-      
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: darkSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryGreen, width: 2),
         ),
       ),
     );

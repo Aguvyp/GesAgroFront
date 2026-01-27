@@ -1,6 +1,8 @@
 class AppConstants {
   // API Configuration
+
   static const String apiBaseUrl = 'http://200.58.96.143';
+
   static const int apiTimeoutSeconds = 30;
   static const Map<String, String> headers = {
     'Content-Type': 'application/json; charset=utf-8',

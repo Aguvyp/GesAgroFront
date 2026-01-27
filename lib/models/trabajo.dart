@@ -2,7 +2,8 @@ import 'package:intl/intl.dart';
 
 class Trabajo {
   final int? id;
-  final int? idTipoTrabajo; // ID del tipo de trabajo (puede ser null si solo viene el nombre)
+  final int?
+      idTipoTrabajo; // ID del tipo de trabajo (puede ser null si solo viene el nombre)
   final String? tipoTrabajoNombre; // Nombre del tipo de trabajo para mostrar
   final String cultivo;
   final DateTime fechaInicio;
@@ -46,11 +47,11 @@ class Trabajo {
     // NOTA: El backend puede no enviar id_tipo_trabajo en las respuestas, solo el nombre en "tipo"
     int? idTipoTrabajo;
     if (json['id_tipo_trabajo'] != null) {
-      idTipoTrabajo = json['id_tipo_trabajo'] is int 
-          ? json['id_tipo_trabajo'] 
+      idTipoTrabajo = json['id_tipo_trabajo'] is int
+          ? json['id_tipo_trabajo']
           : int.tryParse(json['id_tipo_trabajo'].toString());
     }
-    
+
     // Obtener el nombre del tipo de trabajo
     // El backend devuelve el nombre en el campo "tipo" en las respuestas
     String? tipoTrabajoNombre;
@@ -62,34 +63,69 @@ class Trabajo {
     } else if (json['tipo_trabajo'] != null && json['tipo_trabajo'] is Map) {
       tipoTrabajoNombre = json['tipo_trabajo']?['trabajo']?.toString();
     }
-    
+
+    // Parse ID Campo
+    int idCampo = 0;
+    if (json['id_campo'] != null) {
+      idCampo = json['id_campo'] is int
+          ? json['id_campo']
+          : int.tryParse(json['id_campo'].toString()) ?? 0;
+    } else if (json['campo_id'] != null) {
+      idCampo = json['campo_id'] is int
+          ? json['campo_id']
+          : int.tryParse(json['campo_id'].toString()) ?? 0;
+    } else if (json['campo'] != null && json['campo'] is Map) {
+      idCampo = json['campo']['id'] ?? 0;
+    } else if (json['campo'] != null && json['campo'] is int) {
+      idCampo = json['campo'];
+    }
+
+    // Parse Campo Nombre
+    String? campoNombre = json['campo_nombre'];
+    if (campoNombre == null && json['campo'] != null && json['campo'] is Map) {
+      campoNombre = json['campo']['nombre'];
+    }
+
+    // Parse Estado to ensure consistency
+    String? estado = json['estado'];
+
     return Trabajo(
       id: json['id'],
-      idTipoTrabajo: idTipoTrabajo, // Puede ser null si el backend solo devuelve el nombre
+      idTipoTrabajo: idTipoTrabajo,
       tipoTrabajoNombre: tipoTrabajoNombre,
       cultivo: json['cultivo'] ?? '',
-      fechaInicio: json['fecha_inicio'] != null 
+      fechaInicio: json['fecha_inicio'] != null
           ? DateTime.parse(json['fecha_inicio'])
-          : DateTime.now(), // Valor por defecto si es null
-      fechaFin: json['fecha_fin'] != null ? DateTime.parse(json['fecha_fin']) : null,
-      idPersonal: json['id_personal'] != null 
-          ? (json['id_personal'] is List 
+          : DateTime.now(),
+      fechaFin:
+          json['fecha_fin'] != null ? DateTime.parse(json['fecha_fin']) : null,
+      idPersonal: json['id_personal'] != null
+          ? (json['id_personal'] is List
               ? List<int>.from(json['id_personal'])
-              : [json['id_personal'] as int])
-          : [], // Si no hay id_personal, usar lista vacía
-      idMaquinas: json['id_maquinas'] != null 
-          ? (json['id_maquinas'] is List 
-              ? List<int>.from(json['id_maquinas'])
-              : [json['id_maquinas'] as int])
+              : [
+                  json['id_personal'] is int
+                      ? json['id_personal']
+                      : int.tryParse(json['id_personal'].toString()) ?? 0
+                ])
           : [],
-      idCampo: json['campo_id'] ?? json['id_campo'] ?? 0,
-      campoNombre: json['campo_nombre'],
+      idMaquinas: json['id_maquinas'] != null
+          ? (json['id_maquinas'] is List
+              ? List<int>.from(json['id_maquinas'])
+              : [
+                  json['id_maquinas'] is int
+                      ? json['id_maquinas']
+                      : int.tryParse(json['id_maquinas'].toString()) ?? 0
+                ])
+          : [],
+      idCampo: idCampo,
+      campoNombre: campoNombre,
       campoHa: _toDoubleSafe(json['campo_ha']),
-      estado: json['estado'],
+      estado: estado,
       observaciones: json['observaciones'],
       esTercero: _parseBoolean(json['a_terceros']),
       cobrado: (json['cobrado'] ?? false) == true || (json['cobrado'] == 1),
-      montoCobrado: _toDoubleSafe(json['monto_cobrado'] ?? json['montoCobrado']),
+      montoCobrado:
+          _toDoubleSafe(json['monto_cobrado'] ?? json['montoCobrado']),
       cliente: json['cliente'],
       servicioContratado: _parseBoolean(json['servicio_contratado']),
     );
@@ -147,7 +183,8 @@ class Trabajo {
       'id_tipo_trabajo': idTipoTrabajo, // Solo se envía al crear/actualizar
       'cultivo': cultivo,
       'fecha_inicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
-      'fecha_fin': fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
+      'fecha_fin':
+          fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
       'id_personal': idPersonal,
       'id_maquinas': idMaquinas,
       'campo_id': idCampo,

@@ -599,7 +599,7 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
             children: [
               Icon(Icons.receipt_long, size: 64, color: Colors.grey),
               SizedBox(height: 16),
-              Text('No hay costos registrados'),
+              Text('No hay costos guardados'),
               SizedBox(height: 8),
               Text('Toca el botón + para agregar un nuevo costo'),
             ],

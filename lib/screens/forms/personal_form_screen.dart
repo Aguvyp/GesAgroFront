@@ -8,7 +8,7 @@ import '../../utils/validators.dart';
 /// Pantalla completa para crear/editar personal
 class PersonalFormScreen extends ConsumerStatefulWidget {
   final Personal? personal;
-  
+
   const PersonalFormScreen({Key? key, this.personal}) : super(key: key);
 
   @override
@@ -20,15 +20,17 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
   late TextEditingController _nombreController;
   late TextEditingController _dniController;
   late TextEditingController _telefonoController;
-  
+
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _nombreController = TextEditingController(text: widget.personal?.nombre ?? '');
+    _nombreController =
+        TextEditingController(text: widget.personal?.nombre ?? '');
     _dniController = TextEditingController(text: widget.personal?.dni ?? '');
-    _telefonoController = TextEditingController(text: widget.personal?.telefono ?? '');
+    _telefonoController =
+        TextEditingController(text: widget.personal?.telefono ?? '');
   }
 
   @override
@@ -67,18 +69,18 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text(
-                  'Guardar',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text(
+                    'Guardar',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
           ),
         ],
       ),
@@ -109,7 +111,8 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
                       label: 'Nombre completo',
                       hint: 'Ingresa el nombre completo del operario',
                       prefixIcon: const Icon(Icons.person),
-                      validator: (value) => Validators.validateRequired(value, 'Nombre'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Nombre'),
                     ),
                     const SizedBox(height: 16),
                     OptimizedTextField(
@@ -146,7 +149,8 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isSaving ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _isSaving ? null : () => Navigator.pop(context),
                       child: const Text('Cancelar'),
                     ),
                   ),
@@ -154,13 +158,15 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _submitForm,
-                      child: _isSaving 
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(widget.personal == null ? 'Crear Operario' : 'Actualizar Operario'),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(widget.personal == null
+                              ? 'Crear Operario'
+                              : 'Actualizar Operario'),
                     ),
                   ),
                 ],
@@ -187,18 +193,26 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
         };
 
         if (widget.personal == null) {
-          await ref.read(personalProvider.notifier).createPersonal(data);
+          final newPersonal =
+              await ref.read(personalProvider.notifier).createPersonal(data);
+          if (mounted) {
+            Navigator.pop(context, newPersonal);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Operario creado exitosamente')),
+            );
+          }
         } else {
-          await ref.read(personalProvider.notifier).updatePersonal(widget.personal!.id!, data);
-        }
-
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(widget.personal == null ? 'Operario creado exitosamente' : 'Operario actualizado exitosamente'),
-            ),
-          );
+          await ref
+              .read(personalProvider.notifier)
+              .updatePersonal(widget.personal!.id!, data);
+          if (mounted) {
+            Navigator.pop(
+                context, widget.personal); // Return edited (conceptually)
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Operario actualizado exitosamente')),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {

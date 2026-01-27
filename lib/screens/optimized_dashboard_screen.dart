@@ -14,6 +14,7 @@ import '../core/logger/app_logger.dart';
 import 'trabajos/trabajo_detail_screen.dart';
 import 'forms/trabajo_form_screen.dart';
 import 'forms/mantenimiento_form_screen.dart';
+import 'forms/registrar_horas_form.dart';
 import 'optimized_screens.dart';
 import '../providers/optimized_auth_provider.dart';
 
@@ -402,6 +403,8 @@ class _OptimizedDashboardScreenState
         ),
         const SizedBox(height: 16),
         _buildTrabajosCards(trabajos),
+        const SizedBox(height: 24),
+        _buildListaTrabajosPendientes(trabajos),
       ],
     );
   }
@@ -456,6 +459,179 @@ class _OptimizedDashboardScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildListaTrabajosPendientes(List<Trabajo> trabajos) {
+    // Filtrar trabajos activos (pendientes o en curso)
+    final activeJobs = trabajos.where((t) {
+      final estado = t.estado?.toLowerCase().trim() ?? '';
+      return [
+        'pendiente',
+        'en curso',
+        'en_curso',
+        'en progreso',
+        'en_progreso',
+        'ejecutando'
+      ].contains(estado);
+    }).toList();
+
+    if (activeJobs.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Trabajos Activos',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.arrow_forward_ios, size: 16),
+              onPressed: () => _navegarAListaTrabajosPorEstado('En Curso'),
+              tooltip: 'Ver todos',
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount:
+              activeJobs.length > 5 ? 5 : activeJobs.length, // Mostrar max 5
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final trabajo = activeJobs[index];
+            return _buildActiveTrabajoCard(trabajo);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActiveTrabajoCard(Trabajo trabajo) {
+    final isEnCurso = [
+      'en curso',
+      'en_curso',
+      'en progreso',
+      'en_progreso',
+      'ejecutando'
+    ].contains(trabajo.estado?.toLowerCase().trim());
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: isEnCurso
+              ? const Color(AppConstants.accentColor).withOpacity(0.3)
+              : Colors.grey.withOpacity(0.2),
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (isEnCurso
+                    ? const Color(AppConstants.accentColor)
+                    : const Color(AppConstants.infoColor))
+                .withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isEnCurso ? Icons.play_arrow_rounded : Icons.schedule_rounded,
+            color: isEnCurso
+                ? const Color(AppConstants.accentColor)
+                : const Color(AppConstants.infoColor),
+          ),
+        ),
+        title: Text(
+          '${trabajo.tipo} - ${trabajo.cultivo}',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.landscape_rounded,
+                    size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    trabajo.campoInfo,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: (isEnCurso
+                        ? const Color(AppConstants.accentColor)
+                        : const Color(AppConstants.infoColor))
+                    .withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                trabajo.estado ?? 'Desconocido',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: isEnCurso
+                      ? const Color(AppConstants.accentColor)
+                      : const Color(AppConstants.infoColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.add_circle, size: 32),
+          color: Colors.green, // Botón verde solicitado
+          tooltip: 'Registrar Horas',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RegistrarHorasForm(
+                  trabajoId: trabajo.id!,
+                  trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
+                ),
+              ),
+            );
+          },
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
+            ),
+          );
+        },
+      ),
     );
   }
 

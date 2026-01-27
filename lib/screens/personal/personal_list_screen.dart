@@ -182,7 +182,7 @@ class _PersonalListScreenState extends ConsumerState<PersonalListScreen> {
               const SizedBox(height: 16),
               Text(
                 _searchQuery.isEmpty
-                    ? 'No hay personal registrado'
+                    ? 'No hay personal guardado'
                     : 'No se encontraron resultados',
                 style: TextStyle(
                   fontSize: 18,

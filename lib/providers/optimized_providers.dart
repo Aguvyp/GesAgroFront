@@ -20,14 +20,14 @@ import '../models/movimiento.dart';
 /// Estados base para todos los providers
 abstract class BaseState extends Equatable {
   const BaseState();
-  
+
   @override
   List<Object?> get props => [];
 }
 
 class InitialState extends BaseState {
   const InitialState();
-  
+
   @override
   List<Object?> get props => [];
 }
@@ -39,10 +39,10 @@ class LoadingState extends BaseState {
 class LoadedState<T> extends BaseState {
   final T data;
   final DateTime lastUpdated;
-  
-  LoadedState(this.data, {DateTime? lastUpdated}) 
+
+  LoadedState(this.data, {DateTime? lastUpdated})
       : lastUpdated = lastUpdated ?? DateTime.now();
-  
+
   @override
   List<Object?> get props => [data, lastUpdated];
 }
@@ -50,9 +50,9 @@ class LoadedState<T> extends BaseState {
 class ErrorState extends BaseState {
   final String message;
   final dynamic error;
-  
+
   const ErrorState(this.message, [this.error]);
-  
+
   @override
   List<Object?> get props => [message, error];
 }
@@ -71,11 +71,11 @@ class CamposNotifier extends StateNotifier<BaseState> {
   Future<void> loadCampos() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final campos = await apiService.getCampos();
-      
+
       state = LoadedState<List<Campo>>(campos);
       _logger.info('Campos loaded successfully: ${campos.length} items');
     } catch (e) {
@@ -84,17 +84,19 @@ class CamposNotifier extends StateNotifier<BaseState> {
     }
   }
 
-  Future<void> createCampo(Map<String, dynamic> data) async {
+  Future<Campo?> createCampo(Map<String, dynamic> data) async {
     try {
       final apiService = ApiService();
       await apiService.initialize();
-      await apiService.createCampo(data);
-      
+      final newCampo = await apiService.createCampo(data);
+
       await loadCampos(); // Recargar lista
       _logger.info('Campo created successfully');
+      return newCampo;
     } catch (e) {
       state = ErrorState('Error creando campo: $e');
       _logger.error('Error creating campo', e);
+      return null;
     }
   }
 
@@ -103,7 +105,7 @@ class CamposNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateCampo(id, data);
-      
+
       await loadCampos(); // Recargar lista
       _logger.info('Campo updated successfully');
     } catch (e) {
@@ -117,7 +119,7 @@ class CamposNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteCampo(id);
-      
+
       await loadCampos(); // Recargar lista
       _logger.info('Campo deleted successfully');
     } catch (e) {
@@ -140,7 +142,7 @@ class CampoByIdNotifier extends Notifier<BaseState> {
   Future<void> loadCampoById(int id) async {
     state = const LoadingState();
     _logger.info('Loading campo by ID: $id');
-    
+
     try {
       final campo = await CampoService.getCampo(id);
       state = LoadedState(campo);
@@ -158,7 +160,8 @@ final campoByIdProvider = NotifierProvider<CampoByIdNotifier, BaseState>(() {
 
 /// ==================== TRABAJOS PROVIDER ====================
 
-final trabajosProvider = StateNotifierProvider<TrabajosNotifier, BaseState>((ref) {
+final trabajosProvider =
+    StateNotifierProvider<TrabajosNotifier, BaseState>((ref) {
   return TrabajosNotifier();
 });
 
@@ -170,11 +173,11 @@ class TrabajosNotifier extends StateNotifier<BaseState> {
   Future<void> loadTrabajos() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final trabajos = await apiService.getTrabajos();
-      
+
       state = LoadedState<List<Trabajo>>(trabajos);
       _logger.info('Trabajos loaded successfully: ${trabajos.length} items');
     } catch (e) {
@@ -188,16 +191,17 @@ class TrabajosNotifier extends StateNotifier<BaseState> {
       // Log del request antes de enviarlo
       print('🔵 TrabajosNotifier.createTrabajo - Data recibida:');
       print(data);
-      debugPrint('🔵 TrabajosNotifier.createTrabajo - Data recibida (debugPrint):');
+      debugPrint(
+          '🔵 TrabajosNotifier.createTrabajo - Data recibida (debugPrint):');
       debugPrint(data.toString());
-      
+
       final apiService = ApiService();
       await apiService.initialize();
-      
+
       // Log antes de llamar al servicio
       print('🔵 Llamando a apiService.createTrabajo...');
       await apiService.createTrabajo(data);
-      
+
       await loadTrabajos(); // Recargar lista
       _logger.info('Trabajo created successfully');
     } catch (e) {
@@ -214,7 +218,7 @@ class TrabajosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateTrabajo(id, data);
-      
+
       await loadTrabajos(); // Recargar lista
       _logger.info('Trabajo updated successfully');
     } catch (e) {
@@ -228,12 +232,27 @@ class TrabajosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteTrabajo(id);
-      
+
       await loadTrabajos(); // Recargar lista
       _logger.info('Trabajo deleted successfully');
     } catch (e) {
       state = ErrorState('Error eliminando trabajo: $e');
       _logger.error('Error deleting trabajo', e);
+    }
+  }
+
+  Future<void> registrarHoras(Map<String, dynamic> data) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.registrarHorasTrabajo(data);
+
+      await loadTrabajos(); // Recargar lista para actualizar métricas si es necesario
+      _logger.info('Horas registradas exitosamente');
+    } catch (e) {
+      state = ErrorState('Error registrando horas: $e');
+      _logger.error('Error registering horas', e);
+      rethrow;
     }
   }
 }
@@ -252,11 +271,11 @@ class CostosNotifier extends StateNotifier<BaseState> {
   Future<void> loadCostos() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final costos = await apiService.getCostos();
-      
+
       state = LoadedState<List<Costo>>(costos);
       _logger.info('Costos loaded successfully: ${costos.length} items');
     } catch (e) {
@@ -270,7 +289,7 @@ class CostosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.createCosto(data);
-      
+
       await loadCostos(); // Recargar lista
       _logger.info('Costo created successfully');
     } catch (e) {
@@ -284,7 +303,7 @@ class CostosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateCosto(id, data);
-      
+
       await loadCostos(); // Recargar lista
       _logger.info('Costo updated successfully');
     } catch (e) {
@@ -298,7 +317,7 @@ class CostosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteCosto(id);
-      
+
       await loadCostos(); // Recargar lista
       _logger.info('Costo deleted successfully');
     } catch (e) {
@@ -310,7 +329,8 @@ class CostosNotifier extends StateNotifier<BaseState> {
 
 /// ==================== MOVIMIENTOS PROVIDER ====================
 
-final movimientosProvider = StateNotifierProvider<MovimientosNotifier, BaseState>((ref) {
+final movimientosProvider =
+    StateNotifierProvider<MovimientosNotifier, BaseState>((ref) {
   return MovimientosNotifier();
 });
 
@@ -326,7 +346,8 @@ class MovimientosNotifier extends StateNotifier<BaseState> {
       await apiService.initialize();
       final movimientos = await apiService.getMovimientos();
       state = LoadedState<List<Movimiento>>(movimientos);
-      _logger.info('Movimientos loaded successfully: ${movimientos.length} items');
+      _logger
+          .info('Movimientos loaded successfully: ${movimientos.length} items');
     } catch (e) {
       state = ErrorState('Error cargando movimientos: $e');
       _logger.error('Error loading movimientos', e);
@@ -375,7 +396,8 @@ class MovimientosNotifier extends StateNotifier<BaseState> {
 
 /// ==================== MÁQUINAS PROVIDER ====================
 
-final maquinasProvider = StateNotifierProvider<MaquinasNotifier, BaseState>((ref) {
+final maquinasProvider =
+    StateNotifierProvider<MaquinasNotifier, BaseState>((ref) {
   return MaquinasNotifier();
 });
 
@@ -387,11 +409,11 @@ class MaquinasNotifier extends StateNotifier<BaseState> {
   Future<void> loadMaquinas() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final maquinas = await apiService.getMaquinas();
-      
+
       state = LoadedState<List<Maquina>>(maquinas);
       _logger.info('Maquinas loaded successfully: ${maquinas.length} items');
     } catch (e) {
@@ -400,7 +422,7 @@ class MaquinasNotifier extends StateNotifier<BaseState> {
     }
   }
 
-  Future<void> createMaquina(Maquina maquina) async {
+  Future<Maquina?> createMaquina(Maquina maquina) async {
     try {
       final apiService = ApiService();
       await apiService.initialize();
@@ -408,13 +430,15 @@ class MaquinasNotifier extends StateNotifier<BaseState> {
       final data = maquina.toJson();
       // Remover el id si existe (no se envía al crear)
       data.remove('id');
-      await apiService.createMaquina(data);
-      
+      final newMaquina = await apiService.createMaquina(data);
+
       await loadMaquinas(); // Recargar lista
       _logger.info('Maquina created successfully');
+      return newMaquina;
     } catch (e) {
       state = ErrorState('Error creando máquina: $e');
       _logger.error('Error creating maquina', e);
+      return null;
     }
   }
 
@@ -423,7 +447,7 @@ class MaquinasNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateMaquina(id, data);
-      
+
       await loadMaquinas(); // Recargar lista
       _logger.info('Maquina updated successfully');
     } catch (e) {
@@ -437,7 +461,7 @@ class MaquinasNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteMaquina(id);
-      
+
       await loadMaquinas(); // Recargar lista
       _logger.info('Maquina deleted successfully');
     } catch (e) {
@@ -449,7 +473,8 @@ class MaquinasNotifier extends StateNotifier<BaseState> {
 
 /// ==================== PERSONAL PROVIDER ====================
 
-final personalProvider = StateNotifierProvider<PersonalNotifier, BaseState>((ref) {
+final personalProvider =
+    StateNotifierProvider<PersonalNotifier, BaseState>((ref) {
   return PersonalNotifier();
 });
 
@@ -461,11 +486,11 @@ class PersonalNotifier extends StateNotifier<BaseState> {
   Future<void> loadPersonal() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final personal = await apiService.getPersonal();
-      
+
       state = LoadedState<List<Personal>>(personal);
       _logger.info('Personal loaded successfully: ${personal.length} items');
     } catch (e) {
@@ -474,17 +499,19 @@ class PersonalNotifier extends StateNotifier<BaseState> {
     }
   }
 
-  Future<void> createPersonal(Map<String, dynamic> data) async {
+  Future<Personal?> createPersonal(Map<String, dynamic> data) async {
     try {
       final apiService = ApiService();
       await apiService.initialize();
-      await apiService.createPersonal(data);
-      
+      final newPersonal = await apiService.createPersonal(data);
+
       await loadPersonal(); // Recargar lista
       _logger.info('Personal created successfully');
+      return newPersonal;
     } catch (e) {
       state = ErrorState('Error creando personal: $e');
       _logger.error('Error creating personal', e);
+      return null;
     }
   }
 
@@ -493,7 +520,7 @@ class PersonalNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updatePersonal(id, data);
-      
+
       await loadPersonal(); // Recargar lista
       _logger.info('Personal updated successfully');
     } catch (e) {
@@ -507,7 +534,7 @@ class PersonalNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deletePersonal(id);
-      
+
       await loadPersonal(); // Recargar lista
       _logger.info('Personal deleted successfully');
     } catch (e) {
@@ -519,7 +546,8 @@ class PersonalNotifier extends StateNotifier<BaseState> {
 
 /// ==================== CLIENTES PROVIDER ====================
 
-final clientesProvider = StateNotifierProvider<ClientesNotifier, BaseState>((ref) {
+final clientesProvider =
+    StateNotifierProvider<ClientesNotifier, BaseState>((ref) {
   return ClientesNotifier();
 });
 
@@ -531,11 +559,11 @@ class ClientesNotifier extends StateNotifier<BaseState> {
   Future<void> loadClientes() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final clientes = await apiService.getClientes();
-      
+
       state = LoadedState<List<Cliente>>(clientes);
       _logger.info('Clientes loaded successfully: ${clientes.length} items');
     } catch (e) {
@@ -544,17 +572,19 @@ class ClientesNotifier extends StateNotifier<BaseState> {
     }
   }
 
-  Future<void> createCliente(Map<String, dynamic> data) async {
+  Future<Cliente?> createCliente(Map<String, dynamic> data) async {
     try {
       final apiService = ApiService();
       await apiService.initialize();
-      await apiService.createCliente(data);
-      
+      final newCliente = await apiService.createCliente(data);
+
       await loadClientes(); // Recargar lista
       _logger.info('Cliente created successfully');
+      return newCliente;
     } catch (e) {
       state = ErrorState('Error creando cliente: $e');
       _logger.error('Error creating cliente', e);
+      return null;
     }
   }
 
@@ -563,7 +593,7 @@ class ClientesNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateCliente(id, data);
-      
+
       await loadClientes(); // Recargar lista
       _logger.info('Cliente updated successfully');
     } catch (e) {
@@ -577,7 +607,7 @@ class ClientesNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteCliente(id);
-      
+
       await loadClientes(); // Recargar lista
       _logger.info('Cliente deleted successfully');
     } catch (e) {
@@ -589,7 +619,8 @@ class ClientesNotifier extends StateNotifier<BaseState> {
 
 /// ==================== FACTURAS PROVIDER ====================
 
-final facturasProvider = StateNotifierProvider<FacturasNotifier, BaseState>((ref) {
+final facturasProvider =
+    StateNotifierProvider<FacturasNotifier, BaseState>((ref) {
   return FacturasNotifier();
 });
 
@@ -601,11 +632,11 @@ class FacturasNotifier extends StateNotifier<BaseState> {
   Future<void> loadFacturas() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final facturas = await apiService.getFacturas();
-      
+
       state = LoadedState<List<Factura>>(facturas);
       _logger.info('Facturas loaded successfully: ${facturas.length} items');
     } catch (e) {
@@ -619,7 +650,7 @@ class FacturasNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.createFactura(data);
-      
+
       await loadFacturas(); // Recargar lista
       _logger.info('Factura created successfully');
     } catch (e) {
@@ -633,7 +664,7 @@ class FacturasNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateFactura(id, data);
-      
+
       await loadFacturas(); // Recargar lista
       _logger.info('Factura updated successfully');
     } catch (e) {
@@ -647,7 +678,7 @@ class FacturasNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteFactura(id);
-      
+
       await loadFacturas(); // Recargar lista
       _logger.info('Factura deleted successfully');
     } catch (e) {
@@ -659,7 +690,8 @@ class FacturasNotifier extends StateNotifier<BaseState> {
 
 /// ==================== INSUMOS PROVIDER ====================
 
-final insumosProvider = StateNotifierProvider<InsumosNotifier, BaseState>((ref) {
+final insumosProvider =
+    StateNotifierProvider<InsumosNotifier, BaseState>((ref) {
   return InsumosNotifier();
 });
 
@@ -671,11 +703,11 @@ class InsumosNotifier extends StateNotifier<BaseState> {
   Future<void> loadInsumos() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final insumos = await apiService.getInsumos();
-      
+
       state = LoadedState<List<Insumo>>(insumos);
       _logger.info('Insumos loaded successfully: ${insumos.length} items');
     } catch (e) {
@@ -689,7 +721,7 @@ class InsumosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.createInsumo(data);
-      
+
       await loadInsumos(); // Recargar lista
       _logger.info('Insumo created successfully');
     } catch (e) {
@@ -703,7 +735,7 @@ class InsumosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateInsumo(id, data);
-      
+
       await loadInsumos(); // Recargar lista
       _logger.info('Insumo updated successfully');
     } catch (e) {
@@ -717,7 +749,7 @@ class InsumosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteInsumo(id);
-      
+
       await loadInsumos(); // Recargar lista
       _logger.info('Insumo deleted successfully');
     } catch (e) {
@@ -729,7 +761,8 @@ class InsumosNotifier extends StateNotifier<BaseState> {
 
 /// ==================== USUARIOS PROVIDER ====================
 
-final usuariosProvider = StateNotifierProvider<UsuariosNotifier, BaseState>((ref) {
+final usuariosProvider =
+    StateNotifierProvider<UsuariosNotifier, BaseState>((ref) {
   return UsuariosNotifier();
 });
 
@@ -741,11 +774,11 @@ class UsuariosNotifier extends StateNotifier<BaseState> {
   Future<void> loadUsuarios() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final usuarios = await apiService.getUsuarios();
-      
+
       state = LoadedState<List<Usuario>>(usuarios);
       _logger.info('Usuarios loaded successfully: ${usuarios.length} items');
     } catch (e) {
@@ -759,7 +792,7 @@ class UsuariosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.createUsuario(data);
-      
+
       await loadUsuarios(); // Recargar lista
       _logger.info('Usuario created successfully');
     } catch (e) {
@@ -773,7 +806,7 @@ class UsuariosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateUsuario(id, data);
-      
+
       await loadUsuarios(); // Recargar lista
       _logger.info('Usuario updated successfully');
     } catch (e) {
@@ -787,7 +820,7 @@ class UsuariosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.deleteUsuario(id);
-      
+
       await loadUsuarios(); // Recargar lista
       _logger.info('Usuario deleted successfully');
     } catch (e) {
@@ -799,7 +832,8 @@ class UsuariosNotifier extends StateNotifier<BaseState> {
 
 /// ==================== MANTENIMIENTOS PROVIDER ====================
 
-final mantenimientosProvider = StateNotifierProvider<MantenimientosNotifier, BaseState>((ref) {
+final mantenimientosProvider =
+    StateNotifierProvider<MantenimientosNotifier, BaseState>((ref) {
   return MantenimientosNotifier();
 });
 
@@ -811,18 +845,19 @@ class MantenimientosNotifier extends StateNotifier<BaseState> {
   Future<void> loadMantenimientos() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final mantenimientos = await apiService.getMantenimientos();
-      
+
       state = LoadedState<List<Mantenimiento>>(mantenimientos);
-      _logger.info('Mantenimientos loaded successfully: ${mantenimientos.length} items');
+      _logger.info(
+          'Mantenimientos loaded successfully: ${mantenimientos.length} items');
     } catch (e) {
       final errorMessage = 'Error cargando mantenimientos: $e';
       state = ErrorState(errorMessage);
       _logger.error('Error loading mantenimientos', e);
-      
+
       // Log adicional para debug
       if (e.toString().contains('404')) {
         _logger.error('Endpoint /mantenimientos/ not found (404)');
@@ -839,7 +874,7 @@ class MantenimientosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.createMantenimiento(data);
-      
+
       await loadMantenimientos(); // Recargar lista
       _logger.info('Mantenimiento created successfully');
     } catch (e) {
@@ -853,7 +888,7 @@ class MantenimientosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateMantenimiento(id, data);
-      
+
       await loadMantenimientos();
       _logger.info('Mantenimiento updated successfully');
     } catch (e) {
@@ -865,7 +900,8 @@ class MantenimientosNotifier extends StateNotifier<BaseState> {
 
 /// ==================== CRÉDITOS PROVIDER ====================
 
-final creditosProvider = StateNotifierProvider<CreditosNotifier, BaseState>((ref) {
+final creditosProvider =
+    StateNotifierProvider<CreditosNotifier, BaseState>((ref) {
   return CreditosNotifier();
 });
 
@@ -877,11 +913,11 @@ class CreditosNotifier extends StateNotifier<BaseState> {
   Future<void> loadCreditos() async {
     try {
       state = const LoadingState();
-      
+
       final apiService = ApiService();
       await apiService.initialize();
       final creditos = await apiService.getCreditos();
-      
+
       state = LoadedState<List<Credito>>(creditos);
       _logger.info('Creditos loaded successfully: ${creditos.length} items');
     } catch (e) {
@@ -895,7 +931,7 @@ class CreditosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.createCredito(credito.toCreateJson());
-      
+
       await loadCreditos(); // Recargar lista
       _logger.info('Credito created successfully');
     } catch (e) {
@@ -909,7 +945,7 @@ class CreditosNotifier extends StateNotifier<BaseState> {
       final apiService = ApiService();
       await apiService.initialize();
       await apiService.updateCredito(credito.id, credito.toUpdateJson());
-      
+
       await loadCreditos(); // Recargar lista
       _logger.info('Credito updated successfully');
     } catch (e) {
