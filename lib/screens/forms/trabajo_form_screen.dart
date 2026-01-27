@@ -15,7 +15,7 @@ import '../../services/cliente_service.dart';
 import '../../services/tipo_trabajo_service.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
-import '../../utils/constants.dart';
+
 import 'campo_form_screen.dart';
 import 'maquina_form_screen.dart';
 import 'personal_form_screen.dart';
@@ -79,12 +79,6 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   Cliente? _clienteSeleccionado;
   List<Campo> _camposFiltrados = []; // Campos filtrados por cliente
   List<Cliente> _clientes = [];
-
-  // Estados para selectores expandibles
-  bool _maquinasExpanded = false;
-  bool _personalExpanded = false;
-  bool _camposExpanded = false;
-  bool _clientesExpanded = false;
 
   bool _isLoadingData = false;
   bool _isSaving = false;
@@ -577,6 +571,46 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                     // Campos condicionales según el tipo
                     if (_tipoTrabajoForm != null) ...[
                       _buildCamposCondicionales(),
+                      const SizedBox(height: 16),
+                      // Descripción al final del formulario
+                      OptimizedCard(
+                        padding: const EdgeInsets.all(16),
+                        child: OptimizedTextField(
+                          controller: _descripcionController,
+                          label: 'Descripción',
+                          hint: 'Detalles adicionales del trabajo',
+                          prefixIcon:
+                              const Icon(Icons.description_rounded, size: 20),
+                          maxLines: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Botón Guardar
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2E7D32),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : const Text('Guardar',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white)),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
                     ] else ...[
                       const OptimizedCard(
                         padding: EdgeInsets.all(16),
@@ -670,33 +704,6 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 validator: (value) =>
                     Validators.validateRequired(value, 'Cultivo'),
               ),
-              const SizedBox(height: 16),
-              OptimizedTextField(
-                controller: _descripcionController,
-                label: 'Descripción',
-                hint: 'Detalles adicionales del trabajo',
-                prefixIcon: const Icon(Icons.description_rounded, size: 20),
-                maxLines: 3,
-              ),
-              // Campos específicos para cosecha (tipo de trabajo id = 1)
-              if (_tipoTrabajoSeleccionado == 1) ...[
-                const SizedBox(height: 16),
-                OptimizedTextField(
-                  controller: _rindeCosechaController,
-                  label: 'Rinde Cosecha (kg/ha)',
-                  hint: 'Ingrese el rinde de la cosecha',
-                  prefixIcon: const Icon(Icons.trending_up_rounded, size: 20),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                OptimizedTextField(
-                  controller: _humedadCosechaController,
-                  label: 'Humedad Cosecha (%)',
-                  hint: 'Ingrese el porcentaje de humedad',
-                  prefixIcon: const Icon(Icons.water_drop_rounded, size: 20),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
             ],
           ),
         ),
@@ -717,16 +724,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Campo',
-                subtitle: _campoSeleccionado?.nombre ?? 'Seleccionar campo',
-                isExpanded: _camposExpanded,
-                onToggle: () =>
-                    setState(() => _camposExpanded = !_camposExpanded),
-                onAddPressed: () => _showCampoForm(),
-                addButtonText: 'Nuevo',
-                child: _buildCamposSelector(),
-              ),
+              _buildCamposSelector(),
             ],
           ),
         ),
@@ -747,27 +745,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Máquinas',
-                subtitle: '${_maquinasSeleccionadas.length} seleccionadas',
-                isExpanded: _maquinasExpanded,
-                onToggle: () =>
-                    setState(() => _maquinasExpanded = !_maquinasExpanded),
-                onAddPressed: () => _showMaquinaForm(),
-                addButtonText: 'Nueva',
-                child: _buildMaquinasSelector(),
-              ),
+              _buildMaquinasSelector(),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Personal/Operarios',
-                subtitle: '${_personalSeleccionado.length} seleccionados',
-                isExpanded: _personalExpanded,
-                onToggle: () =>
-                    setState(() => _personalExpanded = !_personalExpanded),
-                onAddPressed: () => _showPersonalForm(),
-                addButtonText: 'Nuevo',
-                child: _buildPersonalSelector(),
-              ),
+              _buildPersonalSelector(),
             ],
           ),
         ),
@@ -788,146 +768,67 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            'Fecha de Inicio',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                        TextFormField(
-                          controller: _fechaInicioController,
-                          decoration: InputDecoration(
-                            hintText: 'Seleccione la fecha',
-                            hintStyle: const TextStyle(
-                                fontSize: 17, color: Color(0xFF8E8E93)),
-                            suffixIcon: const Icon(Icons.calendar_today_rounded,
-                                size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF2E7D32), width: 2),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            isDense: true,
-                          ),
-                          style: const TextStyle(
-                              fontSize: 17, color: Color(0xFF1C1C1E)),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _fechaInicio ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setState(() {
-                                _fechaInicio = date;
-                                _fechaInicioController.text =
-                                    DateFormat('dd/MM/yyyy').format(date);
-                              });
-                            }
-                          },
-                        ),
-                      ],
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Fecha de Inicio',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF8E8E93),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            'Fecha de Fin',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                        TextFormField(
-                          controller: _fechaFinController,
-                          decoration: InputDecoration(
-                            hintText: 'Seleccione la fecha',
-                            hintStyle: const TextStyle(
-                                fontSize: 17, color: Color(0xFF8E8E93)),
-                            suffixIcon: const Icon(Icons.calendar_today_rounded,
-                                size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF2E7D32), width: 2),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            isDense: true,
-                          ),
-                          style: const TextStyle(
-                              fontSize: 17, color: Color(0xFF1C1C1E)),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _fechaFin ?? DateTime.now(),
-                              firstDate: _fechaInicio ?? DateTime(2020),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setState(() {
-                                _fechaFin = date;
-                                _fechaFinController.text =
-                                    DateFormat('dd/MM/yyyy').format(date);
-                              });
-                            }
-                          },
-                        ),
-                      ],
+                  TextFormField(
+                    controller: _fechaInicioController,
+                    decoration: InputDecoration(
+                      hintText: 'Seleccione la fecha',
+                      hintStyle: const TextStyle(
+                          fontSize: 17, color: Color(0xFF8E8E93)),
+                      suffixIcon:
+                          const Icon(Icons.calendar_today_rounded, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: Colors.grey.withOpacity(0.2), width: 0.5),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: Colors.grey.withOpacity(0.2), width: 0.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF2E7D32), width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      isDense: true,
                     ),
+                    style:
+                        const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                    readOnly: true,
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _fechaInicio ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _fechaInicio = date;
+                          _fechaInicioController.text =
+                              DateFormat('dd/MM/yyyy').format(date);
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
@@ -1027,32 +928,6 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 validator: (value) =>
                     Validators.validateRequired(value, 'Cultivo'),
               ),
-              const SizedBox(height: 16),
-              OptimizedTextField(
-                controller: _descripcionController,
-                label: 'Descripción',
-                hint: 'Detalles adicionales del trabajo',
-                prefixIcon: const Icon(Icons.description_rounded, size: 20),
-                maxLines: 3,
-              ),
-              if (_tipoTrabajoSeleccionado == 1) ...[
-                const SizedBox(height: 16),
-                OptimizedTextField(
-                  controller: _rindeCosechaController,
-                  label: 'Rinde Cosecha (kg/ha)',
-                  hint: 'Ingrese el rinde de la cosecha',
-                  prefixIcon: const Icon(Icons.trending_up_rounded, size: 20),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                OptimizedTextField(
-                  controller: _humedadCosechaController,
-                  label: 'Humedad Cosecha (%)',
-                  hint: 'Ingrese el porcentaje de humedad',
-                  prefixIcon: const Icon(Icons.water_drop_rounded, size: 20),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
             ],
           ),
         ),
@@ -1073,28 +948,10 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Cliente',
-                subtitle: _clienteSeleccionado?.nombre ?? 'Seleccionar cliente',
-                isExpanded: _clientesExpanded,
-                onToggle: () =>
-                    setState(() => _clientesExpanded = !_clientesExpanded),
-                onAddPressed: () => _showClienteForm(),
-                addButtonText: 'Nuevo',
-                child: _buildClientesSelector(),
-              ),
+              _buildClientesSelector(),
               const SizedBox(height: 16),
               if (_clienteSeleccionado != null) ...[
-                _buildExpandableSelector(
-                  title: 'Campo',
-                  subtitle: _campoSeleccionado?.nombre ?? 'Seleccionar campo',
-                  isExpanded: _camposExpanded,
-                  onToggle: () =>
-                      setState(() => _camposExpanded = !_camposExpanded),
-                  onAddPressed: () => _showCampoForm(),
-                  addButtonText: 'Nuevo',
-                  child: _buildCamposSelector(),
-                ),
+                if (_clienteSeleccionado != null) _buildCamposSelector(),
                 if (_camposFiltrados.isEmpty &&
                     _clienteSeleccionado != null) ...[
                   const SizedBox(height: 12),
@@ -1167,27 +1024,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Máquinas',
-                subtitle: '${_maquinasSeleccionadas.length} seleccionadas',
-                isExpanded: _maquinasExpanded,
-                onToggle: () =>
-                    setState(() => _maquinasExpanded = !_maquinasExpanded),
-                onAddPressed: () => _showMaquinaForm(),
-                addButtonText: 'Nueva',
-                child: _buildMaquinasSelector(),
-              ),
+              _buildMaquinasSelector(),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Personal/Operarios',
-                subtitle: '${_personalSeleccionado.length} seleccionados',
-                isExpanded: _personalExpanded,
-                onToggle: () =>
-                    setState(() => _personalExpanded = !_personalExpanded),
-                onAddPressed: () => _showPersonalForm(),
-                addButtonText: 'Nuevo',
-                child: _buildPersonalSelector(),
-              ),
+              _buildPersonalSelector(),
             ],
           ),
         ),
@@ -1208,146 +1047,67 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            'Fecha de Inicio',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                        TextFormField(
-                          controller: _fechaInicioController,
-                          decoration: InputDecoration(
-                            hintText: 'Seleccione la fecha',
-                            hintStyle: const TextStyle(
-                                fontSize: 17, color: Color(0xFF8E8E93)),
-                            suffixIcon: const Icon(Icons.calendar_today_rounded,
-                                size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF2E7D32), width: 2),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            isDense: true,
-                          ),
-                          style: const TextStyle(
-                              fontSize: 17, color: Color(0xFF1C1C1E)),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _fechaInicio ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setState(() {
-                                _fechaInicio = date;
-                                _fechaInicioController.text =
-                                    DateFormat('dd/MM/yyyy').format(date);
-                              });
-                            }
-                          },
-                        ),
-                      ],
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Fecha de Inicio',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF8E8E93),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            'Fecha de Fin',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                        TextFormField(
-                          controller: _fechaFinController,
-                          decoration: InputDecoration(
-                            hintText: 'Seleccione la fecha',
-                            hintStyle: const TextStyle(
-                                fontSize: 17, color: Color(0xFF8E8E93)),
-                            suffixIcon: const Icon(Icons.calendar_today_rounded,
-                                size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF2E7D32), width: 2),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            isDense: true,
-                          ),
-                          style: const TextStyle(
-                              fontSize: 17, color: Color(0xFF1C1C1E)),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _fechaFin ?? DateTime.now(),
-                              firstDate: _fechaInicio ?? DateTime(2020),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setState(() {
-                                _fechaFin = date;
-                                _fechaFinController.text =
-                                    DateFormat('dd/MM/yyyy').format(date);
-                              });
-                            }
-                          },
-                        ),
-                      ],
+                  TextFormField(
+                    controller: _fechaInicioController,
+                    decoration: InputDecoration(
+                      hintText: 'Seleccione la fecha',
+                      hintStyle: const TextStyle(
+                          fontSize: 17, color: Color(0xFF8E8E93)),
+                      suffixIcon:
+                          const Icon(Icons.calendar_today_rounded, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: Colors.grey.withOpacity(0.2), width: 0.5),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: Colors.grey.withOpacity(0.2), width: 0.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF2E7D32), width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      isDense: true,
                     ),
+                    style:
+                        const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                    readOnly: true,
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _fechaInicio ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _fechaInicio = date;
+                          _fechaInicioController.text =
+                              DateFormat('dd/MM/yyyy').format(date);
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
@@ -1494,32 +1254,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 validator: (value) =>
                     Validators.validateRequired(value, 'Cultivo'),
               ),
-              const SizedBox(height: 16),
-              OptimizedTextField(
-                controller: _descripcionController,
-                label: 'Descripción',
-                hint: 'Detalles adicionales del trabajo',
-                prefixIcon: const Icon(Icons.description_rounded, size: 20),
-                maxLines: 3,
-              ),
-              if (_tipoTrabajoSeleccionado == 1) ...[
-                const SizedBox(height: 16),
-                OptimizedTextField(
-                  controller: _rindeCosechaController,
-                  label: 'Rinde Cosecha (kg/ha)',
-                  hint: 'Ingrese el rinde de la cosecha',
-                  prefixIcon: const Icon(Icons.trending_up_rounded, size: 20),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                OptimizedTextField(
-                  controller: _humedadCosechaController,
-                  label: 'Humedad Cosecha (%)',
-                  hint: 'Ingrese el porcentaje de humedad',
-                  prefixIcon: const Icon(Icons.water_drop_rounded, size: 20),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
+              // Descripción removida de aquí
             ],
           ),
         ),
@@ -1540,28 +1275,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Prestador de Servicio',
-                subtitle:
-                    _clienteSeleccionado?.nombre ?? 'Seleccionar prestador',
-                isExpanded: _clientesExpanded,
-                onToggle: () =>
-                    setState(() => _clientesExpanded = !_clientesExpanded),
-                onAddPressed: () => _showClienteForm(),
-                addButtonText: 'Nuevo',
-                child: _buildClientesSelector(),
-              ),
+              _buildClientesSelector(),
               const SizedBox(height: 16),
-              _buildExpandableSelector(
-                title: 'Campo',
-                subtitle: _campoSeleccionado?.nombre ?? 'Seleccionar campo',
-                isExpanded: _camposExpanded,
-                onToggle: () =>
-                    setState(() => _camposExpanded = !_camposExpanded),
-                onAddPressed: () => _showCampoForm(),
-                addButtonText: 'Nuevo',
-                child: _buildCamposSelector(),
-              ),
+              _buildCamposSelector(),
             ],
           ),
         ),
@@ -1582,146 +1298,67 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            'Fecha de Inicio',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                        TextFormField(
-                          controller: _fechaInicioController,
-                          decoration: InputDecoration(
-                            hintText: 'Seleccione la fecha',
-                            hintStyle: const TextStyle(
-                                fontSize: 17, color: Color(0xFF8E8E93)),
-                            suffixIcon: const Icon(Icons.calendar_today_rounded,
-                                size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF2E7D32), width: 2),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            isDense: true,
-                          ),
-                          style: const TextStyle(
-                              fontSize: 17, color: Color(0xFF1C1C1E)),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _fechaInicio ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setState(() {
-                                _fechaInicio = date;
-                                _fechaInicioController.text =
-                                    DateFormat('dd/MM/yyyy').format(date);
-                              });
-                            }
-                          },
-                        ),
-                      ],
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Fecha de Inicio',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF8E8E93),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            'Fecha de Fin',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                        TextFormField(
-                          controller: _fechaFinController,
-                          decoration: InputDecoration(
-                            hintText: 'Seleccione la fecha',
-                            hintStyle: const TextStyle(
-                                fontSize: 17, color: Color(0xFF8E8E93)),
-                            suffixIcon: const Icon(Icons.calendar_today_rounded,
-                                size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF2E7D32), width: 2),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            isDense: true,
-                          ),
-                          style: const TextStyle(
-                              fontSize: 17, color: Color(0xFF1C1C1E)),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _fechaFin ?? DateTime.now(),
-                              firstDate: _fechaInicio ?? DateTime(2020),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setState(() {
-                                _fechaFin = date;
-                                _fechaFinController.text =
-                                    DateFormat('dd/MM/yyyy').format(date);
-                              });
-                            }
-                          },
-                        ),
-                      ],
+                  TextFormField(
+                    controller: _fechaInicioController,
+                    decoration: InputDecoration(
+                      hintText: 'Seleccione la fecha',
+                      hintStyle: const TextStyle(
+                          fontSize: 17, color: Color(0xFF8E8E93)),
+                      suffixIcon:
+                          const Icon(Icons.calendar_today_rounded, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: Colors.grey.withOpacity(0.2), width: 0.5),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: Colors.grey.withOpacity(0.2), width: 0.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF2E7D32), width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      isDense: true,
                     ),
+                    style:
+                        const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+                    readOnly: true,
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _fechaInicio ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _fechaInicio = date;
+                          _fechaInicioController.text =
+                              DateFormat('dd/MM/yyyy').format(date);
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
@@ -1762,386 +1399,347 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     );
   }
 
-  Widget _buildExpandableSelector({
-    required String title,
-    required String subtitle,
-    required bool isExpanded,
-    required VoidCallback onToggle,
-    required VoidCallback onAddPressed,
-    required String addButtonText,
-    required Widget child,
-  }) {
+  Widget _buildClientesSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: onToggle,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
+        DropdownButtonFormField<dynamic>(
+          decoration: const InputDecoration(
+            labelText: 'Cliente',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.person_rounded, size: 20),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            isDense: true,
+          ),
+          isExpanded: true,
+          borderRadius: BorderRadius.circular(12),
+          menuMaxHeight: 300,
+          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+          value: _clienteSeleccionado,
+          items: [
+            const DropdownMenuItem<dynamic>(
+              value: 'NEW_CLIENTE',
+              child: Row(
+                children: [
+                  Icon(Icons.add, color: Color(0xFF2E7D32), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Nuevo Cliente',
+                    style: TextStyle(
+                      color: Color(0xFF2E7D32),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              subtitle,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        color: Colors.grey.shade600,
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: onAddPressed,
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(addButtonText),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-            ),
+            if (_clientes.isEmpty)
+              const DropdownMenuItem<dynamic>(
+                enabled: false,
+                value: 'EMPTY',
+                child: Text('No hay clientes disponibles'),
+              )
+            else
+              ..._clientes.map((cliente) {
+                return DropdownMenuItem<dynamic>(
+                  value: cliente,
+                  child: Text(
+                    cliente.nombre ?? 'Sin nombre',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }),
           ],
+          onChanged: (dynamic value) async {
+            if (value == 'NEW_CLIENTE') {
+              // Reset selection to previous or null to avoid stuck on "New"
+              // But onChanged fires after selection. We'll handle the action then usually reset or update.
+              _showClienteForm();
+              // Prevent the dropdown from showing "New Cliente" as selected value visually if possible
+              // by not updating state to 'NEW_CLIENTE'.
+              // However, the dropdown needs a valid value.
+              // If we don't setState with the new value, it might revert to old.
+              // We will rely on _showClienteForm updating the state with the NEW client once created.
+            } else if (value != 'EMPTY') {
+              setState(() {
+                _clienteSeleccionado = value as Cliente;
+                _clienteController.text = _clienteSeleccionado?.nombre ?? '';
+                _campoSeleccionado = null; // Reset campo
+              });
+              await _aplicarFiltrosCampos();
+            }
+          },
+          validator: (value) {
+            if (_tipoTrabajoForm == TipoTrabajoForm.aTerceros &&
+                value == null) {
+              return 'El cliente es requerido';
+            }
+            return null;
+          },
         ),
-        if (isExpanded) ...[
-          const SizedBox(height: 8),
-          child,
+      ],
+    );
+  }
+
+  Widget _buildCamposSelector() {
+    List<Campo> camposParaMostrar;
+    if (_tipoTrabajoForm == TipoTrabajoForm.aTerceros) {
+      camposParaMostrar = _camposFiltrados;
+    } else {
+      camposParaMostrar = _campos;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<dynamic>(
+          decoration: const InputDecoration(
+            labelText: 'Campo',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.landscape_rounded, size: 20),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            isDense: true,
+          ),
+          isExpanded: true,
+          borderRadius: BorderRadius.circular(12),
+          menuMaxHeight: 300,
+          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+          value: _campoSeleccionado,
+          items: [
+            const DropdownMenuItem<dynamic>(
+              value: 'NEW_CAMPO',
+              child: Row(
+                children: [
+                  Icon(Icons.add, color: Color(0xFF2E7D32), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Nuevo Campo',
+                    style: TextStyle(
+                      color: Color(0xFF2E7D32),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (camposParaMostrar.isEmpty)
+              const DropdownMenuItem<dynamic>(
+                enabled: false,
+                value: 'EMPTY',
+                child: Text('No hay campos disponibles'),
+              )
+            else
+              ...camposParaMostrar.map((campo) {
+                return DropdownMenuItem<dynamic>(
+                  value: campo,
+                  child: Text(
+                    campo.nombre,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }),
+          ],
+          onChanged: (dynamic value) {
+            if (value == 'NEW_CAMPO') {
+              _showCampoForm();
+            } else if (value != 'EMPTY') {
+              setState(() {
+                _campoSeleccionado = value as Campo;
+              });
+            }
+          },
+          validator: (value) {
+            if (_campoSeleccionado == null) {
+              return 'El campo es requerido';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMaquinasSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<dynamic>(
+          decoration: const InputDecoration(
+            labelText: 'Agregar Máquina',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.agriculture_rounded, size: 20),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            isDense: true,
+          ),
+          isExpanded: true,
+          borderRadius: BorderRadius.circular(12),
+          menuMaxHeight: 300,
+          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+          value:
+              null, // Always null so we can select "Add" again or another machine
+          items: [
+            const DropdownMenuItem<dynamic>(
+              value: 'NEW_MAQUINA',
+              child: Row(
+                children: [
+                  Icon(Icons.add, color: Color(0xFF2E7D32), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Nueva Máquina',
+                    style: TextStyle(
+                      color: Color(0xFF2E7D32),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_maquinas.isEmpty)
+              const DropdownMenuItem<dynamic>(
+                enabled: false,
+                value: 'EMPTY',
+                child: Text('No hay máquinas disponibles'),
+              )
+            else
+              ..._maquinas
+                  .where((m) => !_maquinasSeleccionadas.contains(m))
+                  .map((maquina) {
+                return DropdownMenuItem<dynamic>(
+                  value: maquina,
+                  child: Text(
+                    maquina.nombre,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }),
+          ],
+          onChanged: (dynamic value) {
+            if (value == 'NEW_MAQUINA') {
+              _showMaquinaForm();
+            } else if (value != null && value != 'EMPTY') {
+              setState(() {
+                _maquinasSeleccionadas.add(value as Maquina);
+              });
+            }
+          },
+        ),
+        if (_maquinasSeleccionadas.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _maquinasSeleccionadas.map((maquina) {
+              return Chip(
+                label: Text(maquina.nombre),
+                deleteIcon: const Icon(Icons.close, size: 18),
+                onDeleted: () {
+                  setState(() {
+                    _maquinasSeleccionadas.remove(maquina);
+                  });
+                },
+                backgroundColor: Colors.white,
+                side: BorderSide(color: Colors.grey.shade300),
+              );
+            }).toList(),
+          ),
         ],
       ],
     );
   }
 
-  Widget _buildClientesSelector() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: _clientes.isEmpty
-          ? const Text(
-              'No hay clientes disponibles',
-              style: TextStyle(color: Colors.grey),
-            )
-          : Container(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _clientes.length,
-                itemBuilder: (context, index) {
-                  final cliente = _clientes[index];
-                  return ListTile(
-                    title: Text(cliente.nombre ?? 'Sin nombre'),
-                    subtitle:
-                        cliente.email != null ? Text(cliente.email!) : null,
-                    leading: Radio<Cliente>(
-                      value: cliente,
-                      groupValue: _clienteSeleccionado,
-                      onChanged: (Cliente? value) async {
-                        setState(() {
-                          _clienteSeleccionado = value;
-                          _clienteController.text = value?.nombre ?? '';
-                          _campoSeleccionado =
-                              null; // Limpiar campo seleccionado
-                        });
-                        // Aplicar filtros de campos para el cliente seleccionado
-                        await _aplicarFiltrosCampos();
-                      },
-                    ),
-                    onTap: () async {
-                      setState(() {
-                        _clienteSeleccionado = cliente;
-                        _clienteController.text = cliente.nombre ?? '';
-                        _campoSeleccionado = null; // Limpiar campo seleccionado
-                      });
-                      // Aplicar filtros de campos para el cliente seleccionado
-                      await _aplicarFiltrosCampos();
-                    },
-                  );
-                },
-              ),
-            ),
-    );
-  }
-
-  Widget _buildCamposSelector() {
-    // Determinar qué lista de campos usar según el tipo de trabajo
-    List<Campo> camposParaMostrar;
-    if (_tipoTrabajoForm == TipoTrabajoForm.aTerceros) {
-      // Para "A terceros", usar campos filtrados por cliente
-      camposParaMostrar = _camposFiltrados;
-    } else {
-      // Para otros tipos, usar todos los campos propios
-      camposParaMostrar = _campos;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: camposParaMostrar.isEmpty
-          ? const Text(
-              'No hay campos disponibles',
-              style: TextStyle(color: Colors.grey),
-            )
-          : Container(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: camposParaMostrar.length,
-                itemBuilder: (context, index) {
-                  final campo = camposParaMostrar[index];
-                  return ListTile(
-                    title: Text(campo.nombre),
-                    subtitle: Text(
-                        '${campo.superficieHa.toStringAsFixed(2)} hectáreas'),
-                    leading: Radio<Campo>(
-                      value: campo,
-                      groupValue: _campoSeleccionado,
-                      onChanged: (Campo? value) {
-                        setState(() {
-                          _campoSeleccionado = value;
-                        });
-                      },
-                    ),
-                    onTap: () {
-                      setState(() {
-                        _campoSeleccionado = campo;
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-    );
-  }
-
-  Widget _buildMaquinasSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.grey.shade50,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.build, color: Colors.grey[600], size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Máquinas',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (_maquinas.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.grey[600], size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'No hay máquinas disponibles',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            )
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _maquinas.map((maquina) {
-                final isSelected = _maquinasSeleccionadas.contains(maquina);
-                return FilterChip(
-                  label: Text(
-                    maquina.nombre,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                  selected: isSelected,
-                  onSelected: (bool selected) {
-                    setState(() {
-                      if (selected) {
-                        _maquinasSeleccionadas.add(maquina);
-                      } else {
-                        _maquinasSeleccionadas.remove(maquina);
-                      }
-                    });
-                  },
-                  selectedColor: const Color(AppConstants.primaryColor)
-                      .withValues(alpha: 0.2),
-                  checkmarkColor: const Color(AppConstants.primaryColor),
-                  backgroundColor: Colors.white,
-                  side: BorderSide(
-                    color: isSelected
-                        ? const Color(AppConstants.primaryColor)
-                        : Colors.grey.shade300,
-                    width: isSelected ? 2 : 1,
-                  ),
-                );
-              }).toList(),
-            ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPersonalSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.grey.shade50,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.person, color: Colors.grey[600], size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Operarios',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const Spacer(),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<dynamic>(
+          decoration: const InputDecoration(
+            labelText: 'Agregar Operario',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            isDense: true,
           ),
-          const SizedBox(height: 12),
-          if (_personal.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
+          isExpanded: true,
+          borderRadius: BorderRadius.circular(12),
+          menuMaxHeight: 300,
+          style: const TextStyle(fontSize: 17, color: Color(0xFF1C1C1E)),
+          value: null,
+          items: [
+            const DropdownMenuItem<dynamic>(
+              value: 'NEW_PERSONAL',
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.grey[600], size: 16),
-                  const SizedBox(width: 8),
+                  Icon(Icons.add, color: Color(0xFF2E7D32), size: 20),
+                  SizedBox(width: 8),
                   Text(
-                    'No hay operarios disponibles',
-                    style: TextStyle(color: Colors.grey[600]),
+                    'Nuevo Operario',
+                    style: TextStyle(
+                      color: Color(0xFF2E7D32),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
-            )
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _personal.map((persona) {
-                final isSelected =
-                    _personalSeleccionado.any((p) => p.id == persona.id);
-                return FilterChip(
-                  label: Text(
+            ),
+            if (_personal.isEmpty)
+              const DropdownMenuItem<dynamic>(
+                enabled: false,
+                value: 'EMPTY',
+                child: Text('No hay operarios disponibles'),
+              )
+            else
+              ..._personal
+                  .where((p) => !_personalSeleccionado
+                      .any((selected) => selected.id == p.id))
+                  .map((persona) {
+                return DropdownMenuItem<dynamic>(
+                  value: persona,
+                  child: Text(
                     persona.nombre,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                  selected: isSelected,
-                  onSelected: (bool selected) {
-                    setState(() {
-                      if (selected) {
-                        _personalSeleccionado.add(PersonalConHectareas(
-                          id: persona.id!,
-                          nombre: persona.nombre,
-                          dni: persona.dni,
-                          hectareas: _campoSeleccionado?.superficieHa ?? 0.0,
-                        ));
-                      } else {
-                        _personalSeleccionado
-                            .removeWhere((p) => p.id == persona.id);
-                      }
-                    });
-                  },
-                  selectedColor: const Color(AppConstants.primaryColor)
-                      .withValues(alpha: 0.2),
-                  checkmarkColor: const Color(AppConstants.primaryColor),
-                  backgroundColor: Colors.white,
-                  side: BorderSide(
-                    color: isSelected
-                        ? const Color(AppConstants.primaryColor)
-                        : Colors.grey.shade300,
-                    width: isSelected ? 2 : 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 );
-              }).toList(),
-            ),
-          if (_personalSeleccionado.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              'Hectáreas por operario:',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 8),
-            ..._personalSeleccionado
-                .map((personal) => _buildHectareasInput(personal)),
+              }),
           ],
+          onChanged: (dynamic value) {
+            if (value == 'NEW_PERSONAL') {
+              _showPersonalForm();
+            } else if (value != null && value != 'EMPTY') {
+              final persona = value as Personal;
+              setState(() {
+                _personalSeleccionado.add(PersonalConHectareas(
+                  id: persona.id!,
+                  nombre: persona.nombre,
+                  dni: persona.dni,
+                  hectareas: _campoSeleccionado?.superficieHa ?? 0.0,
+                ));
+              });
+            }
+          },
+        ),
+        if (_personalSeleccionado.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Hectáreas por operario:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._personalSeleccionado
+              .map((personal) => _buildHectareasInput(personal)),
         ],
-      ),
+      ],
     );
   }
 
@@ -2267,7 +1865,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
           'fecha_inicio': _fechaInicio
               ?.toIso8601String()
               .split('T')[0], // Formato YYYY-MM-DD
-          'campo_id': _campoSeleccionado?.id,
+          'campo': _campoSeleccionado?.id,
           'cultivo': _cultivoController.text,
           'observaciones': _descripcionController.text.isNotEmpty
               ? _descripcionController.text
@@ -2389,11 +1987,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     );
 
     if (result != null) {
-      // Recargar campos y seleccionar el nuevo
+      // Recargar campos para que el nuevo aparezca en la lista
       await _loadDataForSelectors();
-      setState(() {
-        _campoSeleccionado = result;
-      });
+      // No se auto-selecciona. El usuario debe elegirlo.
     }
   }
 

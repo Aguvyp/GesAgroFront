@@ -370,7 +370,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
           'detalles': _detallesController.text.isNotEmpty
               ? _detallesController.text
               : null,
-          'es_propio': _esPropio, // Send boolean directly, Dio handles it
+          'propio': _esPropio, // Send boolean directly, Dio handles it
           'cliente_id': _esPropio ? null : _clienteId,
           'id_cliente':
               _esPropio ? null : _clienteId, // Send both keys to be safe

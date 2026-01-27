@@ -67,7 +67,7 @@ class Campo {
         latitud: _toDouble(json['latitud']),
         longitud: _toDouble(json['longitud']),
         detalles: json['detalles']?.toString(),
-        esPropio: json['es_propio'] == 1 || json['es_propio'] == true,
+        esPropio: json['propio'] == 1 || json['propio'] == true,
         clienteId: json['cliente_id'] is int
             ? json['cliente_id']
             : (json['cliente_id'] != null
@@ -92,7 +92,7 @@ class Campo {
       'latitud': latitud,
       'longitud': longitud,
       'detalles': detalles,
-      'es_propio': esPropio ? 1 : 0,
+      'propio': esPropio ? 1 : 0,
       'cliente_id': clienteId,
       'id_cliente': clienteId, // Fallback key
     };
