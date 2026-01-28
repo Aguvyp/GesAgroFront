@@ -19,6 +19,7 @@ import 'optimized_screens.dart';
 import '../providers/optimized_auth_provider.dart';
 import '../providers/optimized_providers.dart';
 import '../widgets/optimized_widgets.dart';
+import '../widgets/dashboard_widgets.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
@@ -308,7 +309,7 @@ class _OptimizedDashboardScreenState
       letterSpacing: -0.41,
     );
 
-    final background = theme.colorScheme.background;
+    final background = const Color(0xFFF8F9FA); // Slightly gray background
     return Scaffold(
       backgroundColor: background,
       body: RefreshIndicator(
@@ -327,24 +328,59 @@ class _OptimizedDashboardScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Saludo y Perfil
-                      _buildGreetingSection(ref.watch(currentUserProvider)),
+                      // Header: Saludo y Avatar
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildGreetingSection(ref.watch(currentUserProvider)),
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(AppConstants.primaryColor)
+                                    .withOpacity(0.5),
+                                width: 2,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor:
+                                  const Color(AppConstants.primaryColor)
+                                      .withOpacity(0.1),
+                              child: Text(
+                                (ref.watch(currentUserProvider)?['nombre'] ??
+                                        'U')
+                                    .substring(0, 1)
+                                    .toUpperCase(),
+                                style: const TextStyle(
+                                  color: Color(AppConstants.primaryColor),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Clima en una fila entera
+                      const WeatherWidget(),
+                      const SizedBox(height: 20),
+
+                      // Ticker de Precios BCR
+                      const PriceTickerWidget(),
                       const SizedBox(height: 24),
 
-                      // Calendario (ahora arriba)
+                      // Calendario (ahora arriba y más compacto)
                       _buildCalendarioTrabajosYMantenimientos(
                           _trabajos, _mantenimientos),
                       const SizedBox(height: 24),
 
                       // Lista de trabajos por estado
-
                       _buildTrabajosSection(_trabajos),
                       const SizedBox(height: 24),
 
-                      // Calendario de trabajos y mantenimientos
-                      // Calendario de trabajos y mantenimientos
-                      // _buildCalendarioTrabajosYMantenimientos(_trabajos, _mantenimientos),
-                      // const SizedBox(height: 24),
                       const SizedBox(height: 24),
 
                       // Superficies de máquinas
@@ -483,18 +519,28 @@ class _OptimizedDashboardScreenState
 
     final isCompletado = ['completado', 'finalizado'].contains(estado);
 
+    IconData laborIcon;
+    final tipoLabor = trabajo.tipo.toLowerCase();
+    if (tipoLabor.contains('siembra')) {
+      laborIcon = Icons.grass;
+    } else if (tipoLabor.contains('cosecha')) {
+      laborIcon = Icons.agriculture;
+    } else if (tipoLabor.contains('pulver')) {
+      laborIcon = Icons.opacity;
+    } else if (tipoLabor.contains('fertiliz')) {
+      laborIcon = Icons.science;
+    } else {
+      laborIcon = Icons.work_outline;
+    }
+
     Color statusColor;
-    IconData statusIcon;
 
     if (isEnCurso) {
       statusColor = const Color(AppConstants.accentColor);
-      statusIcon = Icons.play_arrow_rounded;
     } else if (isCompletado) {
       statusColor = const Color(AppConstants.successColor);
-      statusIcon = Icons.check_circle_rounded;
     } else {
       statusColor = const Color(AppConstants.infoColor);
-      statusIcon = Icons.schedule_rounded;
     }
 
     String ownershipInfo = 'Propio';
@@ -510,113 +556,144 @@ class _OptimizedDashboardScreenState
       margin: EdgeInsets.zero,
       padding: EdgeInsets.zero,
       borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: statusColor,
-              width: 4,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: statusColor,
+                width: 4,
+              ),
             ),
           ),
-        ),
-        child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              statusIcon,
-              color: statusColor,
-            ),
-          ),
-          title: Text(
-            '${trabajo.tipo} - ${trabajo.cultivo}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-            ),
-          ),
-          subtitle: Column(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 4),
               Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      ownershipInfo,
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      laborIcon,
+                      color: statusColor,
+                      size: 18,
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${trabajo.tipo} - ${trabajo.cultivo}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Color(0xFF1C1C1E),
+                          ),
+                        ),
+                        Text(
+                          ownershipInfo,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isEnCurso)
+                    IconButton(
+                      icon: const Icon(Icons.add_circle, size: 24),
+                      color: const Color(AppConstants.primaryColor),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RegistrarHorasForm(
+                              trabajoId: trabajo.id!,
+                              trabajoTitulo:
+                                  '${trabajo.tipo} - ${trabajo.cultivo}',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Icon(Icons.landscape_rounded,
-                      size: 14, color: Colors.grey[600]),
+                      size: 12, color: Colors.grey[400]),
                   const SizedBox(width: 4),
-                  Expanded(
+                  Text(
+                    trabajo.campoInfo,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                     child: Text(
-                      trabajo.campoInfo,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
+                      trabajo.estado?.toUpperCase() ?? 'PENDIENTE',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+              if (isEnCurso) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  trabajo.estado ?? 'Desconocido',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: statusColor,
+                  child: LinearProgressIndicator(
+                    value: 0.65,
+                    backgroundColor: statusColor.withOpacity(0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                    minHeight: 4,
                   ),
                 ),
-              ),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      '65%',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
-          trailing: isEnCurso
-              ? IconButton(
-                  icon: const Icon(Icons.add_circle, size: 32),
-                  color: Colors.green, // Botón verde solicitado
-                  tooltip: 'Registrar Horas',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RegistrarHorasForm(
-                          trabajoId: trabajo.id!,
-                          trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
-                        ),
-                      ),
-                    );
-                  },
-                )
-              : null,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
-              ),
-            );
-          },
         ),
       ),
     );
@@ -1021,78 +1098,41 @@ class _OptimizedDashboardScreenState
 
   // Métodos auxiliares
   Widget _buildGreetingSection(Map<String, dynamic>? user) {
-    // Determinar saludo según la hora
-    final now = DateTime.now();
-    String greeting = 'Buenos días,';
-    if (now.hour >= 12 && now.hour < 20) {
-      greeting = 'Buenas tardes,';
-    } else if (now.hour >= 20) {
-      greeting = 'Buenas noches,';
-    }
-
-    // Obtener nombre del usuario o usar fallback
-    // Prioridad: nombre, username, email
-    // Use the name from the passed user map (which comes from AuthProvider)
     final userName =
         user?['nombre'] ?? user?['username'] ?? user?['email'] ?? 'Usuario';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(AppConstants.secondaryColor),
-                width: 2,
-              ),
-            ),
-            child: CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey[200],
-              child: Text(
-                userName.isNotEmpty
-                    ? userName.substring(0, 1).toUpperCase()
-                    : 'U',
-                style: const TextStyle(
-                  color: Color(AppConstants.primaryColor),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              // Aquí podrías usar NetworkImage si el usuario tiene foto
-              // backgroundImage: user?['photo_url'] != null ? NetworkImage(user!['photo_url']) : null,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Hola,',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w400,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  greeting,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1C1C1E),
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
+        ),
+        Text(
+          userName,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1C1C1E),
+            height: 1.1,
           ),
-        ],
-      ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          'San Justo, Santa Fe',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[500],
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
     );
   }
 
@@ -2159,7 +2199,7 @@ class _OptimizedDashboardScreenState
         List.generate(7, (index) => inicioSemana.add(Duration(days: index)));
 
     return SizedBox(
-      height: 100, // Altura fija para las cards
+      height: 85, // Altura reducida a petición del usuario
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: diasSemana.map((dia) {
