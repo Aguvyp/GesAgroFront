@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../services/weather_service.dart';
 
 class WeatherWidget extends StatefulWidget {
   final String location;
-  const WeatherWidget({Key? key, this.location = 'San Justo, Santa Fe'})
+  const WeatherWidget({Key? key, this.location = 'Mi ubicación'})
       : super(key: key);
 
   @override
@@ -11,14 +12,104 @@ class WeatherWidget extends StatefulWidget {
 
 class _WeatherWidgetState extends State<WeatherWidget> {
   bool _isExpanded = false;
+  final WeatherService _weatherService = WeatherService();
+  WeatherResponse? _weatherData;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeather();
+  }
+
+  Future<void> _fetchWeather() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final data = await _weatherService.getForecast();
+      if (mounted) {
+        setState(() {
+          _weatherData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().contains('Exception:')
+              ? e.toString().split('Exception:')[1]
+              : 'Error al obtener el clima';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Container(
+        height: 64,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE3F2FD),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3E0),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.location_off_rounded, color: Colors.orange),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(fontSize: 12, color: Colors.brown),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20),
+              onPressed: _fetchWeather,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_weatherData == null) return const SizedBox.shrink();
+
+    final actual = _weatherData!.actual;
+    final hasAlert = actual.alertaPulverizacion;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD), // Light blue background like in image
+        color: const Color(0xFFE3F2FD),
         borderRadius: BorderRadius.circular(16),
+        border: hasAlert
+            ? Border.all(color: Colors.orange.shade700, width: 2)
+            : null,
       ),
       child: Column(
         children: [
@@ -30,22 +121,68 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               child: Row(
                 children: [
-                  Icon(Icons.wb_sunny_rounded,
-                      color: Colors.orange[400], size: 32),
+                  Icon(
+                    WeatherService.getWeatherIcon(actual.descripcion),
+                    color: Colors.orange[400],
+                    size: 32,
+                  ),
                   const SizedBox(width: 12),
-                  const Text(
-                    '28°C',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              '${actual.temperatura.round()}°C',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (hasAlert) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[700],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.warning_amber_rounded,
+                                        size: 10, color: Colors.white),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Alerta Pulverización',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Text(
+                          '${actual.descripcion} | Viento: ${actual.viento} km/h | Hum: ${actual.humedad}%',
+                          style:
+                              TextStyle(fontSize: 10, color: Colors.blue[700]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 4),
                   Text(
-                    'Ver pronóstico 5 días >',
+                    _isExpanded ? '⌃' : 'Ver pronóstico 5 días 〉',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: Colors.blue[700],
                     ),
@@ -59,13 +196,14 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildForecastItem('Lun', Icons.wb_sunny_rounded, '30°'),
-                  _buildForecastItem('Mar', Icons.cloud_rounded, '25°'),
-                  _buildForecastItem('Mié', Icons.cloud_rounded, '24°'),
-                  _buildForecastItem('Jue', Icons.wb_cloudy_rounded, '26°'),
-                  _buildForecastItem('Vie', Icons.wb_sunny_rounded, '29°'),
-                ],
+                children: _weatherData!.pronostico.map((forecast) {
+                  return _buildForecastItem(
+                    forecast.dia.toUpperCase(),
+                    WeatherService.getWeatherIcon(forecast.clima),
+                    '${forecast.max.round()}°',
+                    '${forecast.min.round()}°',
+                  );
+                }).toList(),
               ),
             ),
         ],
@@ -73,15 +211,21 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     );
   }
 
-  Widget _buildForecastItem(String day, IconData icon, String temp) {
+  Widget _buildForecastItem(
+      String day, IconData icon, String maxTemp, String minTemp) {
     return Column(
       children: [
-        Text(day, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(day,
+            style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Icon(icon, size: 20, color: Colors.blue[300]),
+        Icon(icon, size: 20, color: Colors.blue[400]),
         const SizedBox(height: 4),
-        Text(temp,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        Text(maxTemp,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(minTemp, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
       ],
     );
   }

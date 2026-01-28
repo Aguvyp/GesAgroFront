@@ -6,6 +6,7 @@ import 'screens/optimized_main_screen_new.dart';
 import 'screens/optimized_auth_screens.dart';
 import 'screens/optimized_screens.dart';
 import 'screens/optimized_dashboard_screen.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/config/app_config.dart';
 import 'core/logger/app_logger.dart';
 
@@ -61,6 +62,9 @@ Future<void> _initializeApp() async {
 
   // Inicializar configuración de la aplicación
   await AppConfig.instance.initialize();
+
+  // Inicializar localización
+  await initializeDateFormatting('es', null);
 
   logger.info('✅ Inicialización completada exitosamente');
 }
