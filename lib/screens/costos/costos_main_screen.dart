@@ -10,7 +10,7 @@ import 'costos_categoria_screen.dart';
 /// Pantalla principal de costos con menú
 class CostosMainScreen extends ConsumerStatefulWidget {
   final bool showAppBar;
-  
+
   const CostosMainScreen({Key? key, this.showAppBar = false}) : super(key: key);
 
   @override
@@ -32,12 +32,11 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
   @override
   Widget build(BuildContext context) {
     final body = _getBody();
-    
+
     if (widget.showAppBar) {
       return Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          title: Text(_getAppBarTitle(_selectedIndex)),
           elevation: 0,
           backgroundColor: Colors.white,
           foregroundColor: const Color(0xFF1C1C1E),
@@ -56,34 +55,24 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
             : null,
       );
     }
-    
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F5F5),
       body: CustomScrollView(
         slivers: [
           // AppBar moderno estilo iOS
-            SliverAppBar(
-              expandedHeight: 56,
-              floating: false,
-              pinned: true,
-              backgroundColor: Colors.white,
-              elevation: 0,
-              toolbarHeight: 56,
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  _getAppBarTitle(_selectedIndex),
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1C1C1E),
-                    letterSpacing: -0.41,
-                  ),
-                ),
-                centerTitle: false,
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
-              ),
+          SliverAppBar(
+            expandedHeight: 56,
+            floating: false,
+            pinned: true,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            toolbarHeight: 56,
+            flexibleSpace: const FlexibleSpaceBar(
+              centerTitle: false,
             ),
+          ),
           SliverToBoxAdapter(
             child: body,
           ),
@@ -97,21 +86,6 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
             )
           : null,
     );
-  }
-
-  String _getAppBarTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'finanzas';
-      case 1:
-        return 'Movimientos';
-      case 2:
-        return 'Resumen Gastos/Cobros';
-      case 3:
-        return 'Resumen por Categoría';
-      default:
-        return 'Costos';
-    }
   }
 
   Widget _getBody() {
@@ -129,7 +103,6 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
     }
   }
 
-
   Widget _buildDashboard() {
     final costosState = ref.watch(costosProvider);
 
@@ -141,15 +114,15 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
           // Botones de navegación de finanzas (arriba, más pequeños)
           _buildNavigationButtons(),
           const SizedBox(height: 16),
-          
+
           // Accesos rápidos (más pequeños)
           _buildQuickAccessButtons(),
           const SizedBox(height: 24),
-          
+
           // Resumen rápido
           _buildResumenRapido(costosState),
           const SizedBox(height: 24),
-          
+
           // Movimientos recientes
           _buildMovimientosRecientes(costosState),
         ],
@@ -243,7 +216,7 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
     final costos = state.data;
     final gastos = costos.where((c) => !c.esCobro).toList();
     final cobros = costos.where((c) => c.esCobro).toList();
-    
+
     final totalGastos = gastos.fold(0.0, (sum, c) => sum + c.monto);
     final totalCobros = cobros.fold(0.0, (sum, c) => sum + c.monto);
     final balance = totalCobros - totalGastos;
@@ -284,7 +257,9 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: balance >= 0 ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                color: balance >= 0
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -311,7 +286,8 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
     );
   }
 
-  Widget _buildResumenCard(String title, double amount, Color color, IconData icon) {
+  Widget _buildResumenCard(
+      String title, double amount, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -372,7 +348,8 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
     );
   }
 
-  Widget _buildQuickAccessButton(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickAccessButton(
+      String title, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -564,16 +541,17 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: costo.pagado 
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.orange.withOpacity(0.2),
+                  color: costo.pagado
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   costo.pagado ? 'Pagado' : 'Pendiente',
                   style: TextStyle(
                     fontSize: 10,
-                    color: costo.pagado ? Colors.green[700] : Colors.orange[700],
+                    color:
+                        costo.pagado ? Colors.green[700] : Colors.orange[700],
                     fontWeight: FontWeight.w500,
                   ),
                 ),

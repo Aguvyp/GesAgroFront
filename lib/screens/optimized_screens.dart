@@ -84,27 +84,16 @@ class _OptimizedCamposListScreenState
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 120,
+              expandedHeight: 80,
               floating: false,
               pinned: true,
               backgroundColor: Colors.white,
               elevation: 0,
-              toolbarHeight: 56,
+              toolbarHeight: 80,
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
-                  'Campos',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1C1C1E),
-                    letterSpacing: -0.41,
-                  ),
-                ),
-                centerTitle: false,
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 60),
                 background: Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.only(top: 60, left: 16, right: 16),
+                  padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
                   child: Row(
                     children: [
                       Expanded(
@@ -491,29 +480,16 @@ class _OptimizedTrabajosListScreenState
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 120,
-              toolbarHeight: 56,
+              expandedHeight: 80,
+              toolbarHeight: 80,
               floating: false,
               pinned: true,
               backgroundColor: Colors.white,
               elevation: 0,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  widget.estadoFiltro != null
-                      ? 'Trabajos - ${widget.estadoFiltro}'
-                      : 'Trabajos',
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1C1C1E),
-                    letterSpacing: -0.41,
-                  ),
-                ),
-                centerTitle: false,
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 60),
                 background: Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.only(top: 60, left: 16, right: 16),
+                  padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
                   child: Row(
                     children: [
                       Expanded(
@@ -541,7 +517,7 @@ class _OptimizedTrabajosListScreenState
                         ),
                       ),
                       const SizedBox(width: 8),
-                      _buildFilterButtons(),
+                      _buildFilterButtons(trabajosState),
                     ],
                   ),
                 ),
@@ -561,7 +537,7 @@ class _OptimizedTrabajosListScreenState
     );
   }
 
-  Widget _buildFilterButtons() {
+  Widget _buildFilterButtons(BaseState trabajosState) {
     bool hasActiveFilters = _fechaFiltro != null ||
         _clienteIdFiltro != null ||
         _ownershipFiltro != null ||

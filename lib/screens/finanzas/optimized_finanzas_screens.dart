@@ -32,14 +32,6 @@ class _OptimizedFinanzasMainScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text(
-          'Dashboard Financiero',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1C1C1E),
-          ),
-        ),
         elevation: 0,
         backgroundColor: Colors.white,
         actions: [
@@ -357,11 +349,9 @@ class _OptimizedFacturasScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Facturas'),
         elevation: 0,
         backgroundColor: const Color(0xFF7E57C2), // Color lila de finanzas
         foregroundColor: Colors.white,
-        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -459,11 +449,9 @@ class _OptimizedCreditosScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Créditos'),
         elevation: 0,
         backgroundColor: const Color(0xFF7E57C2), // Color lila de finanzas
         foregroundColor: Colors.white,
-        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -578,11 +566,9 @@ class _OptimizedMovimientosScreenState
     final state = ref.watch(movimientosProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Movimientos'),
         elevation: 0,
         backgroundColor: const Color(0xFF7E57C2), // Color lila de finanzas
         foregroundColor: Colors.white,
-        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),

@@ -30,14 +30,6 @@ class _OptimizedMantenimientosScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text(
-          'Mantenimientos',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1C1C1E),
-          ),
-        ),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
