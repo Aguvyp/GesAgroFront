@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../models/trabajo.dart';
 import '../models/maquina.dart';
 import '../models/personal.dart';
@@ -395,16 +394,6 @@ class _OptimizedDashboardScreenState
 
                       // Lista de trabajos por estado
                       _buildTrabajosSection(_trabajos),
-                      const SizedBox(height: 24),
-
-                      const SizedBox(height: 24),
-
-                      // Superficies de máquinas
-                      _buildMaquinasSection(_maquinas),
-                      const SizedBox(height: 24),
-
-                      // Superficies y horas de operadores
-                      _buildPersonalSection(_personal),
                     ],
                   ),
                 ),
@@ -457,9 +446,17 @@ class _OptimizedDashboardScreenState
                 const Text(
                   'Trabajos',
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1C1C1E),
+                    letterSpacing: -0.5,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 1),
+                        blurRadius: 2.0,
+                        color: Colors.black12,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -687,22 +684,33 @@ class _OptimizedDashboardScreenState
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: 0.65,
+                    value: (trabajo.porcentajeProgreso ?? 0.0) / 100,
                     backgroundColor: statusColor.withOpacity(0.1),
                     valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                     minHeight: 4,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    if (trabajo.haRealizadas != null && trabajo.campoHa != null)
+                      Text(
+                        '${trabajo.haRealizadas!.toStringAsFixed(1)} / ${trabajo.campoHa!.toStringAsFixed(1)} ha',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      )
+                    else
+                      const SizedBox.shrink(),
                     Text(
-                      '65%',
+                      '${(trabajo.porcentajeProgreso ?? 0.0).toStringAsFixed(0)}%',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -1614,386 +1622,6 @@ class _OptimizedDashboardScreenState
         builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
       ),
     );
-  }
-
-  Widget _buildMaquinasSection(List<Maquina> maquinas) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(AppConstants.primaryColor),
-                    const Color(AppConstants.primaryColor).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Superficies por Máquina',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildMaquinasContent(maquinas),
-      ],
-    );
-  }
-
-  Widget _buildMaquinasContent(List<Maquina> maquinas) {
-    return _buildMaquinasCards(maquinas);
-  }
-
-  Widget _buildMaquinasCards(List<Maquina> maquinas) {
-    if (maquinas.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.build_circle_outlined,
-              size: 48,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No hay máquinas registradas',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Agrega máquinas para ver estadísticas',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: maquinas
-          .take(3)
-          .map(
-            (maquina) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.build,
-                    color: const Color(AppConstants.primaryColor),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${maquina.marca} ${maquina.modelo}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              'Año: ${maquina.ano}',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${maquina.superficieTotalHa?.toStringAsFixed(1) ?? '0.0'} ha',
-                                style: const TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  Widget _buildPersonalSection(List<Personal> personal) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              height: 24,
-              width: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(AppConstants.primaryColor),
-                    const Color(AppConstants.primaryColor).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Rendimiento de Operadores',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildPersonalContent(personal),
-      ],
-    );
-  }
-
-  Widget _buildPersonalContent(List<Personal> personal) {
-    return _buildPersonalCards(personal);
-  }
-
-  Widget _buildPersonalCards(List<Personal> personal) {
-    if (personal.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.person_outline,
-              size: 48,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No hay personal registrado',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Agrega personal para ver estadísticas',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Preparar datos para el gráfico (máximo 5 operadores)
-    final topOperadores = personal.take(5).toList();
-
-    return Container(
-      height: 280,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Título del gráfico
-
-          const SizedBox(height: 16),
-
-          // Gráfico de torta
-          Expanded(
-            child: Row(
-              children: [
-                // Gráfico de torta
-                Expanded(
-                  flex: 2,
-                  child: PieChart(
-                    PieChartData(
-                      pieTouchData: PieTouchData(
-                        enabled: true,
-                        touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                          // Manejar toque en el gráfico
-                        },
-                      ),
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 40,
-                      sections: topOperadores.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final operario = entry.value;
-                        final ha = operario.superficieTotalHa ?? 0.0;
-                        final totalHa = topOperadores.fold(0.0,
-                            (sum, p) => sum + (p.superficieTotalHa ?? 0.0));
-                        final percentage =
-                            totalHa > 0 ? (ha / totalHa) * 100 : 0.0;
-
-                        return PieChartSectionData(
-                          color: _getBarColor(index),
-                          value: ha,
-                          title: '${percentage.toStringAsFixed(1)}%',
-                          radius: 50,
-                          titleStyle: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-
-                // Leyenda con nombres y valores
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: topOperadores.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final operario = entry.value;
-                      final ha = operario.superficieTotalHa ?? 0.0;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: _getBarColor(index),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    operario.nombre,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    '${ha.toStringAsFixed(1)} ha',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getBarColor(int index) {
-    final colors = [
-      const Color(AppConstants.primaryColor), // Color primario de la app
-      Colors.deepOrange, // Naranja intenso
-      Colors.teal, // Verde azulado
-      Colors.purple, // Púrpura
-      Colors.red, // Rojo
-      Colors.indigo, // Índigo
-      Colors.amber, // Ámbar
-      Colors.pink, // Rosa
-      Colors.cyan, // Cian
-      Colors.lime, // Lima
-    ];
-    return colors[index % colors.length];
   }
 
   void _onDaySelected(DateTime dia) {

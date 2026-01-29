@@ -220,15 +220,13 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
                 validator: (v) => v!.isEmpty ? 'Requerido' : null,
               ),
 
-              const SizedBox(height: 16),
-
               OptimizedTextField(
                 controller: _hectareasController,
                 label: 'Hectáreas',
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                prefixIcon: const Icon(
-                    Icons.confirmation_number), // Or appropriate icon
+                prefixIcon: const Icon(Icons.confirmation_number),
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
               ),
 
               const SizedBox(height: 32),

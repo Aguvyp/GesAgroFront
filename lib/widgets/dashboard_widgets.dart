@@ -250,34 +250,65 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
-                              Text(
-                                '${actual.temperatura.round()}°C',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.blue[800],
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${actual.temperatura.round()}° C',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  if (_weatherData!.pronostico.isNotEmpty)
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '${_weatherData!.pronostico[0].max.round()}°',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.redAccent,
+                                          ),
+                                        ),
+                                        const Text(
+                                          '/',
+                                          style: TextStyle(
+                                              fontSize: 12, color: Colors.grey),
+                                        ),
+                                        Text(
+                                          '${_weatherData!.pronostico[0].min.round()}°',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blueAccent,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
                               ),
                               _buildInlineDivider(),
-                              Icon(Icons.air_rounded,
-                                  size: 16, color: Colors.blue[600]),
+                              const Icon(Icons.air_rounded,
+                                  size: 16, color: Colors.black54),
                               const SizedBox(width: 4),
                               Text(
                                 '${actual.viento} km/h',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
-                                  color: Colors.blue[700],
+                                  color: Colors.black87,
                                 ),
                               ),
                               _buildInlineDivider(),
-                              Icon(Icons.water_drop_outlined,
-                                  size: 16, color: Colors.blue[600]),
+                              const Icon(Icons.water_drop_outlined,
+                                  size: 16, color: Colors.black54),
                               const SizedBox(width: 4),
                               Text(
                                 '${actual.humedad}%',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
-                                  color: Colors.blue[700],
+                                  color: Colors.black87,
                                 ),
                               ),
                             ],
@@ -372,12 +403,29 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        forecast.diaNombre ?? forecast.dia,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            forecast.diaNombre ?? '',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1C1C1E),
+                            ),
+                          ),
+                          if (forecast.diaNombre != null)
+                            const SizedBox(width: 8),
+                          Text(
+                            forecast.dia,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
                       ),
                       Text(
                         forecast.clima,

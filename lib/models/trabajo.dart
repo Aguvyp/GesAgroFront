@@ -8,8 +8,8 @@ class Trabajo {
   final String cultivo;
   final DateTime fechaInicio;
   final DateTime? fechaFin;
-  final List<int> idPersonal; // Cambiado a lista
-  final List<int> idMaquinas; // Cambiado a lista
+  final List<int> idPersonal;
+  final List<int> idMaquinas;
   final int idCampo;
   final String? campoNombre;
   final double? campoHa;
@@ -19,6 +19,8 @@ class Trabajo {
   final bool cobrado;
   final double? montoCobrado;
   final String? cliente;
+  final double? haRealizadas; // Hectáreas realizadas hasta el momento
+  final double? porcentajeProgreso; // Porcentaje de progreso (0-100)
   final bool servicioContratado;
 
   Trabajo({
@@ -39,12 +41,12 @@ class Trabajo {
     this.cobrado = false,
     this.montoCobrado,
     this.cliente,
+    this.haRealizadas,
+    this.porcentajeProgreso,
     this.servicioContratado = false,
   });
 
   factory Trabajo.fromJson(Map<String, dynamic> json) {
-    // Manejar id_tipo_trabajo: puede venir como int directamente, o necesitamos parsearlo
-    // NOTA: El backend puede no enviar id_tipo_trabajo en las respuestas, solo el nombre en "tipo"
     int? idTipoTrabajo;
     if (json['id_tipo_trabajo'] != null) {
       idTipoTrabajo = json['id_tipo_trabajo'] is int
@@ -52,11 +54,8 @@ class Trabajo {
           : int.tryParse(json['id_tipo_trabajo'].toString());
     }
 
-    // Obtener el nombre del tipo de trabajo
-    // El backend devuelve el nombre en el campo "tipo" en las respuestas
     String? tipoTrabajoNombre;
     if (json['tipo'] != null) {
-      // El backend devuelve el nombre del tipo en el campo "tipo"
       tipoTrabajoNombre = json['tipo'].toString();
     } else if (json['tipo_trabajo_nombre'] != null) {
       tipoTrabajoNombre = json['tipo_trabajo_nombre'].toString();
@@ -64,7 +63,6 @@ class Trabajo {
       tipoTrabajoNombre = json['tipo_trabajo']?['trabajo']?.toString();
     }
 
-    // Parse ID Campo
     int idCampo = 0;
     if (json['id_campo'] != null) {
       idCampo = json['id_campo'] is int
@@ -80,14 +78,10 @@ class Trabajo {
       idCampo = json['campo'];
     }
 
-    // Parse Campo Nombre
     String? campoNombre = json['campo_nombre'];
     if (campoNombre == null && json['campo'] != null && json['campo'] is Map) {
       campoNombre = json['campo']['nombre'];
     }
-
-    // Parse Estado to ensure consistency
-    String? estado = json['estado'];
 
     return Trabajo(
       id: json['id'],
@@ -120,18 +114,19 @@ class Trabajo {
       idCampo: idCampo,
       campoNombre: campoNombre,
       campoHa: _toDoubleSafe(json['campo_ha']),
-      estado: estado,
+      estado: json['estado'],
       observaciones: json['observaciones'],
       esTercero: _parseBoolean(json['a_terceros']),
       cobrado: (json['cobrado'] ?? false) == true || (json['cobrado'] == 1),
       montoCobrado:
           _toDoubleSafe(json['monto_cobrado'] ?? json['montoCobrado']),
       cliente: json['cliente'],
+      haRealizadas: _toDoubleSafe(json['ha_realizadas']),
+      porcentajeProgreso: _toDoubleSafe(json['porcentaje_progreso']),
       servicioContratado: _parseBoolean(json['servicio_contratado']),
     );
   }
 
-  // Función helper para convertir a double de forma segura
   static double? _toDoubleSafe(dynamic value) {
     if (value == null) return null;
     if (value is double) return value;
@@ -142,45 +137,21 @@ class Trabajo {
       final cleaned = value.trim().replaceAll(',', '.');
       return double.tryParse(cleaned);
     }
-    try {
-      final stringValue = value.toString().trim();
-      if (stringValue.isEmpty) return null;
-      final cleaned = stringValue.replaceAll(',', '.');
-      return double.tryParse(cleaned);
-    } catch (e) {
-      return null;
-    }
+    return null;
   }
 
-  // Helper method para parsear valores booleanos
   static bool _parseBoolean(dynamic value) {
-    print('DEBUG: _parseBoolean recibió: $value (tipo: ${value.runtimeType})');
-    if (value == null) {
-      print('DEBUG: _parseBoolean retorna false (null)');
-      return false;
-    }
-    if (value is bool) {
-      print('DEBUG: _parseBoolean retorna $value (bool)');
-      return value;
-    }
-    if (value is int) {
-      bool result = value == 1;
-      print('DEBUG: _parseBoolean retorna $result (int: $value)');
-      return result;
-    }
-    if (value is String) {
-      bool result = value.toLowerCase() == 'true';
-      print('DEBUG: _parseBoolean retorna $result (string: $value)');
-      return result;
-    }
-    print('DEBUG: _parseBoolean retorna false (tipo desconocido)');
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
     return false;
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'id_tipo_trabajo': idTipoTrabajo, // Solo se envía al crear/actualizar
+      'id_tipo_trabajo': idTipoTrabajo,
       'cultivo': cultivo,
       'fecha_inicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
       'fecha_fin':
@@ -196,6 +167,8 @@ class Trabajo {
       'cobrado': cobrado,
       'monto_cobrado': montoCobrado,
       'cliente': cliente,
+      'ha_realizadas': haRealizadas,
+      'porcentaje_progreso': porcentajeProgreso,
       'servicio_contratado': servicioContratado,
     };
   }
@@ -216,6 +189,8 @@ class Trabajo {
     bool? cobrado,
     double? montoCobrado,
     String? cliente,
+    double? haRealizadas,
+    double? porcentajeProgreso,
     bool? servicioContratado,
   }) {
     return Trabajo(
@@ -234,6 +209,8 @@ class Trabajo {
       cobrado: cobrado ?? this.cobrado,
       montoCobrado: montoCobrado ?? this.montoCobrado,
       cliente: cliente ?? this.cliente,
+      haRealizadas: haRealizadas ?? this.haRealizadas,
+      porcentajeProgreso: porcentajeProgreso ?? this.porcentajeProgreso,
       servicioContratado: servicioContratado ?? this.servicioContratado,
     );
   }
@@ -242,27 +219,8 @@ class Trabajo {
   bool get isInProgress => estado == 'En curso';
   bool get isPending => estado == 'Pendiente' || estado == null;
 
-  bool get esTrabajoDeTercero => esTercero;
-  bool get estaCobrado => cobrado;
-
-  int get durationDays {
-    if (fechaFin == null) return 0;
-    return fechaFin!.difference(fechaInicio).inDays + 1;
-  }
-
-  String get formattedDateRange {
-    final start = DateFormat('dd/MM/yyyy').format(fechaInicio);
-    if (fechaFin == null) {
-      return 'Desde $start';
-    }
-    final end = DateFormat('dd/MM/yyyy').format(fechaFin!);
-    return '$start - $end';
-  }
-
-  // Getter para obtener el nombre del tipo de trabajo (compatibilidad)
   String get tipo => tipoTrabajoNombre ?? 'Sin tipo';
 
-  // Información del campo
   String get campoInfo {
     if (campoNombre != null && campoHa != null) {
       return '$campoNombre - ${campoHa!.toStringAsFixed(1)} ha';
@@ -272,18 +230,4 @@ class Trabajo {
       return 'Campo $idCampo';
     }
   }
-
-  @override
-  String toString() {
-    return 'Trabajo(id: $id, idTipoTrabajo: $idTipoTrabajo, tipoTrabajoNombre: $tipoTrabajoNombre, cultivo: $cultivo, fechaInicio: $fechaInicio)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Trabajo && other.id == id;
-  }
-
-  @override
-  int get hashCode => id.hashCode;
 }

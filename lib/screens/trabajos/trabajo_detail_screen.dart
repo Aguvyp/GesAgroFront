@@ -63,7 +63,7 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
               child: Text('Trabajo no encontrado'),
             );
           }
-          return _buildTrabajoDetalleContent(trabajoDetalle);
+          return _buildTrabajoDetalleContent(trabajoDetalle, estadoColor);
         },
         loading: () => const Center(
           child: CircularProgressIndicator(),
@@ -153,7 +153,8 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
     );
   }
 
-  Widget _buildTrabajoDetalleContent(TrabajoDetalle trabajoDetalle) {
+  Widget _buildTrabajoDetalleContent(
+      TrabajoDetalle trabajoDetalle, Color estadoColor) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -161,7 +162,50 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
         children: [
           // Encabezado con título, fechas y estado
           _buildHeader(trabajoDetalle),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
+
+          // Progreso si está en curso
+          if (trabajoDetalle.isInProgress ||
+              trabajoDetalle.estado?.toLowerCase() == 'en progreso') ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (trabajoDetalle.porcentajeProgreso ?? 0.0) / 100,
+                backgroundColor: estadoColor.withOpacity(0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(estadoColor),
+                minHeight: 12,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (trabajoDetalle.haRealizadas != null &&
+                    trabajoDetalle.campo?.superficieHa != null)
+                  Text(
+                    '${trabajoDetalle.haRealizadas!.toStringAsFixed(1)} / ${trabajoDetalle.campo!.superficieHa.toStringAsFixed(1)} ha realizadas',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else
+                  const SizedBox.shrink(),
+                Text(
+                  '${(trabajoDetalle.porcentajeProgreso ?? 0.0).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: estadoColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          const SizedBox(height: 16),
 
           // Campo
           _buildSection(

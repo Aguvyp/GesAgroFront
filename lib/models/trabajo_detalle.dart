@@ -14,6 +14,8 @@ class TrabajoDetalle {
   final DateTime fechaInicio;
   final DateTime? fechaFin;
   final int campoId;
+  final double? haRealizadas;
+  final double? porcentajeProgreso;
 
   // Información del campo
   final Campo? campo;
@@ -48,6 +50,8 @@ class TrabajoDetalle {
     this.personal = const [],
     this.cobrado = false,
     this.montoCobrado,
+    this.haRealizadas,
+    this.porcentajeProgreso,
   });
 
   factory TrabajoDetalle.fromJson(Map<String, dynamic> json) {
@@ -102,7 +106,16 @@ class TrabajoDetalle {
         if (val is String) return double.tryParse(val);
         return null;
       }(),
+      haRealizadas: _toDoubleSafe(json['ha_realizadas']),
+      porcentajeProgreso: _toDoubleSafe(json['porcentaje_progreso']),
     );
+  }
+
+  static double? _toDoubleSafe(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   static bool _parseBoolean(dynamic value) {
@@ -132,6 +145,8 @@ class TrabajoDetalle {
       'personal': personal.map((per) => per.toJson()).toList(),
       'cobrado': cobrado,
       'monto_cobrado': montoCobrado,
+      'ha_realizadas': haRealizadas,
+      'porcentaje_progreso': porcentajeProgreso,
     };
   }
 

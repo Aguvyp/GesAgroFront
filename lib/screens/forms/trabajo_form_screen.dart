@@ -1838,6 +1838,25 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   void _submitForm() async {
     print('🔵 _submitForm llamado');
     if (_formKey.currentState!.validate()) {
+      // Validar que se haya seleccionado al menos un personal
+      if (_personalSeleccionado.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Debe seleccionar al menos un operario')),
+        );
+        return;
+      }
+
+      // Validar que todos los operarios tengan hectáreas > 0
+      for (var p in _personalSeleccionado) {
+        if (p.hectareas <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ingrese las hectáreas para ${p.nombre}')),
+          );
+          return;
+        }
+      }
+
       print('🔵 Validación del formulario exitosa');
       setState(() {
         _isSaving = true;
