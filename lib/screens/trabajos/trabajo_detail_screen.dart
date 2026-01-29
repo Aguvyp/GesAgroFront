@@ -6,7 +6,10 @@ import '../../models/trabajo_detalle.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../providers/trabajo_detalle_provider.dart';
 import '../../utils/constants.dart';
+import '../../providers/optimized_providers.dart';
+import '../../services/optimized_api_service.dart';
 import '../forms/trabajo_form_screen.dart';
+import '../forms/registrar_horas_form.dart';
 
 class TrabajoDetailScreen extends ConsumerStatefulWidget {
   final Trabajo trabajo;
@@ -26,7 +29,9 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   void initState() {
     super.initState();
     // Cargar los detalles completos del trabajo usando el nuevo endpoint
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Cargar personal si no está cargado
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(personalProvider.notifier).loadPersonal();
       if (widget.trabajo.id != null) {
         ref
             .read(trabajoDetalleProvider.notifier)
@@ -321,57 +326,186 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   }
 
   Widget _buildPersonalItem(PersonalTrabajo personal, String? estado) {
+    // We attempt to create a unique key. If idTrabajoPersonal is present, use it.
+    // Otherwise, use a UniqueKey to ensure Dismissible doesn't crash with duplicates,
+    // though functionality will be limited (deletion will fail safely).
+    final Key dismissKey = personal.idTrabajoPersonal != null
+        ? Key('personal_trabajo_${personal.idTrabajoPersonal}')
+        : UniqueKey();
+
+    return Dismissible(
+      key: dismissKey,
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4.0),
+        padding: const EdgeInsets.only(right: 20.0),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('Eliminar',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+            SizedBox(width: 8),
+            Icon(Icons.delete, color: Colors.white),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        if (personal.idTrabajoPersonal == null) {
+          if (mounted) {
+            OptimizedSnackBar.showError(context,
+                message: 'No se puede eliminar: ID de registro no válido');
+          }
+          return false;
+        }
+
+        final bool? confirm = await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Confirmar eliminación"),
+              content: const Text(
+                  "¿Estás seguro de que deseas eliminar este registro de horas?"),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text("Cancelar"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text("Eliminar",
+                      style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm != true) return false;
+
+        try {
+          final apiService = ref.read(apiServiceProvider);
+          // Usamos idTrabajoPersonal que es el ID del registro específico (tabla trabajo_personal)
+          await apiService.deleteTrabajoPersonal(personal.idTrabajoPersonal!);
+
+          if (mounted) {
+            OptimizedSnackBar.showSuccess(context,
+                message: 'Registro eliminado');
+          }
+
+          // Recargar los detalles para reflejar cambios
+          if (widget.trabajo.id != null && mounted) {
+            ref
+                .read(trabajoDetalleProvider.notifier)
+                .loadTrabajoDetalle(widget.trabajo.id!);
+          }
+
+          return true;
+        } catch (e) {
+          if (mounted) {
+            OptimizedSnackBar.showError(context,
+                message: 'Error al eliminar: $e');
+          }
+          return false;
+        }
+      },
+      child: _buildPersonalCard(personal, estado),
+    );
+  }
+
+  Widget _buildPersonalCard(PersonalTrabajo personal, String? estado) {
     final color = _getTrabajoColor(estado);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4.0),
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.person, size: 20, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  personal.nombre,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
-                Text(
-                  'DNI: ${personal.dni}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                if (personal.rol != null)
-                  Text(
-                    'Rol: ${personal.rol}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-              ],
+    return InkWell(
+      onTap: () {
+        // Calcular hectáreas disponibles
+        final trabajoDetalleState = ref.read(trabajoDetalleProvider);
+        double? maxHectares;
+
+        trabajoDetalleState.whenData((detalle) {
+          if (detalle != null && detalle.campo?.superficieHa != null) {
+            final totalCampo = detalle.campo!.superficieHa;
+            final realizadas = detalle.haRealizadas ?? 0.0;
+            maxHectares = totalCampo - realizadas;
+            if (maxHectares! < 0) maxHectares = 0;
+          }
+        });
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RegistrarHorasForm(
+              trabajoId: widget.trabajo.id!,
+              trabajoTitulo:
+                  '${widget.trabajo.tipoTrabajoNombre} - ${widget.trabajo.cultivo}',
+              trabajoPersonalId: personal.idTrabajoPersonal,
+              initialPersonalId: personal.idPersonal,
+              initialHoras: personal.horas,
+              initialHectareas: personal.ha,
+              maxHectares: maxHectares,
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${personal.horas.toStringAsFixed(0)}hs / ${personal.ha.toStringAsFixed(0)}ha',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+        );
+      },
+      borderRadius: BorderRadius.circular(8.0),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4.0),
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.person, size: 20, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        personal.nombre,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, color: Colors.black87),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.edit_outlined,
+                          size: 12, color: color.withOpacity(0.5)),
+                    ],
+                  ),
+                  if (personal.rol != null)
+                    Text(
+                      'Rol: ${personal.rol}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                ],
               ),
             ),
-          ),
-        ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${personal.horas.toStringAsFixed(0)}hs / ${personal.ha.toStringAsFixed(0)}ha',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -425,13 +559,34 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Título principal
-        Text(
-          '${trabajoDetalle.tipo} - ${trabajoDetalle.cultivo}',
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        // Título principal (Clickable to edit)
+        InkWell(
+          onTap: () => _editTrabajo(context),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    '${trabajoDetalle.tipo} - ${trabajoDetalle.cultivo}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.edit_note_rounded,
+                  size: 20,
+                  color:
+                      const Color(AppConstants.primaryColor).withOpacity(0.5),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 8),

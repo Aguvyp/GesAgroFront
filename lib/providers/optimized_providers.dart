@@ -241,14 +241,15 @@ class TrabajosNotifier extends StateNotifier<BaseState> {
     }
   }
 
-  Future<void> registrarHoras(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> registrarHoras(Map<String, dynamic> data) async {
     try {
       final apiService = ApiService();
       await apiService.initialize();
-      await apiService.registrarHorasTrabajo(data);
+      final result = await apiService.registrarHorasTrabajo(data);
 
       await loadTrabajos(); // Recargar lista para actualizar métricas si es necesario
       _logger.info('Horas registradas exitosamente');
+      return result;
     } catch (e) {
       state = ErrorState('Error registrando horas: $e');
       _logger.error('Error registering horas', e);

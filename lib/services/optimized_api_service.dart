@@ -445,21 +445,39 @@ class ApiService {
     return Trabajo.fromJson(response.data);
   }
 
-  /// Actualizar trabajo
+  /// Editar un trabajo existente
   Future<Trabajo> updateTrabajo(int id, Map<String, dynamic> data) async {
-    final response =
-        await _httpClient.put('/api/trabajos/$id/update', data: data);
+    final response = await _httpClient.put('/api/trabajos/$id', data: data);
     return Trabajo.fromJson(response.data);
   }
 
-  /// Eliminar trabajo
+  /// Eliminar un trabajo
   Future<void> deleteTrabajo(int id) async {
-    await _httpClient.delete('/api/trabajos/$id/delete');
+    await _httpClient.delete('/api/trabajos/$id');
   }
 
-  /// Registrar horas de trabajo
-  Future<void> registrarHorasTrabajo(Map<String, dynamic> data) async {
-    await _httpClient.post('/api/trabajos/registrar-horas/', data: data);
+  /// Registrar horas y hectáreas para un operario en un trabajo
+  Future<Map<String, dynamic>> registrarHorasTrabajo(
+      Map<String, dynamic> data) async {
+    final response =
+        await _httpClient.post('/api/trabajos-personal/create/', data: data);
+    return response.data;
+  }
+
+  /// Obtener detalle de TrabajoPersonal
+  Future<Map<String, dynamic>> getTrabajoPersonal(int id) async {
+    final response = await _httpClient.get('/api/trabajos-personal/$id/');
+    return response.data;
+  }
+
+  /// Actualizar TrabajoPersonal
+  Future<void> updateTrabajoPersonal(int id, Map<String, dynamic> data) async {
+    await _httpClient.put('/api/trabajos-personal/$id/update/', data: data);
+  }
+
+  /// Eliminar TrabajoPersonal
+  Future<void> deleteTrabajoPersonal(int id) async {
+    await _httpClient.delete('/api/trabajos-personal/$id/delete/');
   }
 
   /// ==================== INSUMOS ====================

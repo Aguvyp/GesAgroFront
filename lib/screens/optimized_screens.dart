@@ -1076,6 +1076,15 @@ class _OptimizedTrabajosListScreenState
                         color: Colors.green,
                         tooltip: 'Registrar Horas',
                         onPressed: () {
+                          // Calcular hectáreas disponibles
+                          double? maxHectares;
+                          if (trabajo.campoHa != null &&
+                              trabajo.haRealizadas != null) {
+                            maxHectares =
+                                trabajo.campoHa! - trabajo.haRealizadas!;
+                            if (maxHectares! < 0) maxHectares = 0;
+                          }
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -1083,6 +1092,7 @@ class _OptimizedTrabajosListScreenState
                                 trabajoId: trabajo.id,
                                 trabajoTitulo:
                                     '${trabajo.tipo} - ${trabajo.cultivo}',
+                                maxHectares: maxHectares,
                               ),
                             ),
                           );

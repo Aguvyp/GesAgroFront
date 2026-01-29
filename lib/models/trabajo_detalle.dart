@@ -362,6 +362,8 @@ class MaquinaTrabajo {
 /// Modelo para personal con sus hectáreas trabajadas en un trabajo específico
 class PersonalTrabajo {
   final int id;
+  final int? idTrabajoPersonal; // ID de la relación TrabajoPersonal
+  final int? idPersonal; // ID del operario (Personal)
   final String nombre;
   final String dni;
   final String? rol;
@@ -370,6 +372,8 @@ class PersonalTrabajo {
 
   PersonalTrabajo({
     required this.id,
+    this.idTrabajoPersonal,
+    this.idPersonal,
     required this.nombre,
     required this.dni,
     this.rol,
@@ -380,6 +384,9 @@ class PersonalTrabajo {
   factory PersonalTrabajo.fromJson(Map<String, dynamic> json) {
     return PersonalTrabajo(
       id: json['id'],
+      idTrabajoPersonal:
+          json['id_trabajo_personal'] ?? json['trabajo_personal_id'],
+      idPersonal: json['id_personal'] ?? json['personal_id'],
       nombre: json['nombre'] ?? '',
       dni: json['dni'] ?? '',
       rol: json['rol'],
@@ -403,6 +410,8 @@ class PersonalTrabajo {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'id_trabajo_personal': idTrabajoPersonal,
+      'id_personal': idPersonal,
       'nombre': nombre,
       'dni': dni,
       'rol': rol,
@@ -413,6 +422,8 @@ class PersonalTrabajo {
 
   PersonalTrabajo copyWith({
     int? id,
+    int? idTrabajoPersonal,
+    int? idPersonal,
     String? nombre,
     String? dni,
     String? rol,
@@ -421,6 +432,8 @@ class PersonalTrabajo {
   }) {
     return PersonalTrabajo(
       id: id ?? this.id,
+      idTrabajoPersonal: idTrabajoPersonal ?? this.idTrabajoPersonal,
+      idPersonal: idPersonal ?? this.idPersonal,
       nombre: nombre ?? this.nombre,
       dni: dni ?? this.dni,
       rol: rol ?? this.rol,
@@ -431,7 +444,7 @@ class PersonalTrabajo {
 
   @override
   String toString() {
-    return 'PersonalTrabajo(id: $id, nombre: $nombre, ha: $ha, horas: $horas)';
+    return 'PersonalTrabajo(id: $id, idTrabajoPersonal: $idTrabajoPersonal, nombre: $nombre, ha: $ha, horas: $horas)';
   }
 
   @override

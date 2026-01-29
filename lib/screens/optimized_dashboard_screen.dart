@@ -636,6 +636,15 @@ class _OptimizedDashboardScreenState
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () {
+                        // Calcular hectáreas disponibles
+                        double? maxHectares;
+                        if (trabajo.campoHa != null &&
+                            trabajo.haRealizadas != null) {
+                          maxHectares =
+                              trabajo.campoHa! - trabajo.haRealizadas!;
+                          if (maxHectares < 0) maxHectares = 0;
+                        }
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -643,6 +652,7 @@ class _OptimizedDashboardScreenState
                               trabajoId: trabajo.id!,
                               trabajoTitulo:
                                   '${trabajo.tipo} - ${trabajo.cultivo}',
+                              maxHectares: maxHectares,
                             ),
                           ),
                         );
