@@ -49,5 +49,10 @@
 	<!-- Google Maps API Key para iOS -->
 	<key>GMSApiKey</key>
 	<string>TU_API_KEY_AQUI</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Necesitamos tu ubicación para mostrarte el clima local.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Necesitamos tu ubicación para mostrarte el clima local.</string>
 </dict>
 </plist>

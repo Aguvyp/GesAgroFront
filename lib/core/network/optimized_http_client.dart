@@ -9,8 +9,9 @@ import '../../services/optimized_auth_service.dart';
 /// Cliente HTTP optimizado con cache y conexión persistente
 class OptimizedHttpClient {
   static OptimizedHttpClient? _instance;
-  static OptimizedHttpClient get instance => _instance ??= OptimizedHttpClient._();
-  
+  static OptimizedHttpClient get instance =>
+      _instance ??= OptimizedHttpClient._();
+
   OptimizedHttpClient._();
 
   final Dio _dio = Dio();
@@ -24,16 +25,16 @@ class OptimizedHttpClient {
       _logger.debug('OptimizedHttpClient already initialized, skipping...');
       return;
     }
-    
+
     // Inicializar token de autenticación
     await AuthConfig.initializeToken();
-    
+
     // Normalizar la URL base (eliminar barra final si existe)
     String baseUrl = AppConfig.instance.apiBaseUrl.trim();
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.substring(0, baseUrl.length - 1);
     }
-    
+
     // Configurar opciones base con timeouts amplios para ngrok
     _dio.options = BaseOptions(
       baseUrl: baseUrl,
@@ -46,7 +47,7 @@ class OptimizedHttpClient {
         'ngrok-skip-browser-warning': 'true',
       },
     );
-    
+
     _logger.info('🌐 OptimizedHttpClient configured');
     _logger.info('   Base URL: $baseUrl');
     _logger.info('   Connect Timeout: 60s');
@@ -55,7 +56,7 @@ class OptimizedHttpClient {
 
     // Configurar interceptores
     _setupInterceptors();
-    
+
     _isInitialized = true;
     _logger.info('OptimizedHttpClient initialized');
   }
@@ -87,25 +88,31 @@ class OptimizedHttpClient {
             options.path = '/${options.path}';
           }
           // Agregar barra final si no existe (todos los endpoints terminan con slash)
-          if (!options.path.endsWith('/') && options.path != '/') {
+          // Excepción: el endpoint de clima no debe llevar barra final según requerimiento del backend
+          if (!options.path.endsWith('/') &&
+              options.path != '/' &&
+              !options.path.contains('/api/clima/pronostico')) {
             options.path = '${options.path}/';
           }
-          
+
           // Log de normalización para debugging
           if (originalPath != options.path) {
-            _logger.info('🔧 Path normalizado en interceptor: "$originalPath" → "${options.path}"');
+            _logger.info(
+                '🔧 Path normalizado en interceptor: "$originalPath" → "${options.path}"');
           }
-          
+
           // Construir URL completa para logging
           final fullUrl = '${options.baseUrl}${options.path}';
-          
+
           // Asegurar que el header de ngrok siempre esté presente
           options.headers['ngrok-skip-browser-warning'] = 'true';
-          
+
           // LOG DETALLADO ANTES DE CADA PETICIÓN
-          _logger.info('═══════════════════════════════════════════════════════════');
+          _logger.info(
+              '═══════════════════════════════════════════════════════════');
           _logger.info('📤 REQUEST PREPARATION');
-          _logger.info('═══════════════════════════════════════════════════════════');
+          _logger.info(
+              '═══════════════════════════════════════════════════════════');
           _logger.info('🌐 URL Completa: $fullUrl');
           _logger.info('📡 Método: ${options.method}');
           _logger.info('📋 Headers:');
@@ -113,7 +120,8 @@ class OptimizedHttpClient {
             if (key == 'Authorization') {
               final tokenValue = value.toString();
               if (tokenValue.length > 20) {
-                _logger.info('   $key: Bearer ${tokenValue.substring(7, 27)}...');
+                _logger
+                    .info('   $key: Bearer ${tokenValue.substring(7, 27)}...');
               } else {
                 _logger.info('   $key: $value');
               }
@@ -127,13 +135,16 @@ class OptimizedHttpClient {
           if (options.queryParameters.isNotEmpty) {
             _logger.info('🔍 Query Params: ${options.queryParameters}');
           }
-          _logger.info('═══════════════════════════════════════════════════════════');
-          
+          _logger.info(
+              '═══════════════════════════════════════════════════════════');
+
           // No agregar token a endpoints de autenticación y health check
           final path = options.path.toLowerCase();
-          final isAuthEndpoint = path.contains('/api/auth/') || path.contains('/auth/');
-          final isHealthEndpoint = path.contains('/api/health/') || path.contains('/health/');
-          
+          final isAuthEndpoint =
+              path.contains('/api/auth/') || path.contains('/auth/');
+          final isHealthEndpoint =
+              path.contains('/api/health/') || path.contains('/health/');
+
           if (!isAuthEndpoint && !isHealthEndpoint) {
             // Agregar token de autenticación si está disponible
             // Primero intentar obtener el token del AuthService (token del login)
@@ -141,37 +152,44 @@ class OptimizedHttpClient {
               final authService = AuthService();
               await authService.initialize();
               String? token = await authService.getToken();
-              
+
               // Si no hay token del login, usar el token fijo de AuthConfig como fallback
               if (token == null || token.isEmpty) {
                 token = await AuthConfig.getToken();
-                _logger.info('🔐 Usando token fijo de AuthConfig para: ${options.path}');
+                _logger.info(
+                    '🔐 Usando token fijo de AuthConfig para: ${options.path}');
               } else {
                 _logger.info('🔐 Usando token del login para: ${options.path}');
               }
-              
+
               if (token != null && token.isNotEmpty) {
                 final authHeader = 'Bearer $token';
                 options.headers['Authorization'] = authHeader;
-                _logger.info('═══════════════════════════════════════════════════════════');
+                _logger.info(
+                    '═══════════════════════════════════════════════════════════');
                 _logger.info('🔐 AUTENTICACIÓN - HEADER CONFIGURADO');
-                _logger.info('═══════════════════════════════════════════════════════════');
+                _logger.info(
+                    '═══════════════════════════════════════════════════════════');
                 _logger.info('📡 Endpoint: ${options.path}');
-                _logger.info('🌐 URL completa: ${options.baseUrl}${options.path}');
+                _logger
+                    .info('🌐 URL completa: ${options.baseUrl}${options.path}');
                 _logger.info('🔑 Token completo: $token');
                 _logger.info('📏 Token length: ${token.length} caracteres');
                 _logger.info('🔐 Header Authorization completo: $authHeader');
                 _logger.info('📋 Todos los headers de la petición:');
                 options.headers.forEach((key, value) {
                   if (key == 'Authorization') {
-                    _logger.info('   $key: Bearer ${value.toString().substring(7).length > 20 ? value.toString().substring(7, 27) + "..." : value}');
+                    _logger.info(
+                        '   $key: Bearer ${value.toString().substring(7).length > 20 ? value.toString().substring(7, 27) + "..." : value}');
                   } else {
                     _logger.info('   $key: $value');
                   }
                 });
-                _logger.info('═══════════════════════════════════════════════════════════');
+                _logger.info(
+                    '═══════════════════════════════════════════════════════════');
               } else {
-                _logger.warning('⚠️ ❌ No se encontró token para la petición: ${options.path}');
+                _logger.warning(
+                    '⚠️ ❌ No se encontró token para la petición: ${options.path}');
               }
             } catch (e) {
               _logger.error('❌ Error obteniendo token: $e');
@@ -180,7 +198,8 @@ class OptimizedHttpClient {
                 final token = await AuthConfig.getToken();
                 if (token != null && token.isNotEmpty) {
                   options.headers['Authorization'] = 'Bearer $token';
-                  _logger.warning('⚠️ Usando token fijo después de error: ${options.path}');
+                  _logger.warning(
+                      '⚠️ Usando token fijo después de error: ${options.path}');
                 }
               } catch (e2) {
                 _logger.error('❌ Error obteniendo token fijo: $e2');
@@ -214,7 +233,8 @@ class OptimizedHttpClient {
         _logger.warning('Timeout error: ${error.message}');
         break;
       case DioExceptionType.badResponse:
-        _logger.error('Bad response: ${error.response?.statusCode} - ${error.message}');
+        _logger.error(
+            'Bad response: ${error.response?.statusCode} - ${error.message}');
         break;
       case DioExceptionType.cancel:
         _logger.info('Request cancelled');
@@ -234,10 +254,11 @@ class OptimizedHttpClient {
   /// Verificar conectividad
   Future<bool> hasConnection() async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     final result = await _connectivity.checkConnectivity();
     return result != ConnectivityResult.none;
   }
@@ -251,30 +272,34 @@ class OptimizedHttpClient {
     bool forceRefresh = false,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     // Normalizar path (asegurar que empiece con / y termine con /)
     final originalPath = path;
     if (!path.startsWith('/')) {
       path = '/$path';
     }
     // Agregar barra final si no existe (todos los endpoints terminan con slash)
-    if (!path.endsWith('/') && path != '/') {
+    // Excepción: el endpoint de clima no debe llevar barra final
+    if (!path.endsWith('/') &&
+        path != '/' &&
+        !path.contains('/api/clima/pronostico')) {
       path = '${path}/';
     }
-    
+
     // Log de normalización para debugging
     if (originalPath != path) {
       _logger.info('🔧 Path normalizado: "$originalPath" → "$path"');
     }
-    
+
     final fullUrl = '${AppConfig.instance.apiBaseUrl}$path';
     _logger.info('🚀 GET Request: $fullUrl');
-    
+
     final requestOptions = options ?? Options();
-    
+
     if (forceRefresh) {
       requestOptions.extra = {'cache': false};
     }
@@ -290,7 +315,7 @@ class OptimizedHttpClient {
         options: requestOptions,
         cancelToken: cancelToken,
       );
-      
+
       _logger.info('✅ GET Response: ${response.statusCode} - $fullUrl');
       return response;
     } catch (e) {
@@ -332,10 +357,11 @@ class OptimizedHttpClient {
     CancelToken? cancelToken,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     // Normalizar path (asegurar que empiece con / y termine con /)
     if (!path.startsWith('/')) {
       path = '/$path';
@@ -344,10 +370,10 @@ class OptimizedHttpClient {
     if (!path.endsWith('/') && path != '/') {
       path = '${path}/';
     }
-    
+
     final fullUrl = '${AppConfig.instance.apiBaseUrl}$path';
     _logger.info('🚀 POST Request: $fullUrl');
-    
+
     try {
       final response = await _dio.post<T>(
         path,
@@ -356,7 +382,7 @@ class OptimizedHttpClient {
         options: options,
         cancelToken: cancelToken,
       );
-      
+
       _logger.info('✅ POST Response: ${response.statusCode} - $fullUrl');
       return response;
     } catch (e) {
@@ -382,10 +408,11 @@ class OptimizedHttpClient {
     CancelToken? cancelToken,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     // Normalizar path (asegurar que empiece con / y termine con /)
     if (!path.startsWith('/')) {
       path = '/$path';
@@ -394,7 +421,7 @@ class OptimizedHttpClient {
     if (!path.endsWith('/') && path != '/') {
       path = '${path}/';
     }
-    
+
     return await _dio.put<T>(
       path,
       data: data,
@@ -413,10 +440,11 @@ class OptimizedHttpClient {
     CancelToken? cancelToken,
   }) async {
     if (!_isInitialized) {
-      _logger.warning('OptimizedHttpClient not initialized, initializing now...');
+      _logger
+          .warning('OptimizedHttpClient not initialized, initializing now...');
       await initialize();
     }
-    
+
     // Normalizar path (asegurar que empiece con / y termine con /)
     if (!path.startsWith('/')) {
       path = '/$path';
@@ -425,7 +453,7 @@ class OptimizedHttpClient {
     if (!path.endsWith('/') && path != '/') {
       path = '${path}/';
     }
-    
+
     return await _dio.delete<T>(
       path,
       data: data,

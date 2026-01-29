@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class AppLogger {
   static AppLogger? _instance;
   static AppLogger get instance => _instance ??= AppLogger._();
-  
+
   AppLogger._();
 
   late final Logger _logger;
@@ -51,10 +51,15 @@ class AppLogger {
   }
 
   /// Log de API calls
-  void apiCall(String method, String endpoint, {Map<String, dynamic>? data}) {
+  void apiCall(String method, String endpoint,
+      {Map<String, dynamic>? data, Map<String, dynamic>? queryParameters}) {
     final message = '🌐 $method $endpoint';
-    if (data != null) {
-      debug('$message\nData: $data');
+    String details = '';
+    if (data != null) details += '\nData: $data';
+    if (queryParameters != null) details += '\nQueryParams: $queryParameters';
+
+    if (details.isNotEmpty) {
+      debug('$message$details');
     } else {
       debug(message);
     }
@@ -102,7 +107,8 @@ class AppLogger {
   void database(String operation, {String? table, int? count}) {
     final message = '🗄️ DB $operation';
     if (table != null) {
-      info('$message - Table: $table${count != null ? ' ($count records)' : ''}');
+      info(
+          '$message - Table: $table${count != null ? ' ($count records)' : ''}');
     } else {
       info(message);
     }
@@ -110,7 +116,8 @@ class AppLogger {
 
   /// Log de UI
   void ui(String operation, {String? screen, String? widget}) {
-    debug('🎨 UI $operation${screen != null ? ' - Screen: $screen' : ''}${widget != null ? ' - Widget: $widget' : ''}');
+    debug(
+        '🎨 UI $operation${screen != null ? ' - Screen: $screen' : ''}${widget != null ? ' - Widget: $widget' : ''}');
   }
 
   /// Log de estado
@@ -122,11 +129,14 @@ class AppLogger {
   }
 }
 
-
 /// Extensiones para logging más fácil
 extension LoggerExtensions on Object {
-  void logDebug(String message) => AppLogger.instance.debug('$runtimeType: $message');
-  void logInfo(String message) => AppLogger.instance.info('$runtimeType: $message');
-  void logWarning(String message) => AppLogger.instance.warning('$runtimeType: $message');
-  void logError(String message, [dynamic error]) => AppLogger.instance.error('$runtimeType: $message', error);
+  void logDebug(String message) =>
+      AppLogger.instance.debug('$runtimeType: $message');
+  void logInfo(String message) =>
+      AppLogger.instance.info('$runtimeType: $message');
+  void logWarning(String message) =>
+      AppLogger.instance.warning('$runtimeType: $message');
+  void logError(String message, [dynamic error]) =>
+      AppLogger.instance.error('$runtimeType: $message', error);
 }

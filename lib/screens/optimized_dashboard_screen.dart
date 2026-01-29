@@ -333,32 +333,53 @@ class _OptimizedDashboardScreenState
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _buildGreetingSection(ref.watch(currentUserProvider)),
-                          Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(AppConstants.primaryColor)
-                                    .withOpacity(0.5),
-                                width: 2,
-                              ),
-                            ),
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor:
-                                  const Color(AppConstants.primaryColor)
-                                      .withOpacity(0.1),
-                              child: Text(
-                                (ref.watch(currentUserProvider)?['nombre'] ??
-                                        'U')
-                                    .substring(0, 1)
-                                    .toUpperCase(),
-                                style: const TextStyle(
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.calendar_month_rounded,
                                   color: Color(AppConstants.primaryColor),
-                                  fontWeight: FontWeight.bold,
+                                  size: 28,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _focusedDay = DateTime.now();
+                                    _calendarFormat = CalendarFormat.month;
+                                  });
+                                  _showFullCalendarModal(context);
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color:
+                                        const Color(AppConstants.primaryColor)
+                                            .withOpacity(0.5),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor:
+                                      const Color(AppConstants.primaryColor)
+                                          .withOpacity(0.1),
+                                  child: Text(
+                                    (ref.watch(currentUserProvider)?[
+                                                'nombre'] ??
+                                            'U')
+                                        .substring(0, 1)
+                                        .toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Color(AppConstants.primaryColor),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
@@ -370,11 +391,6 @@ class _OptimizedDashboardScreenState
 
                       // Ticker de Precios BCR
                       const PriceTickerWidget(),
-                      const SizedBox(height: 24),
-
-                      // Calendario (ahora arriba y más compacto)
-                      _buildCalendarioTrabajosYMantenimientos(
-                          _trabajos, _mantenimientos),
                       const SizedBox(height: 24),
 
                       // Lista de trabajos por estado
@@ -1980,316 +1996,6 @@ class _OptimizedDashboardScreenState
     return colors[index % colors.length];
   }
 
-  /// Nuevo Calendario con vista semanal personalizada
-  Widget _buildCalendarioTrabajosYMantenimientos(
-      List<Trabajo> trabajos, List<Mantenimiento> mantenimientos) {
-    // Mostrar TODOS los trabajos sin importar el estado
-    final todosLosTrabajos = trabajos;
-
-    // Crear mapa de fechas con trabajos
-    _trabajosPorFecha = {};
-    for (final trabajo in todosLosTrabajos) {
-      final fecha = DateTime(trabajo.fechaInicio.year,
-          trabajo.fechaInicio.month, trabajo.fechaInicio.day);
-      _trabajosPorFecha[fecha] = [...(_trabajosPorFecha[fecha] ?? []), trabajo];
-    }
-
-    // Crear mapa de fechas con mantenimientos próximos
-    _mantenimientosPorFecha = {};
-    final hoy = DateTime.now();
-    final proximosDias = hoy.add(const Duration(days: 30));
-
-    for (final mantenimiento in mantenimientos) {
-      if (mantenimiento.estado.toLowerCase() == 'pendiente' &&
-          mantenimiento.fecha.isAfter(hoy.subtract(const Duration(days: 1))) &&
-          mantenimiento.fecha.isBefore(proximosDias)) {
-        final fecha = DateTime(mantenimiento.fecha.year,
-            mantenimiento.fecha.month, mantenimiento.fecha.day);
-        _mantenimientosPorFecha[fecha] = [
-          ...(_mantenimientosPorFecha[fecha] ?? []),
-          mantenimiento
-        ];
-      }
-    }
-
-    // Texto del mes actual
-    final mesActual = DateFormat('MMMM yyyy', 'es_ES').format(_focusedDay);
-    final semanaActual = _getWeekNumber(_focusedDay);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header del Calendario (Mes y Selector de Vista)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  mesActual[0].toUpperCase() + mesActual.substring(1),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1C1C1E),
-                  ),
-                ),
-                if (_calendarFormat == CalendarFormat.week)
-                  const SizedBox(height: 4),
-              ],
-            ),
-            Row(
-              children: [
-                if (_calendarFormat == CalendarFormat.week)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9), // Verde muy claro
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Semana $semanaActual',
-                      style: const TextStyle(
-                        color: Color(0xFF2E7D32),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _calendarFormat = _calendarFormat == CalendarFormat.week
-                          ? CalendarFormat.month
-                          : CalendarFormat.week;
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _calendarFormat == CalendarFormat.week
-                              ? 'Ver Mes'
-                              : 'Ver Semana',
-                          style: TextStyle(
-                            color: Colors.grey[800],
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          _calendarFormat == CalendarFormat.week
-                              ? Icons.keyboard_arrow_down_rounded
-                              : Icons.keyboard_arrow_up_rounded,
-                          color: Colors.grey[800],
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Cuerpo del Calendario
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: _calendarFormat == CalendarFormat.week
-              ? _buildCustomWeekCalendar()
-              : _buildMonthCalendar(),
-        ),
-      ],
-    );
-  }
-
-  /// Obtener número de semana
-  int _getWeekNumber(DateTime date) {
-    int dayOfYear = int.parse(DateFormat('D').format(date));
-    return ((dayOfYear - date.weekday + 10) / 7).floor();
-  }
-
-  /// Construye la vista de calendario mensual estándar
-  Widget _buildMonthCalendar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: _buildLeyendaColores(),
-          ),
-          TableCalendar<Trabajo>(
-            firstDay: DateTime.now().subtract(const Duration(days: 365)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: _focusedDay,
-            calendarFormat: CalendarFormat.month,
-            headerVisible: false, // Ya tenemos nuestro propio header
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              if (!isSameDay(_selectedDay, selectedDay)) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-                _onDaySelected(selectedDay);
-              }
-            },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-              });
-            },
-            eventLoader: (day) {
-              final fechaNormalizada = DateTime(day.year, day.month, day.day);
-              return _trabajosPorFecha[fechaNormalizada] ?? [];
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay);
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay, isSelected: true);
-              },
-              todayBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay, isToday: true);
-              },
-            ),
-            calendarStyle: CalendarStyle(
-              outsideDaysVisible: false,
-              weekendTextStyle: TextStyle(color: Colors.red[400]),
-              defaultTextStyle: const TextStyle(color: Colors.black87),
-              markersMaxCount: 0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Construye la vista personalizada de semana (tipo tarjetas)
-  Widget _buildCustomWeekCalendar() {
-    // Calcular inicio de semana (Lunes)
-    final inicioSemana =
-        _focusedDay.subtract(Duration(days: _focusedDay.weekday - 1));
-    final diasSemana =
-        List.generate(7, (index) => inicioSemana.add(Duration(days: index)));
-
-    return SizedBox(
-      height: 85, // Altura reducida a petición del usuario
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: diasSemana.map((dia) {
-          final isSelected = isSameDay(_selectedDay ?? DateTime.now(), dia);
-
-          final fechaNormalizada = DateTime(dia.year, dia.month, dia.day);
-          final hasTrabajos =
-              (_trabajosPorFecha[fechaNormalizada] ?? []).isNotEmpty;
-          final hasMantenimientos =
-              (_mantenimientosPorFecha[fechaNormalizada] ?? []).isNotEmpty;
-          final hasEvents = hasTrabajos || hasMantenimientos;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedDay = dia;
-                  _focusedDay = dia;
-                });
-                _onDaySelected(dia);
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF00C853) // Verde brillante seleccionado
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: isSelected
-                      ? null
-                      : Border.all(color: Colors.grey.withOpacity(0.1)),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFF00C853).withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          )
-                        ]
-                      : [],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      DateFormat('EEE', 'es_ES')
-                          .format(dia)
-                          .substring(0, 3)
-                          .replaceFirst('.', ''),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color:
-                            isSelected ? Colors.white : const Color(0xFF9E9E9E),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${dia.day}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color:
-                            isSelected ? Colors.white : const Color(0xFF1C1C1E),
-                      ),
-                    ),
-                    if (hasEvents) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Colors.white
-                              : const Color(0xFF00C853),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ] else
-                      const SizedBox(height: 11),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   void _onDaySelected(DateTime dia) {
     final fechaNormalizada = DateTime(dia.year, dia.month, dia.day);
     final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
@@ -2298,5 +2004,99 @@ class _OptimizedDashboardScreenState
 
     _mostrarDetallesTrabajosYMantenimientos(
         context, trabajosDelDia, mantenimientosDelDia, dia);
+  }
+
+  /// Muestra el calendario completo en un diálogo modal
+  void _showFullCalendarModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final mesActual =
+              DateFormat('MMMM yyyy', 'es_ES').format(_focusedDay);
+
+          return Dialog(
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        mesActual[0].toUpperCase() + mesActual.substring(1),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1C1C1E),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLeyendaColores(),
+                  const SizedBox(height: 16),
+                  TableCalendar<Trabajo>(
+                    firstDay:
+                        DateTime.now().subtract(const Duration(days: 365)),
+                    lastDay: DateTime.now().add(const Duration(days: 365)),
+                    focusedDay: _focusedDay,
+                    calendarFormat: CalendarFormat.month,
+                    headerVisible: true,
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                    ),
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setModalState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                      _onDaySelected(selectedDay);
+                    },
+                    onPageChanged: (focusedDay) {
+                      setModalState(() {
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    eventLoader: (day) {
+                      final fechaNormalizada =
+                          DateTime(day.year, day.month, day.day);
+                      return _trabajosPorFecha[fechaNormalizada] ?? [];
+                    },
+                    calendarBuilders: CalendarBuilders(
+                      defaultBuilder: (context, day, focusedDay) {
+                        return _buildDayCell(day, focusedDay);
+                      },
+                      selectedBuilder: (context, day, focusedDay) {
+                        return _buildDayCell(day, focusedDay, isSelected: true);
+                      },
+                      todayBuilder: (context, day, focusedDay) {
+                        return _buildDayCell(day, focusedDay, isToday: true);
+                      },
+                    ),
+                    calendarStyle: const CalendarStyle(
+                      outsideDaysVisible: false,
+                      markersMaxCount: 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

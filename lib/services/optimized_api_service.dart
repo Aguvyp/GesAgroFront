@@ -16,6 +16,7 @@ import '../../models/trabajo.dart';
 import '../../models/movimiento.dart';
 import '../../models/usuario.dart';
 import '../../models/tipo_trabajo.dart';
+import '../../models/weather.dart';
 
 /// Servicio API ultra optimizado con todos los endpoints
 final apiServiceProvider = Provider<ApiService>((ref) {
@@ -1008,5 +1009,31 @@ class ApiService {
     final response = await _httpClient.put(endpoint, data: data);
     _logger.apiResponse(endpoint, response.statusCode!, data: response.data);
     return response.data;
+  }
+
+  /// ==================== CLIMA ====================
+
+  /// Obtener pronóstico de clima
+  Future<WeatherResponse> getWeatherForecast(double lat, double lon) async {
+    try {
+      _logger.apiCall('GET', '/api/clima/pronostico', queryParameters: {
+        'lat': lat,
+        'lon': lon,
+      });
+
+      final response =
+          await _httpClient.get('/api/clima/pronostico', queryParameters: {
+        'lat': lat,
+        'lon': lon,
+      });
+
+      _logger.apiResponse('/api/clima/pronostico', response.statusCode!,
+          data: response.data);
+
+      return WeatherResponse.fromJson(response.data);
+    } catch (e) {
+      _logger.error('❌ Error al obtener el clima: $e');
+      rethrow;
+    }
   }
 }
