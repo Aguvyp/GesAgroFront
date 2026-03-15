@@ -30,6 +30,7 @@ dependencies:
   shimmer: ^3.0.0
   flutter_staggered_animations: ^1.1.1
   auto_size_text: ^3.0.0
+  google_fonts: ^6.1.0
   
   # Charts & Data Visualization
   fl_chart: ^0.68.0

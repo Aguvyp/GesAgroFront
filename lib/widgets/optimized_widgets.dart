@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../themes/app_theme.dart';
 
-/// Widget de carga simple
+/// Widget de carga premium con animación suave
 class OptimizedLoadingWidget extends ConsumerWidget {
   final String? message;
   final double? size;
@@ -17,21 +19,32 @@ class OptimizedLoadingWidget extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: size ?? 32,
-            height: size ?? 32,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                color ?? AppTheme.primary,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: (color ?? AppTheme.primary).withOpacity(0.06),
+              shape: BoxShape.circle,
+            ),
+            child: SizedBox(
+              width: size ?? 32,
+              height: size ?? 32,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  color ?? AppTheme.primary,
+                ),
               ),
             ),
           ),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               message!,
-              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondary,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -41,7 +54,7 @@ class OptimizedLoadingWidget extends ConsumerWidget {
   }
 }
 
-/// Shimmer para listas
+/// Shimmer para listas — con efecto de brillo
 class OptimizedShimmerList extends StatelessWidget {
   final int itemCount;
   final double itemHeight;
@@ -50,7 +63,7 @@ class OptimizedShimmerList extends StatelessWidget {
   const OptimizedShimmerList({
     Key? key,
     this.itemCount = 5,
-    this.itemHeight = 72,
+    this.itemHeight = 80,
     this.padding,
   }) : super(key: key);
 
@@ -62,18 +75,25 @@ class OptimizedShimmerList extends StatelessWidget {
       itemBuilder: (context, index) {
         return Container(
           height: itemHeight,
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: AppTheme.border.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(14),
+            color: AppTheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(16),
           ),
-        );
+        )
+            .animate(onPlay: (c) => c.repeat())
+            .shimmer(
+              duration: 1200.ms,
+              color: AppTheme.surface.withOpacity(0.8),
+            )
+            .animate()
+            .fadeIn(delay: Duration(milliseconds: index * 80), duration: 300.ms);
       },
     );
   }
 }
 
-/// Widget de error
+/// Widget de error premium
 class OptimizedErrorWidget extends ConsumerWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -92,31 +112,41 @@ class OptimizedErrorWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon ?? Icons.error_outline_rounded,
-              size: 48,
-              color: AppTheme.textHint,
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.errorSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon ?? Icons.error_outline_rounded,
+                size: 44,
+                color: AppTheme.error,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               message,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text(retryText ?? 'Reintentar'),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text(retryText ?? 'Reintentar'),
+                ),
               ),
             ],
           ],
@@ -126,7 +156,7 @@ class OptimizedErrorWidget extends ConsumerWidget {
   }
 }
 
-/// Widget de estado vacío
+/// Widget de estado vacío premium
 class OptimizedEmptyWidget extends StatelessWidget {
   final String message;
   final String? subtitle;
@@ -149,34 +179,43 @@ class OptimizedEmptyWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon ?? Icons.inbox_outlined,
-              size: 56,
-              color: AppTheme.textHint,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceVariant,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon ?? Icons.inbox_outlined,
+                size: 48,
+                color: AppTheme.textTertiary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               message,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
                 color: AppTheme.textPrimary,
+                letterSpacing: -0.3,
               ),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: const TextStyle(
-                  fontSize: 13,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
                   color: AppTheme.textSecondary,
+                  height: 1.4,
                 ),
                 textAlign: TextAlign.center,
               ),
             ],
             if (action != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               action!,
             ],
           ],
@@ -186,7 +225,7 @@ class OptimizedEmptyWidget extends StatelessWidget {
   }
 }
 
-/// Tarjeta simple
+/// Tarjeta premium con sombra sutil
 class OptimizedCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -215,16 +254,16 @@ class OptimizedCard extends StatelessWidget {
       margin: margin ?? const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: color ?? AppTheme.surface,
-        borderRadius: borderRadius ?? BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border, width: 1),
+        borderRadius: borderRadius ?? BorderRadius.circular(18),
+        boxShadow: AppTheme.shadowSm,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: borderRadius ?? BorderRadius.circular(14),
+          borderRadius: borderRadius ?? BorderRadius.circular(18),
           child: Padding(
-            padding: padding ?? const EdgeInsets.all(14),
+            padding: padding ?? const EdgeInsets.all(16),
             child: child,
           ),
         ),
@@ -233,7 +272,7 @@ class OptimizedCard extends StatelessWidget {
   }
 }
 
-/// Botón simple
+/// Botón premium con loading state
 class OptimizedButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -258,15 +297,15 @@ class OptimizedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
-      height: 50,
+      height: 54,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: style,
         child: isLoading
             ? const SizedBox(
-                height: 20, width: 20,
+                height: 22, width: 22,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: 2.5,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
@@ -275,16 +314,17 @@ class OptimizedButton extends StatelessWidget {
                 children: [
                   if (icon != null) ...[
                     Icon(icon, size: 20),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                   ],
                   Flexible(
                     child: Text(
                       text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
                         fontSize: 16,
+                        letterSpacing: -0.2,
                       ),
                     ),
                   ),
@@ -295,7 +335,7 @@ class OptimizedButton extends StatelessWidget {
   }
 }
 
-/// Campo de texto simple
+/// Campo de texto premium con label animado
 class OptimizedTextField extends StatefulWidget {
   final String? label;
   final String? hint;
@@ -360,13 +400,14 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
       children: [
         if (widget.label != null) ...[
           Padding(
-            padding: const EdgeInsets.only(bottom: 6, left: 2),
+            padding: const EdgeInsets.only(bottom: 8, left: 2),
             child: Text(
               widget.label!,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
                 fontSize: 13,
                 color: _isFocused ? AppTheme.primary : AppTheme.textSecondary,
+                letterSpacing: -0.1,
               ),
             ),
           ),
@@ -383,7 +424,11 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
           maxLines: widget.maxLines,
           maxLength: widget.maxLength,
           enabled: widget.enabled,
-          style: const TextStyle(fontSize: 15, color: AppTheme.textPrimary),
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            color: AppTheme.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
           decoration: InputDecoration(
             hintText: widget.hint,
             prefixIcon: widget.prefixIcon,
@@ -395,7 +440,7 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
   }
 }
 
-/// Lista animada simple
+/// Lista animada
 class OptimizedAnimatedList extends StatelessWidget {
   final List<Widget> children;
   final EdgeInsetsGeometry? padding;
@@ -460,7 +505,7 @@ class OptimizedAnimatedGrid extends StatelessWidget {
   }
 }
 
-/// Snackbar helper
+/// Snackbar premium helper
 class OptimizedSnackBar {
   static void show(
     BuildContext context, {
@@ -469,23 +514,40 @@ class OptimizedSnackBar {
     VoidCallback? onAction,
     Duration duration = const Duration(seconds: 3),
     Color? backgroundColor,
+    IconData? icon,
   }) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 14),
+        content: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
         ),
         backgroundColor: backgroundColor ?? AppTheme.textPrimary,
         duration: duration,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         margin: const EdgeInsets.all(16),
+        elevation: 8,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         action: actionLabel != null && onAction != null
             ? SnackBarAction(
                 label: actionLabel,
-                textColor: Colors.white,
+                textColor: Colors.white.withOpacity(0.9),
                 onPressed: onAction,
               )
             : null,
@@ -494,14 +556,23 @@ class OptimizedSnackBar {
   }
 
   static void showSuccess(BuildContext context, {required String message}) {
-    show(context, message: message, backgroundColor: AppTheme.success);
+    show(context,
+        message: message,
+        backgroundColor: AppTheme.success,
+        icon: Icons.check_circle_rounded);
   }
 
   static void showError(BuildContext context, {required String message}) {
-    show(context, message: message, backgroundColor: AppTheme.error);
+    show(context,
+        message: message,
+        backgroundColor: AppTheme.error,
+        icon: Icons.warning_amber_rounded);
   }
 
   static void showInfo(BuildContext context, {required String message}) {
-    show(context, message: message, backgroundColor: AppTheme.info);
+    show(context,
+        message: message,
+        backgroundColor: AppTheme.info,
+        icon: Icons.info_outline_rounded);
   }
 }

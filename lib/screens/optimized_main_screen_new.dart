@@ -1,5 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'optimized_screens.dart';
 import 'optimized_dashboard_screen.dart';
 import 'costos/costos_main_screen.dart';
@@ -48,35 +52,54 @@ class _OptimizedSplashScreenState extends ConsumerState<OptimizedSplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.agriculture, size: 80, color: Colors.white),
-            const SizedBox(height: 16),
-            Text(
-              'GesAgro',
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 24),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-              ),
-            ),
-          ],
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.eco_rounded, size: 64, color: Colors.white),
+              )
+                  .animate()
+                  .fadeIn(duration: 500.ms)
+                  .scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1)),
+              const SizedBox(height: 20),
+              Text(
+                'GesAgro',
+                style: GoogleFonts.inter(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -1,
+                ),
+              ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.white.withOpacity(0.7)),
+                ),
+              ).animate().fadeIn(delay: 600.ms),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+// ═══════════════════════════════════════════
+//  MAIN SCREEN CON NAV PREMIUM
+// ═══════════════════════════════════════════
 
 class OptimizedMainScreen extends ConsumerStatefulWidget {
   const OptimizedMainScreen({Key? key}) : super(key: key);
@@ -86,15 +109,21 @@ class OptimizedMainScreen extends ConsumerStatefulWidget {
       _OptimizedMainScreenState();
 }
 
-class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
+class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
+    with TickerProviderStateMixin {
   int _currentIndex = 0;
   late PageController _pageController;
   late final List<Widget> _screens;
+  late AnimationController _fabAnimController;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    _fabAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _screens = [
       OptimizedDashboardScreen(
         onNavigateToIndex: (index) {
@@ -114,82 +143,135 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _fabAnimController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: (index) => setState(() => _currentIndex = index),
-        children: _screens,
-      ),
-      floatingActionButton: _currentIndex != 4
-          ? FloatingActionButton(
-              onPressed: () => _showQuickActionMenu(context),
-              elevation: 2,
-              child: const Icon(Icons.add, size: 28),
-            )
-          : null,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          border: Border(
-            top: BorderSide(color: AppTheme.border, width: 1),
-          ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        body: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          onPageChanged: (index) => setState(() => _currentIndex = index),
+          children: _screens,
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Inicio'),
-                _buildNavItem(1, Icons.landscape_outlined, Icons.landscape_rounded, 'Campos'),
-                _buildNavItem(2, Icons.work_outline_rounded, Icons.work_rounded, 'Trabajos'),
-                _buildNavItem(3, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded, 'Finanzas'),
-                _buildNavItem(4, Icons.menu_rounded, Icons.menu_rounded, 'Más'),
-              ],
-            ),
-          ),
-        ),
+        floatingActionButton: _currentIndex != 4
+            ? _buildPremiumFAB()
+            : null,
+        bottomNavigationBar: _buildPremiumNavBar(),
+        resizeToAvoidBottomInset: false,
       ),
-      resizeToAvoidBottomInset: false,
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+  // ─── FAB premium con sombra y animación ───
+  Widget _buildPremiumFAB() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: AppTheme.primary.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: FloatingActionButton(
+        onPressed: () => _showQuickActionMenu(context),
+        elevation: 0,
+        child: const Icon(Icons.add_rounded, size: 28),
+      ),
+    );
+  }
+
+  // ─── Bottom nav bar premium ───
+  Widget _buildPremiumNavBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Inicio'),
+              _buildNavItem(1, Icons.landscape_outlined, Icons.landscape_rounded, 'Campos'),
+              _buildNavItem(2, Icons.work_outline_rounded, Icons.work_rounded, 'Trabajos'),
+              _buildNavItem(3, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded, 'Finanzas'),
+              _buildNavItem(4, Icons.grid_view_rounded, Icons.grid_view_rounded, 'Más'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(
+      int index, IconData icon, IconData activeIcon, String label) {
     final isSelected = _currentIndex == index;
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () {
+          HapticFeedback.lightImpact();
           setState(() {
             _currentIndex = index;
             _pageController.jumpToPage(index);
           });
         },
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: Padding(
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                isSelected ? activeIcon : icon,
-                color: isSelected ? AppTheme.primary : AppTheme.textHint,
-                size: 24,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSelected ? 16 : 0,
+                  vertical: isSelected ? 6 : 0,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primary.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  color: isSelected ? AppTheme.primary : AppTheme.textHint,
+                  size: 23,
+                ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 label,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   color: isSelected ? AppTheme.primary : AppTheme.textHint,
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  fontSize: 10.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  letterSpacing: -0.1,
                 ),
               ),
             ],
@@ -199,66 +281,120 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
     );
   }
 
+  // ─── Quick Actions Sheet premium ───
   void _showQuickActionMenu(BuildContext context) {
+    HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
           ),
+          boxShadow: AppTheme.shadowLg,
         ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle
+            // Handle bar
             Container(
-              width: 36,
+              width: 40,
               height: 4,
               decoration: BoxDecoration(
                 color: AppTheme.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Crear nuevo',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+            const SizedBox(height: 24),
+            
+            // Título
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
                 ),
-              ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Crear nuevo',
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      Text(
+                        'Selecciona qué deseas crear',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+            
+            // Grid de acciones
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 4,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 0.85,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.82,
               children: [
-                _buildActionItem(context, Icons.work_outline_rounded, 'Trabajo',
-                    () => _navigateToForm(context, const TrabajoFormScreen())),
-                _buildActionItem(context, Icons.agriculture_outlined, 'Máquina',
-                    () => _navigateToForm(context, const MaquinaFormScreen())),
-                _buildActionItem(context, Icons.person_outline_rounded, 'Personal',
-                    () => _navigateToForm(context, const PersonalFormScreen())),
-                _buildActionItem(context, Icons.build_outlined, 'Manten.',
-                    () => _navigateToForm(context, const MantenimientoFormScreen())),
-                _buildActionItem(context, Icons.people_outline_rounded, 'Cliente',
-                    () => _navigateToForm(context, const ClienteFormScreen())),
-                _buildActionItem(context, Icons.landscape_outlined, 'Campo',
-                    () => _navigateToForm(context, const CampoFormScreen())),
-                _buildActionItem(context, Icons.attach_money_rounded, 'Costo',
-                    () => _navigateToForm(context, const CostoFormScreen())),
+                _buildActionItem(
+                  context, Icons.work_outline_rounded, 'Trabajo',
+                  const Color(0xFF1976D2), const Color(0xFFE3F2FD),
+                  () => _navigateToForm(context, const TrabajoFormScreen()),
+                ),
+                _buildActionItem(
+                  context, Icons.agriculture_outlined, 'Máquina',
+                  const Color(0xFF388E3C), const Color(0xFFE8F5E9),
+                  () => _navigateToForm(context, const MaquinaFormScreen()),
+                ),
+                _buildActionItem(
+                  context, Icons.person_outline_rounded, 'Personal',
+                  const Color(0xFF7B1FA2), const Color(0xFFF3E5F5),
+                  () => _navigateToForm(context, const PersonalFormScreen()),
+                ),
+                _buildActionItem(
+                  context, Icons.build_outlined, 'Manten.',
+                  const Color(0xFFF57C00), const Color(0xFFFFF3E0),
+                  () => _navigateToForm(context, const MantenimientoFormScreen()),
+                ),
+                _buildActionItem(
+                  context, Icons.people_outline_rounded, 'Cliente',
+                  const Color(0xFF00838F), const Color(0xFFE0F7FA),
+                  () => _navigateToForm(context, const ClienteFormScreen()),
+                ),
+                _buildActionItem(
+                  context, Icons.landscape_outlined, 'Campo',
+                  const Color(0xFF558B2F), const Color(0xFFF1F8E9),
+                  () => _navigateToForm(context, const CampoFormScreen()),
+                ),
+                _buildActionItem(
+                  context, Icons.payments_outlined, 'Costo',
+                  const Color(0xFFC62828), const Color(0xFFFFEBEE),
+                  () => _navigateToForm(context, const CostoFormScreen()),
+                ),
               ],
             ),
           ],
@@ -269,33 +405,54 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
 
   void _navigateToForm(BuildContext context, Widget screen) {
     Navigator.pop(context);
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => screen,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.15),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 350),
+      ),
+    );
   }
 
-  Widget _buildActionItem(
-      BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+  Widget _buildActionItem(BuildContext context, IconData icon, String label,
+      Color iconColor, Color bgColor, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(14),
+              color: bgColor,
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: AppTheme.primary, size: 24),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
               fontSize: 11,
               color: AppTheme.textPrimary,
+              letterSpacing: -0.1,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -306,7 +463,10 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   }
 }
 
-/// Pantalla de costos optimizada
+// ═══════════════════════════════════════════
+//  COSTOS SCREEN (sin cambios de lógica)
+// ═══════════════════════════════════════════
+
 class OptimizedCostosScreen extends ConsumerStatefulWidget {
   const OptimizedCostosScreen({Key? key}) : super(key: key);
 
@@ -332,7 +492,7 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
       body: _buildCostosList(costosState),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCostoForm(context),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
@@ -349,7 +509,7 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
             Icon(Icons.error_outline, size: 48, color: AppTheme.textHint),
             const SizedBox(height: 12),
             Text('Error: ${state.message}',
-                style: const TextStyle(color: AppTheme.textSecondary)),
+                style: GoogleFonts.inter(color: AppTheme.textSecondary)),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: () => ref.read(costosProvider.notifier).loadCostos(),
@@ -367,13 +527,23 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.receipt_long_outlined, size: 48, color: AppTheme.textHint),
-              const SizedBox(height: 12),
-              const Text('Sin costos registrados',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.primarySurface,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.receipt_long_outlined,
+                    size: 44, color: AppTheme.primary),
+              ),
+              const SizedBox(height: 16),
+              Text('Sin costos registrados',
+                  style: GoogleFonts.inter(
+                      fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              const Text('Toca + para agregar uno',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+              Text('Toca + para agregar uno',
+                  style: GoogleFonts.inter(
+                      color: AppTheme.textSecondary, fontSize: 14)),
             ],
           ),
         );
@@ -383,19 +553,37 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
         itemCount: costos.length,
         itemBuilder: (context, index) {
           final costo = costos[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppTheme.shadowSm,
+            ),
             child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppTheme.primarySurface,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.receipt_outlined, color: AppTheme.primary, size: 22),
+                child: const Icon(Icons.receipt_outlined,
+                    color: AppTheme.primary, size: 22),
               ),
-              title: Text(costo.descripcion ?? 'Sin descripción'),
-              subtitle: Text('\$${costo.monto?.toStringAsFixed(2) ?? '0.00'}'),
+              title: Text(
+                costo.descripcion ?? 'Sin descripción',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+              subtitle: Text(
+                '\$${costo.monto?.toStringAsFixed(2) ?? '0.00'}',
+                style: GoogleFonts.inter(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               trailing: PopupMenuButton<String>(
                 onSelected: (value) => _handleCostoAction(value, costo),
                 itemBuilder: (context) => [
@@ -433,7 +621,9 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
         title: const Text('Eliminar'),
         content: const Text('¿Eliminar este costo?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar')),
           TextButton(
             onPressed: () async {
               if (costo.id != null) {
@@ -441,7 +631,8 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
               }
               if (mounted) Navigator.pop(context);
             },
-            child: const Text('Eliminar', style: TextStyle(color: AppTheme.error)),
+            child:
+                const Text('Eliminar', style: TextStyle(color: AppTheme.error)),
           ),
         ],
       ),
@@ -449,12 +640,16 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
   }
 }
 
-/// Pantalla "Más" — Simple estilo Settings de iOS
+// ═══════════════════════════════════════════
+//  PANTALLA "MÁS" PREMIUM
+// ═══════════════════════════════════════════
+
 class OptimizedMoreScreen extends ConsumerStatefulWidget {
   const OptimizedMoreScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedMoreScreen> createState() => _OptimizedMoreScreenState();
+  ConsumerState<OptimizedMoreScreen> createState() =>
+      _OptimizedMoreScreenState();
 }
 
 class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
@@ -464,18 +659,18 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
       backgroundColor: AppTheme.background,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
             // Header
-            const Padding(
-              padding: EdgeInsets.only(left: 4, bottom: 20),
+            Padding(
+              padding: const EdgeInsets.only(left: 2, bottom: 24),
               child: Text(
                 'Más opciones',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
+                style: GoogleFonts.inter(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
                   color: AppTheme.textPrimary,
-                  letterSpacing: -0.5,
+                  letterSpacing: -1,
                 ),
               ),
             ),
@@ -483,58 +678,86 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
             // Gestión
             _buildSectionLabel('GESTIÓN'),
             _buildGroupCard([
-              _buildItem('Trabajos', Icons.work_outline_rounded, () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const OptimizedTrabajosListScreen(showAppBar: true)));
+              _buildItem('Trabajos', Icons.work_outline_rounded,
+                  const Color(0xFF1976D2), const Color(0xFFE3F2FD), () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const OptimizedTrabajosListScreen(
+                            showAppBar: true)));
               }),
-              _buildItem('Máquinas', Icons.agriculture_outlined, () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const OptimizedMaquinasListScreen(showAppBar: true)));
+              _buildItem('Máquinas', Icons.agriculture_outlined,
+                  const Color(0xFF388E3C), const Color(0xFFE8F5E9), () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const OptimizedMaquinasListScreen(
+                            showAppBar: true)));
               }),
-              _buildItem('Personal', Icons.people_outline_rounded, () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const PersonalListScreen()));
+              _buildItem('Personal', Icons.people_outline_rounded,
+                  const Color(0xFF7B1FA2), const Color(0xFFF3E5F5), () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PersonalListScreen()));
               }),
-              _buildItem('Clientes', Icons.contacts_outlined, () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const ClientesListScreen()));
+              _buildItem('Clientes', Icons.contacts_outlined,
+                  const Color(0xFF00838F), const Color(0xFFE0F7FA), () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ClientesListScreen()));
               }),
-              _buildItem('Mantenimientos', Icons.build_outlined, () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const OptimizedMantenimientosScreen()));
+              _buildItem('Mantenimientos', Icons.build_outlined,
+                  const Color(0xFFF57C00), const Color(0xFFFFF3E0), () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            const OptimizedMantenimientosScreen()));
               }),
             ]),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             // Reportes
             _buildSectionLabel('REPORTES'),
             _buildGroupCard([
-              _buildItem('Reportes', Icons.analytics_outlined, () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const OptimizedReportesScreen()));
+              _buildItem('Reportes', Icons.analytics_outlined,
+                  const Color(0xFF5C6BC0), const Color(0xFFE8EAF6), () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const OptimizedReportesScreen()));
               }),
             ]),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             // Cuenta
             _buildSectionLabel('CUENTA'),
             _buildGroupCard([
-              _buildItem('Mi Perfil', Icons.person_outline_rounded, () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const OptimizedProfileScreen()));
+              _buildItem('Mi Perfil', Icons.person_outline_rounded,
+                  const Color(0xFF546E7A), const Color(0xFFECEFF1), () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const OptimizedProfileScreen()));
               }),
             ]),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             // Cerrar sesión
             _buildLogoutButton(context),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Versión
             Center(
               child: Text(
                 'GesAgro v1.0.0',
-                style: TextStyle(fontSize: 12, color: AppTheme.textHint),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.textTertiary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -545,14 +768,14 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
 
   Widget _buildSectionLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         label,
-        style: const TextStyle(
+        style: GoogleFonts.inter(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.textSecondary,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.textTertiary,
+          letterSpacing: 1,
         ),
       ),
     );
@@ -562,8 +785,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppTheme.shadowSm,
       ),
       child: Column(
         children: List.generate(items.length, (i) {
@@ -571,7 +794,7 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
             children: [
               items[i],
               if (i < items.length - 1)
-                Divider(height: 1, indent: 56, color: AppTheme.border),
+                Divider(height: 1, indent: 64, color: AppTheme.borderLight),
             ],
           );
         }),
@@ -579,34 +802,39 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
     );
   }
 
-  Widget _buildItem(String title, IconData icon, VoidCallback onTap) {
+  Widget _buildItem(String title, IconData icon, Color iconColor,
+      Color bgColor, VoidCallback onTap) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(18),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
+                color: bgColor,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.primary, size: 20),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 16,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                   color: AppTheme.textPrimary,
                 ),
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: AppTheme.textHint, size: 20),
+            Icon(Icons.chevron_right_rounded,
+                color: AppTheme.textHint, size: 20),
           ],
         ),
       ),
@@ -617,24 +845,24 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppTheme.shadowSm,
       ),
       child: InkWell(
         onTap: () => _handleLogout(context),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.logout_rounded, color: AppTheme.error, size: 20),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Text(
                 'Cerrar sesión',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color: AppTheme.error,
                 ),
               ),
@@ -669,7 +897,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
       try {
         await ref.read(authProvider.notifier).logout();
         if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/login', (route) => false);
         }
       } catch (e) {
         if (mounted) {
@@ -682,45 +911,123 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
   }
 }
 
-/// Pantalla de perfil
+// ═══════════════════════════════════════════
+//  PANTALLA DE PERFIL PREMIUM
+// ═══════════════════════════════════════════
+
 class OptimizedProfileScreen extends ConsumerWidget {
   const OptimizedProfileScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final userName = user?['nombre'] ?? user?['username'] ?? 'Usuario';
+    final userEmail = user?['email'] ?? '';
+
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Mi Perfil'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.08),
-                shape: BoxShape.circle,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 200,
+            pinned: true,
+            backgroundColor: AppTheme.primary,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_rounded,
+                  size: 20, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 40),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: Colors.white.withOpacity(0.3), width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: Text(
+                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                          style: GoogleFonts.inter(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      userName,
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    if (userEmail.isNotEmpty)
+                      Text(
+                        userEmail,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              child: const Icon(Icons.person_outline_rounded, size: 64, color: AppTheme.primary),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Mi Perfil',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: AppTheme.shadowSm,
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.construction_rounded,
+                            size: 48, color: AppTheme.textHint),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Perfil en desarrollo',
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Pronto podrás editar tu información personal aquí',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Próximamente',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

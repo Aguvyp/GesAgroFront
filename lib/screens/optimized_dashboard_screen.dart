@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -141,90 +144,11 @@ class _OptimizedDashboardScreenState
     });
 
     if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppTheme.background,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: AppTheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Cargando tu campo...',
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildLoadingState();
     }
 
     if (_errorMessage != null) {
-      return Scaffold(
-        backgroundColor: AppTheme.background,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppTheme.error.withOpacity(0.06),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.wifi_off_rounded,
-                      size: 40, color: AppTheme.error),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Sin conexión',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _refreshDashboard,
-                    icon: const Icon(Icons.refresh_rounded, size: 20),
-                    label: const Text('Reintentar'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      return _buildErrorState();
     }
 
     // Classify jobs
@@ -254,101 +178,107 @@ class _OptimizedDashboardScreenState
       body: RefreshIndicator(
         color: AppTheme.primary,
         backgroundColor: AppTheme.surface,
+        strokeWidth: 2.5,
+        displacement: 60,
         onRefresh: _refreshDashboard,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            // ─── Top safe area + greeting ───
+            // ─── Header con gradiente ───
             SliverToBoxAdapter(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppTheme.surface,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeader(ref.watch(currentUserProvider)),
-                        const SizedBox(height: 16),
-                        const WeatherWidget(),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              child: _buildHeaderSection(ref.watch(currentUserProvider)),
             ),
 
-            // ─── Content ───
+            // ─── Contenido principal ───
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ─── Stats row ───
-                    _buildStatsRow(enCurso.length, pendientes.length,
-                        completados.length),
-                    const SizedBox(height: 24),
+                    // Precios
+                    const PriceTickerWidget()
+                        .animate()
+                        .fadeIn(duration: 400.ms),
+                    const SizedBox(height: 20),
 
-                    // ─── Precios ───
-                    const PriceTickerWidget(),
-                    const SizedBox(height: 24),
+                    // Stats
+                    _buildStatsRow(
+                        enCurso.length, pendientes.length, completados.length)
+                        .animate()
+                        .fadeIn(delay: 100.ms, duration: 400.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 400.ms),
+                    const SizedBox(height: 28),
 
-                    // ─── En curso ───
+                    // En curso
                     if (enCurso.isNotEmpty) ...[
                       _buildSectionHeader(
                         'En curso',
                         '${enCurso.length}',
                         AppTheme.warning,
+                        Icons.play_circle_fill_rounded,
                         () => _navegarAListaTrabajosPorEstado('En curso'),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       ...enCurso
                           .take(3)
-                          .map((t) => _buildTrabajoCard(t, true, false)),
-                      const SizedBox(height: 20),
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) => _buildTrabajoCard(
+                                  entry.value, true, false)
+                              .animate()
+                              .fadeIn(
+                                  delay: Duration(milliseconds: 100 + entry.key * 80),
+                                  duration: 400.ms)
+                              .slideX(begin: 0.05, end: 0, duration: 400.ms)),
+                      const SizedBox(height: 24),
                     ],
 
-                    // ─── Pendientes ───
+                    // Pendientes
                     if (pendientes.isNotEmpty) ...[
                       _buildSectionHeader(
                         'Pendientes',
                         '${pendientes.length}',
                         AppTheme.info,
+                        Icons.schedule_rounded,
                         () => _navegarAListaTrabajosPorEstado('Pendiente'),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       ...pendientes
                           .take(3)
-                          .map((t) => _buildTrabajoCard(t, false, false)),
-                      const SizedBox(height: 20),
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) => _buildTrabajoCard(
+                                  entry.value, false, false)
+                              .animate()
+                              .fadeIn(
+                                  delay: Duration(milliseconds: 200 + entry.key * 80),
+                                  duration: 400.ms)
+                              .slideX(begin: 0.05, end: 0, duration: 400.ms)),
+                      const SizedBox(height: 24),
                     ],
 
-                    // ─── Completados recientes ───
+                    // Completados recientes
                     if (completados.isNotEmpty) ...[
                       _buildSectionHeader(
                         'Completados',
                         '${completados.length}',
                         AppTheme.success,
+                        Icons.check_circle_rounded,
                         () => _navegarAListaTrabajosPorEstado('Todos'),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       ...completados
                           .take(2)
                           .map((t) => _buildTrabajoCard(t, false, true)),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                     ],
 
-                    // ─── Empty state ───
+                    // Empty state
                     if (_trabajos.isEmpty) _buildEmptyState(),
 
                     // Bottom padding for FAB
@@ -364,20 +294,123 @@ class _OptimizedDashboardScreenState
   }
 
   // ════════════════════════════════════════════════
-  //  HEADER
+  //  LOADING STATE
   // ════════════════════════════════════════════════
 
-  Widget _buildHeader(Map<String, dynamic>? user) {
+  Widget _buildLoadingState() {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.primarySurface,
+                shape: BoxShape.circle,
+              ),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: AppTheme.primary,
+                ),
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat())
+                .shimmer(duration: 1200.ms, color: AppTheme.primarySoft.withOpacity(0.3)),
+            const SizedBox(height: 24),
+            Text(
+              'Cargando tu campo...',
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  ERROR STATE
+  // ════════════════════════════════════════════════
+
+  Widget _buildErrorState() {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.wifi_off_rounded,
+                    size: 44, color: AppTheme.error),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                'Sin conexión',
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary, fontSize: 15),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _refreshDashboard,
+                  icon: const Icon(Icons.refresh_rounded, size: 20),
+                  label: const Text('Reintentar'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  HEADER SECTION
+  // ════════════════════════════════════════════════
+
+  Widget _buildHeaderSection(Map<String, dynamic>? user) {
     final userName =
         user?['nombre'] ?? user?['username'] ?? user?['email'] ?? 'Usuario';
     final now = DateTime.now();
     String greeting;
+    IconData greetingIcon;
     if (now.hour < 12) {
       greeting = 'Buenos días';
+      greetingIcon = Icons.wb_sunny_rounded;
     } else if (now.hour < 19) {
       greeting = 'Buenas tardes';
+      greetingIcon = Icons.wb_twilight_rounded;
     } else {
       greeting = 'Buenas noches';
+      greetingIcon = Icons.nights_stay_rounded;
     }
 
     String dateStr;
@@ -388,74 +421,104 @@ class _OptimizedDashboardScreenState
       dateStr = DateFormat('dd/MM/yyyy').format(now);
     }
 
-    return Row(
-      children: [
-        Expanded(
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppTheme.headerGradient,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '$greeting,',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textSecondary,
-                  fontWeight: FontWeight.w400,
-                ),
+              // Top row
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(greetingIcon,
+                                size: 16,
+                                color: Colors.white.withOpacity(0.6)),
+                            const SizedBox(width: 6),
+                            Text(
+                              greeting,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          userName,
+                          style: GoogleFonts.inter(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.8,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          dateStr,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildHeaderIconButton(
+                    Icons.calendar_month_outlined,
+                    () {
+                      setState(() => _focusedDay = DateTime.now());
+                      _showFullCalendarModal(context);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildAvatar(userName),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                userName,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimary,
-                  letterSpacing: -0.8,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                dateStr,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.textHint,
-                ),
-              ),
+              const SizedBox(height: 18),
+              // Weather widget
+              const WeatherWidget(),
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        _buildHeaderIconButton(
-          Icons.calendar_month_outlined,
-          () {
-            setState(() {
-              _focusedDay = DateTime.now();
-            });
-            _showFullCalendarModal(context);
-          },
-        ),
-        const SizedBox(width: 8),
-        _buildAvatar(userName),
-      ],
+      ),
     );
   }
 
   Widget _buildHeaderIconButton(IconData icon, VoidCallback onTap) {
     return Material(
-      color: AppTheme.background,
-      borderRadius: BorderRadius.circular(12),
+      color: Colors.white.withOpacity(0.12),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          width: 40,
-          height: 40,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.border),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
           ),
-          child: Icon(icon, color: AppTheme.textSecondary, size: 20),
+          child: Icon(icon, color: Colors.white.withOpacity(0.8), size: 20),
         ),
       ),
     );
@@ -463,20 +526,17 @@ class _OptimizedDashboardScreenState
 
   Widget _buildAvatar(String name) {
     return Container(
-      width: 42,
-      height: 42,
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.primary, AppTheme.primaryLight],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white.withOpacity(0.2),
         shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withOpacity(0.25), width: 2),
       ),
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : 'U',
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             color: Colors.white,
             fontWeight: FontWeight.w700,
             fontSize: 18,
@@ -494,31 +554,19 @@ class _OptimizedDashboardScreenState
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard(
-            'En curso',
-            '$enCurso',
-            AppTheme.warning,
-            Icons.play_circle_outline_rounded,
-          ),
-        ),
+            child: _buildStatCard(
+                'En curso', '$enCurso', AppTheme.warning,
+                Icons.play_circle_outline_rounded)),
         const SizedBox(width: 10),
         Expanded(
-          child: _buildStatCard(
-            'Pendientes',
-            '$pendientes',
-            AppTheme.info,
-            Icons.schedule_rounded,
-          ),
-        ),
+            child: _buildStatCard(
+                'Pendientes', '$pendientes', AppTheme.info,
+                Icons.schedule_rounded)),
         const SizedBox(width: 10),
         Expanded(
-          child: _buildStatCard(
-            'Listos',
-            '$completados',
-            AppTheme.success,
-            Icons.check_circle_outline_rounded,
-          ),
-        ),
+            child: _buildStatCard(
+                'Listos', '$completados', AppTheme.success,
+                Icons.check_circle_outline_rounded)),
       ],
     );
   }
@@ -526,28 +574,36 @@ class _OptimizedDashboardScreenState
   Widget _buildStatCard(
       String label, String value, Color color, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppTheme.shadowSm,
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 10),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 22,
+            style: GoogleFonts.inter(
+              fontSize: 24,
               fontWeight: FontWeight.w800,
               color: color,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 11,
               color: AppTheme.textSecondary,
               fontWeight: FontWeight.w500,
@@ -563,37 +619,37 @@ class _OptimizedDashboardScreenState
   // ════════════════════════════════════════════════
 
   Widget _buildSectionHeader(
-      String title, String count, Color color, VoidCallback onSeeAll) {
+      String title, String count, Color color, IconData icon, VoidCallback onSeeAll) {
     return Row(
       children: [
         Container(
-          width: 4,
-          height: 20,
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
+          child: Icon(icon, color: color, size: 16),
         ),
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: AppTheme.textPrimary,
             letterSpacing: -0.3,
           ),
         ),
         const SizedBox(width: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             count,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: color,
@@ -603,21 +659,28 @@ class _OptimizedDashboardScreenState
         const Spacer(),
         GestureDetector(
           onTap: onSeeAll,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Ver todos',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.primary,
-                  fontWeight: FontWeight.w500,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppTheme.primarySurface,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Ver todos',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 2),
-              const Icon(Icons.chevron_right_rounded,
-                  size: 18, color: AppTheme.primary),
-            ],
+                const SizedBox(width: 2),
+                const Icon(Icons.chevron_right_rounded,
+                    size: 16, color: AppTheme.primary),
+              ],
+            ),
           ),
         ),
       ],
@@ -667,44 +730,44 @@ class _OptimizedDashboardScreenState
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
                 builder: (_) => TrabajoDetailScreen(trabajo: trabajo)),
           ),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.border),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: AppTheme.shadowSm,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    // Icon
+                    // Icon con color
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(11),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(laborIcon, color: statusColor, size: 20),
+                      child: Icon(laborIcon, color: statusColor, size: 22),
                     ),
-                    const SizedBox(width: 12),
-                    // Title & subtitle
+                    const SizedBox(width: 14),
+                    // Info
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '${trabajo.tipo} · ${trabajo.cultivo}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
                               fontSize: 15,
                               color: AppTheme.textPrimary,
                               letterSpacing: -0.2,
@@ -712,16 +775,16 @@ class _OptimizedDashboardScreenState
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.landscape_outlined,
-                                  size: 13, color: AppTheme.textHint),
+                              Icon(Icons.landscape_outlined,
+                                  size: 13, color: AppTheme.textTertiary),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
                                   trabajo.campoInfo,
-                                  style: const TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: AppTheme.textSecondary,
                                   ),
@@ -729,12 +792,20 @@ class _OptimizedDashboardScreenState
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 6),
+                                width: 3,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.textTertiary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                               Text(
-                                '· $subtitle',
-                                style: const TextStyle(
+                                subtitle,
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: AppTheme.textHint,
+                                  color: AppTheme.textTertiary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -745,7 +816,7 @@ class _OptimizedDashboardScreenState
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Action buttons
+                    // Action
                     if (isEnCurso)
                       _buildAddHoursButton(trabajo)
                     else
@@ -756,7 +827,7 @@ class _OptimizedDashboardScreenState
 
                 // Progress bar for en-curso
                 if (isEnCurso) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   _buildProgressBar(trabajo, statusColor),
                 ],
               ],
@@ -768,31 +839,43 @@ class _OptimizedDashboardScreenState
   }
 
   Widget _buildAddHoursButton(Trabajo trabajo) {
-    return Material(
-      color: AppTheme.primary.withOpacity(0.08),
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: () {
-          double? maxHectares;
-          if (trabajo.campoHa != null && trabajo.haRealizadas != null) {
-            maxHectares = trabajo.campoHa! - trabajo.haRealizadas!;
-            if (maxHectares < 0) maxHectares = 0;
-          }
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => RegistrarHorasForm(
-                trabajoId: trabajo.id!,
-                trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
-                maxHectares: maxHectares,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            double? maxHectares;
+            if (trabajo.campoHa != null && trabajo.haRealizadas != null) {
+              maxHectares = trabajo.campoHa! - trabajo.haRealizadas!;
+              if (maxHectares < 0) maxHectares = 0;
+            }
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => RegistrarHorasForm(
+                  trabajoId: trabajo.id!,
+                  trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
+                  maxHectares: maxHectares,
+                ),
               ),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: const Icon(Icons.add_rounded, color: AppTheme.primary, size: 20),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+          ),
         ),
       ),
     );
@@ -805,23 +888,40 @@ class _OptimizedDashboardScreenState
 
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress.clamp(0.0, 1.0),
-            backgroundColor: color.withOpacity(0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 5,
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeOutCubic,
+                    width: constraints.maxWidth * progress.clamp(0.0, 1.0),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [color, color.withOpacity(0.7)],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             if (haRealiz != null && campoHa != null)
               Text(
                 '${haRealiz.toStringAsFixed(1)} / ${campoHa.toStringAsFixed(1)} ha',
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppTheme.textSecondary,
                   fontWeight: FontWeight.w500,
@@ -829,12 +929,19 @@ class _OptimizedDashboardScreenState
               )
             else
               const SizedBox.shrink(),
-            Text(
-              '${(trabajo.porcentajeProgreso ?? 0.0).toStringAsFixed(0)}%',
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.w700,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${(trabajo.porcentajeProgreso ?? 0.0).toStringAsFixed(0)}%',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -852,37 +959,38 @@ class _OptimizedDashboardScreenState
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.border),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: AppTheme.shadowSm,
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.06),
+              color: AppTheme.primarySurface,
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.agriculture_rounded,
-              size: 44,
+              Icons.eco_rounded,
+              size: 48,
               color: AppTheme.primary,
             ),
           ),
-          const SizedBox(height: 20),
-          const Text(
+          const SizedBox(height: 24),
+          Text(
             'Sin trabajos aún',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
               color: AppTheme.textPrimary,
+              letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Creá tu primer trabajo con el botón +\npara empezar a gestionar tu campo',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 14,
               color: AppTheme.textSecondary,
               height: 1.5,
@@ -955,12 +1063,13 @@ class _OptimizedDashboardScreenState
 
           return Container(
             height: MediaQuery.of(context).size.height * 0.72,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppTheme.surface,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(28),
+                topRight: Radius.circular(28),
               ),
+              boxShadow: AppTheme.shadowLg,
             ),
             child: Column(
               children: [
@@ -968,7 +1077,7 @@ class _OptimizedDashboardScreenState
                 Padding(
                   padding: const EdgeInsets.only(top: 12, bottom: 4),
                   child: Container(
-                    width: 36,
+                    width: 40,
                     height: 4,
                     decoration: BoxDecoration(
                       color: AppTheme.border,
@@ -985,15 +1094,23 @@ class _OptimizedDashboardScreenState
                     children: [
                       Text(
                         mesActual,
-                        style: const TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 22),
-                        onPressed: () => Navigator.pop(context),
+                      Material(
+                        color: AppTheme.surfaceVariant,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () => Navigator.pop(context),
+                          child: const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Icon(Icons.close_rounded, size: 20),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1025,16 +1142,16 @@ class _OptimizedDashboardScreenState
                       focusedDay: _focusedDay,
                       calendarFormat: CalendarFormat.month,
                       headerVisible: true,
-                      headerStyle: const HeaderStyle(
+                      headerStyle: HeaderStyle(
                         formatButtonVisible: false,
                         titleCentered: true,
-                        titleTextStyle: TextStyle(
+                        titleTextStyle: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
-                        leftChevronIcon: Icon(Icons.chevron_left_rounded,
+                        leftChevronIcon: const Icon(Icons.chevron_left_rounded,
                             color: AppTheme.primary),
-                        rightChevronIcon: Icon(
+                        rightChevronIcon: const Icon(
                             Icons.chevron_right_rounded,
                             color: AppTheme.primary),
                       ),
@@ -1074,13 +1191,13 @@ class _OptimizedDashboardScreenState
                         outsideDaysVisible: false,
                         markersMaxCount: 0,
                       ),
-                      daysOfWeekStyle: const DaysOfWeekStyle(
-                        weekdayStyle: TextStyle(
+                      daysOfWeekStyle: DaysOfWeekStyle(
+                        weekdayStyle: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textSecondary,
                         ),
-                        weekendStyle: TextStyle(
+                        weekendStyle: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textHint,
@@ -1108,7 +1225,7 @@ class _OptimizedDashboardScreenState
         ),
         const SizedBox(width: 4),
         Text(label,
-            style: const TextStyle(
+            style: GoogleFonts.inter(
                 fontSize: 11, color: AppTheme.textSecondary)),
       ],
     );
@@ -1134,7 +1251,7 @@ class _OptimizedDashboardScreenState
       bgColor = AppTheme.primary;
       textColor = Colors.white;
     } else if (isToday) {
-      bgColor = AppTheme.primary.withOpacity(0.1);
+      bgColor = AppTheme.primarySurface;
     }
 
     return Container(
@@ -1143,18 +1260,18 @@ class _OptimizedDashboardScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
               child: Text(
                 '${day.day}',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   color: textColor,
-                  fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                  fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w400,
                   fontSize: 13,
                 ),
               ),
@@ -1222,12 +1339,13 @@ class _OptimizedDashboardScreenState
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.55,
         ),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppTheme.surface,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
           ),
+          boxShadow: AppTheme.shadowLg,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1236,7 +1354,7 @@ class _OptimizedDashboardScreenState
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Container(
-                width: 36,
+                width: 40,
                 height: 4,
                 decoration: BoxDecoration(
                   color: AppTheme.border,
@@ -1252,7 +1370,7 @@ class _OptimizedDashboardScreenState
                   Expanded(
                     child: Text(
                       _formatDayTitle(fecha),
-                      style: const TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textPrimary,
@@ -1269,22 +1387,29 @@ class _OptimizedDashboardScreenState
                     const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                 child: Column(
                   children: [
-                    Icon(Icons.event_available_rounded,
-                        size: 40, color: AppTheme.textHint),
-                    const SizedBox(height: 12),
-                    const Text(
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceVariant,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.event_available_rounded,
+                          size: 36, color: AppTheme.textHint),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
                       'Día libre',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                      style: GoogleFonts.inter(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
                         color: AppTheme.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'No hay actividades programadas',
-                      style: TextStyle(
-                          fontSize: 13, color: AppTheme.textHint),
+                      style: GoogleFonts.inter(
+                          fontSize: 13, color: AppTheme.textTertiary),
                     ),
                   ],
                 ),
@@ -1304,7 +1429,7 @@ class _OptimizedDashboardScreenState
               ),
             // Action buttons
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
               child: Row(
                 children: [
                   Expanded(
@@ -1379,13 +1504,13 @@ class _OptimizedDashboardScreenState
           ),
         );
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: color.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: color.withOpacity(0.12)),
         ),
         child: Row(
@@ -1405,7 +1530,7 @@ class _OptimizedDashboardScreenState
                 children: [
                   Text(
                     '${trabajo.tipo} · ${trabajo.cultivo}',
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -1415,7 +1540,7 @@ class _OptimizedDashboardScreenState
                   const SizedBox(height: 2),
                   Text(
                     trabajo.estado ?? 'Pendiente',
-                    style: TextStyle(fontSize: 12, color: color),
+                    style: GoogleFonts.inter(fontSize: 12, color: color),
                   ),
                 ],
               ),
@@ -1431,11 +1556,11 @@ class _OptimizedDashboardScreenState
   Widget _buildDayMantenimientoItem(Mantenimiento m) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.warning.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.warning.withOpacity(0.12)),
+        color: AppTheme.warningSoft,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.warning.withOpacity(0.15)),
       ),
       child: Row(
         children: [
@@ -1454,7 +1579,7 @@ class _OptimizedDashboardScreenState
               children: [
                 Text(
                   m.descripcion,
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600, fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1462,8 +1587,8 @@ class _OptimizedDashboardScreenState
                 const SizedBox(height: 2),
                 Text(
                   'Mantenimiento · ${m.estado}',
-                  style:
-                      const TextStyle(fontSize: 12, color: AppTheme.warning),
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: AppTheme.warning),
                 ),
               ],
             ),
