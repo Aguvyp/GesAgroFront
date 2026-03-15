@@ -168,7 +168,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
     );
   }
 
-  // ─── FAB premium con sombra y animación ───
+  // ─── FAB premium — abre el form correspondiente al tab activo ───
   Widget _buildPremiumFAB() {
     return Container(
       decoration: BoxDecoration(
@@ -187,9 +187,53 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
         ],
       ),
       child: FloatingActionButton(
-        onPressed: () => _showQuickActionMenu(context),
+        onPressed: () => _handleFABPress(context),
         elevation: 0,
         child: const Icon(Icons.add_rounded, size: 28),
+      ),
+    );
+  }
+
+  void _handleFABPress(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    switch (_currentIndex) {
+      case 0:
+        // Dashboard → menú rápido de creación
+        _showQuickActionMenu(context);
+        break;
+      case 1:
+        // Campos → crear campo directo
+        _navigateToFormDirect(context, const CampoFormScreen());
+        break;
+      case 2:
+        // Trabajos → crear trabajo directo
+        _navigateToFormDirect(context, const TrabajoFormScreen());
+        break;
+      case 3:
+        // Finanzas → crear costo directo
+        _navigateToFormDirect(context, const CostoFormScreen());
+        break;
+    }
+  }
+
+  void _navigateToFormDirect(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => screen,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.15),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 350),
       ),
     );
   }

@@ -50,7 +50,7 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
           ],
         ),
       ),
-      floatingActionButton: _selectedTab == 0 || _selectedTab == 1
+      floatingActionButton: widget.showAppBar && (_selectedTab == 0 || _selectedTab == 1)
           ? FloatingActionButton(
               onPressed: () => _navigateToFormulario(),
               elevation: 2,

@@ -754,28 +754,30 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Recursos (Máquinas y Personal)
-        OptimizedCard(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Recursos',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1C1C1E),
+        // Recursos (Máquinas y Personal) - Solo en edición
+        if (widget.trabajo != null) ...[
+          OptimizedCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Recursos',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1C1C1E),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildMaquinasSelector(),
-              const SizedBox(height: 16),
-              _buildPersonalSelector(),
-            ],
+                const SizedBox(height: 16),
+                _buildMaquinasSelector(),
+                const SizedBox(height: 16),
+                _buildPersonalSelector(),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
+        ],
 
         // Fechas
         OptimizedCard(
@@ -1033,28 +1035,30 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Recursos
-        OptimizedCard(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Recursos',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1C1C1E),
+        // Recursos - Solo en edición
+        if (widget.trabajo != null) ...[
+          OptimizedCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Recursos',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1C1C1E),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildMaquinasSelector(),
-              const SizedBox(height: 16),
-              _buildPersonalSelector(),
-            ],
+                const SizedBox(height: 16),
+                _buildMaquinasSelector(),
+                const SizedBox(height: 16),
+                _buildPersonalSelector(),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
+        ],
 
         // Fechas y Estado
         OptimizedCard(
@@ -1866,22 +1870,24 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   void _submitForm() async {
     print('🔵 _submitForm llamado');
     if (_formKey.currentState!.validate()) {
-      // Validar que se haya seleccionado al menos un personal
-      if (_personalSeleccionado.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Debe seleccionar al menos un operario')),
-        );
-        return;
-      }
-
-      // Validar que todos los operarios tengan hectáreas > 0
-      for (var p in _personalSeleccionado) {
-        if (p.hectareas <= 0) {
+      // Validar personal solo en edición (en creación no se pide)
+      if (widget.trabajo != null) {
+        if (_personalSeleccionado.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Ingrese las hectáreas para ${p.nombre}')),
+            const SnackBar(
+                content: Text('Debe seleccionar al menos un operario')),
           );
           return;
+        }
+
+        // Validar que todos los operarios tengan hectáreas > 0
+        for (var p in _personalSeleccionado) {
+          if (p.hectareas <= 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Ingrese las hectáreas para ${p.nombre}')),
+            );
+            return;
+          }
         }
       }
 

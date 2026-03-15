@@ -131,13 +131,6 @@ class _OptimizedCamposListScreenState
         },
         body: body,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showCampoForm(context);
-        },
-        backgroundColor: const Color(0xFF2E7D32),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
@@ -527,13 +520,15 @@ class _OptimizedTrabajosListScreenState
         },
         body: body,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showTrabajoForm(context);
-        },
-        backgroundColor: const Color(0xFF2E7D32),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: (widget.showAppBar ?? false)
+          ? FloatingActionButton(
+              onPressed: () {
+                _showTrabajoForm(context);
+              },
+              backgroundColor: const Color(0xFF2E7D32),
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
     );
   }
 

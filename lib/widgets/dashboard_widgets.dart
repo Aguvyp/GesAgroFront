@@ -262,16 +262,22 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget>
                             const SizedBox(height: 5),
                             Row(
                               children: [
-                                _miniMetricWhite(Icons.air_rounded,
-                                    '${actual.viento.round()} km/h'),
+                                Flexible(
+                                  child: _miniMetricWhite(Icons.air_rounded,
+                                      '${actual.viento.round()} km/h'),
+                                ),
                                 const SizedBox(width: 12),
-                                _miniMetricWhite(Icons.water_drop_rounded,
-                                    '${actual.humedad}%'),
+                                Flexible(
+                                  child: _miniMetricWhite(Icons.water_drop_rounded,
+                                      '${actual.humedad}%'),
+                                ),
                                 if (forecasts.isNotEmpty) ...[
                                   const SizedBox(width: 12),
-                                  _miniMetricWhite(
-                                      Icons.thermostat_auto_rounded,
-                                      '${forecasts[0].max.round()}°/${forecasts[0].min.round()}°'),
+                                  Flexible(
+                                    child: _miniMetricWhite(
+                                        Icons.thermostat_auto_rounded,
+                                        '${forecasts[0].max.round()}°/${forecasts[0].min.round()}°'),
+                                  ),
                                 ],
                               ],
                             ),
@@ -482,12 +488,15 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget>
       children: [
         Icon(icon, size: 12, color: Colors.white.withOpacity(0.7)),
         const SizedBox(width: 3),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.85),
+        Flexible(
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withOpacity(0.85),
+            ),
           ),
         ),
       ],
