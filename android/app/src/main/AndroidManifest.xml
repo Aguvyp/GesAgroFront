@@ -8,7 +8,7 @@
     
     <application
         android:usesCleartextTraffic="true"
-        android:label="ges_agro_front"
+        android:label="GesAgro"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

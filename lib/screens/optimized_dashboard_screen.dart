@@ -7,7 +7,7 @@ import '../models/trabajo.dart';
 import '../models/maquina.dart';
 import '../models/personal.dart';
 import '../models/mantenimiento.dart';
-import '../utils/constants.dart';
+import '../themes/app_theme.dart';
 import '../services/optimized_api_service.dart';
 import '../core/logger/app_logger.dart';
 import 'trabajos/trabajo_detail_screen.dart';
@@ -17,16 +17,13 @@ import 'forms/registrar_horas_form.dart';
 import 'optimized_screens.dart';
 import '../providers/optimized_auth_provider.dart';
 import '../providers/optimized_providers.dart';
-import '../widgets/optimized_widgets.dart';
 import '../widgets/dashboard_widgets.dart';
 
 class OptimizedDashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateToIndex;
 
-  const OptimizedDashboardScreen({
-    Key? key,
-    this.onNavigateToIndex,
-  }) : super(key: key);
+  const OptimizedDashboardScreen({Key? key, this.onNavigateToIndex})
+      : super(key: key);
 
   @override
   ConsumerState<OptimizedDashboardScreen> createState() =>
@@ -37,9 +34,7 @@ class _OptimizedDashboardScreenState
     extends ConsumerState<OptimizedDashboardScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  CalendarFormat _calendarFormat = CalendarFormat.week;
 
-  // Estados para datos reales
   List<Trabajo> _trabajos = [];
   List<Maquina> _maquinas = [];
   List<Personal> _personal = [];
@@ -47,7 +42,6 @@ class _OptimizedDashboardScreenState
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Mapas por fecha para el calendario
   Map<DateTime, List<Trabajo>> _trabajosPorFecha = {};
   Map<DateTime, List<Mantenimiento>> _mantenimientosPorFecha = {};
 
@@ -58,14 +52,11 @@ class _OptimizedDashboardScreenState
   void initState() {
     super.initState();
     initializeDateFormatting('es_ES', null).then((_) {
-      if (mounted) {
-        setState(() {}); // Rebuild once locale data is loaded
-      }
+      if (mounted) setState(() {});
     });
     _loadDashboardData();
   }
 
-  /// Cargar datos del dashboard desde la API
   Future<void> _loadDashboardData() async {
     try {
       setState(() {
@@ -73,54 +64,40 @@ class _OptimizedDashboardScreenState
         _errorMessage = null;
       });
 
-      _logger.info('🔄 Cargando datos del dashboard...');
-
-      // Inicializar el servicio API solo si no está inicializado
       if (!_apiService.isInitialized) {
         await _apiService.initialize();
       }
 
-      // Cargar datos usando el endpoint del dashboard que contiene toda la información
-      // Usar manejo individual de errores para que si uno falla, los otros continúen
       List<Trabajo> trabajos = [];
       Map<String, dynamic> dashboardResponse = {};
       List<Mantenimiento> mantenimientos = [];
 
-      // Cargar trabajos
       try {
         trabajos = await _apiService.getTrabajos();
-        _logger.info('✅ Trabajos cargados: ${trabajos.length}');
       } catch (e) {
-        _logger.error('❌ Error cargando trabajos: $e');
-        trabajos = [];
+        _logger.error('Error cargando trabajos: $e');
       }
 
-      // Cargar resumen del dashboard
       try {
         final response = await _apiService.get('/api/dashboard/resumen');
         if (response is Map<String, dynamic>) {
           dashboardResponse = response;
         }
-        _logger.info('✅ Dashboard resumen cargado');
       } catch (e) {
-        _logger.error('❌ Error cargando dashboard resumen: $e');
-        dashboardResponse = {};
+        _logger.error('Error cargando resumen: $e');
       }
 
-      // Cargar mantenimientos (este puede fallar con 500, pero ya está manejado en el servicio)
       try {
         mantenimientos = await _apiService.getMantenimientos();
-        _logger.info('✅ Mantenimientos cargados: ${mantenimientos.length}');
       } catch (e) {
-        _logger.error('❌ Error cargando mantenimientos: $e');
-        mantenimientos = [];
+        _logger.error('Error cargando mantenimientos: $e');
       }
+
+      if (!mounted) return;
 
       setState(() {
         _trabajos = trabajos;
 
-        // Procesar datos del resumen del dashboard
-        // Extraer máquinas del resumen
         if (dashboardResponse['maquinas'] != null) {
           final maquinasData = dashboardResponse['maquinas'] as List<dynamic>;
           _maquinas =
@@ -128,15 +105,9 @@ class _OptimizedDashboardScreenState
         } else {
           _maquinas = [];
         }
+        _maquinas.sort((a, b) =>
+            (b.superficieTotalHa ?? 0.0).compareTo(a.superficieTotalHa ?? 0.0));
 
-        // Ordenar máquinas por hectáreas (mayor a menor)
-        _maquinas.sort((a, b) {
-          final haA = a.superficieTotalHa ?? 0.0;
-          final haB = b.superficieTotalHa ?? 0.0;
-          return haB.compareTo(haA); // Orden descendente
-        });
-
-        // Extraer personal del resumen
         if (dashboardResponse['personal'] != null) {
           final personalData = dashboardResponse['personal'] as List<dynamic>;
           _personal =
@@ -144,109 +115,60 @@ class _OptimizedDashboardScreenState
         } else {
           _personal = [];
         }
+        _personal.sort((a, b) =>
+            (b.superficieTotalHa ?? 0.0).compareTo(a.superficieTotalHa ?? 0.0));
 
-        // Ordenar personal por hectáreas (mayor a menor)
-        _personal.sort((a, b) {
-          final haA = a.superficieTotalHa ?? 0.0;
-          final haB = b.superficieTotalHa ?? 0.0;
-          return haB.compareTo(haA); // Orden descendente
-        });
-
-        // Asignar mantenimientos (ya viene como List<Mantenimiento> del método getMantenimientos)
         _mantenimientos = mantenimientos;
-
         _isLoading = false;
       });
-
-      _logger.info(
-          '✅ Datos del dashboard cargados: ${_trabajos.length} trabajos, ${_maquinas.length} máquinas, ${_personal.length} personal, ${_mantenimientos.length} mantenimientos');
-
-      // Mostrar datos detallados de los endpoints específicos
-      _logger.info('📊 Datos de máquinas desde endpoint específico:');
-      for (int i = 0; i < _maquinas.length; i++) {
-        final maquina = _maquinas[i];
-        _logger.info(
-            '   Máquina $i: id=${maquina.id}, nombre=${maquina.nombre}, superficieTotalHa=${maquina.superficieTotalHa}, horasTrabajadas=${maquina.horasTrabajadas}');
-      }
-
-      _logger.info('📊 Datos de personal desde endpoint específico:');
-      for (int i = 0; i < _personal.length; i++) {
-        final operario = _personal[i];
-        _logger.info(
-            '   Operario $i: id=${operario.id}, nombre=${operario.nombre}, superficieTotalHa=${operario.superficieTotalHa}, horasTrabajadas=${operario.horasTrabajadas}, trabajosCompletados=${operario.trabajosCompletados}');
-      }
-
-      // Probar los nuevos endpoints específicos
-      await _testNewEndpoints();
     } catch (e) {
-      _logger.error('❌ Error cargando datos del dashboard: $e');
+      if (!mounted) return;
       setState(() {
-        _errorMessage = 'Error cargando datos: ${e.toString()}';
+        _errorMessage = 'Error cargando datos';
         _isLoading = false;
       });
     }
   }
 
-  /// Probar el endpoint del dashboard
-  Future<void> _testNewEndpoints() async {
-    try {
-      _logger.info('🧪 Probando endpoint /api/dashboard/resumen...');
-
-      final dashboardResponse = await _apiService.get('/api/dashboard/resumen');
-      _logger.info('📊 Respuesta del dashboard resumen:');
-      _logger.info('   Tipo: ${dashboardResponse.runtimeType}');
-      _logger.info('   Contenido: $dashboardResponse');
-
-      if (dashboardResponse is Map<String, dynamic>) {
-        _logger
-            .info('   Campos disponibles: ${dashboardResponse.keys.toList()}');
-
-        if (dashboardResponse['maquinas'] != null) {
-          final maquinas = dashboardResponse['maquinas'];
-          _logger.info('   Máquinas: $maquinas');
-          if (maquinas is List) {
-            _logger.info('   Cantidad de máquinas: ${maquinas.length}');
-          }
-        }
-
-        if (dashboardResponse['personal'] != null) {
-          final personal = dashboardResponse['personal'];
-          _logger.info('   Personal: $personal');
-          if (personal is List) {
-            _logger.info('   Cantidad de personal: ${personal.length}');
-          }
-        }
-      }
-    } catch (e) {
-      _logger.error('❌ Error en endpoint dashboard/resumen: $e');
-    }
-  }
-
-  /// Refrescar datos del dashboard
   Future<void> _refreshDashboard() async {
     await _loadDashboardData();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Escuchar cambios en el dashboardRefreshProvider para recargar datos
     ref.listen<int>(dashboardRefreshProvider, (previous, next) {
       _refreshDashboard();
     });
 
     if (_isLoading) {
       return Scaffold(
+        backgroundColor: AppTheme.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(
-                'Cargando dashboard...',
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Cargando tu campo...',
                 style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16,
+                  color: AppTheme.textSecondary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -257,229 +179,59 @@ class _OptimizedDashboardScreenState
 
     if (_errorMessage != null) {
       return Scaffold(
+        backgroundColor: AppTheme.background,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red[400],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Error al cargar datos',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red[600],
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.error.withOpacity(0.06),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.wifi_off_rounded,
+                      size: 40, color: AppTheme.error),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
+                const SizedBox(height: 24),
+                const Text(
+                  'Sin conexión',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _refreshDashboard,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(
+                      color: AppTheme.textSecondary, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _refreshDashboard,
+                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    label: const Text('Reintentar'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final appBarBackground =
-        theme.appBarTheme.backgroundColor ?? colorScheme.surfaceVariant;
-    final titleBaseStyle = theme.appBarTheme.titleTextStyle ??
-        theme.textTheme.titleLarge ??
-        const TextStyle();
-    final appBarTitleStyle = titleBaseStyle.copyWith(
-      color: theme.appBarTheme.foregroundColor ?? colorScheme.primary,
-      letterSpacing: -0.41,
-    );
-
-    final background = const Color(0xFFF8F9FA); // Slightly gray background
-    return Scaffold(
-      backgroundColor: background,
-      body: RefreshIndicator(
-        backgroundColor: background,
-        color: theme.colorScheme.primary,
-        onRefresh: _refreshDashboard,
-        child: Container(
-          color: background,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // Contenido
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header: Saludo y Avatar
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildGreetingSection(ref.watch(currentUserProvider)),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.calendar_month_rounded,
-                                  color: Color(AppConstants.primaryColor),
-                                  size: 28,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _focusedDay = DateTime.now();
-                                    _calendarFormat = CalendarFormat.month;
-                                  });
-                                  _showFullCalendarModal(context);
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color:
-                                        const Color(AppConstants.primaryColor)
-                                            .withOpacity(0.5),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor:
-                                      const Color(AppConstants.primaryColor)
-                                          .withOpacity(0.1),
-                                  child: Text(
-                                    (ref.watch(currentUserProvider)?[
-                                                'nombre'] ??
-                                            'U')
-                                        .substring(0, 1)
-                                        .toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Color(AppConstants.primaryColor),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Clima en una fila entera
-                      const WeatherWidget(),
-                      const SizedBox(height: 20),
-
-                      // Ticker de Precios BCR
-                      const PriceTickerWidget(),
-                      const SizedBox(height: 24),
-
-                      // Lista de trabajos por estado
-                      _buildTrabajosSection(_trabajos),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Navega a la lista de trabajos filtrada por estado
-  void _navegarAListaTrabajosPorEstado(String estado) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OptimizedTrabajosListScreen(
-          showAppBar: true,
-          estadoFiltro: estado,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrabajosSection(List<Trabajo> trabajos) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  height: 24,
-                  width: 4,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(AppConstants.primaryColor),
-                        const Color(AppConstants.primaryColor).withOpacity(0.7),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Trabajos',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1C1C1E),
-                    letterSpacing: -0.5,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(0, 1),
-                        blurRadius: 2.0,
-                        color: Colors.black12,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            IconButton(
-              icon: const Icon(Icons.arrow_forward_ios, size: 16),
-              onPressed: () => _navegarAListaTrabajosPorEstado('Todos'),
-              tooltip: 'Ver todos',
-            ),
-          ],
-        ),
-        const SizedBox(height: 0),
-        _buildTrabajosList(trabajos),
-      ],
-    );
-  }
-
-  Widget _buildTrabajosList(List<Trabajo> trabajos) {
-    List<Trabajo> enCurso = [];
-    List<Trabajo> pendientes = [];
-    List<Trabajo> completados = [];
-
-    for (var t in trabajos) {
+    // Classify jobs
+    final enCurso = <Trabajo>[];
+    final pendientes = <Trabajo>[];
+    final completados = <Trabajo>[];
+    for (var t in _trabajos) {
       final estado = t.estado?.toLowerCase().trim() ?? '';
       if ([
         'en curso',
@@ -497,830 +249,1154 @@ class _OptimizedDashboardScreenState
       }
     }
 
-    // Sort priority
-    List<Trabajo> sorted = [...enCurso, ...pendientes, ...completados];
-    final displayList = sorted.take(5).toList();
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: RefreshIndicator(
+        color: AppTheme.primary,
+        backgroundColor: AppTheme.surface,
+        onRefresh: _refreshDashboard,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            // ─── Top safe area + greeting ───
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppTheme.surface,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(ref.watch(currentUserProvider)),
+                        const SizedBox(height: 16),
+                        const WeatherWidget(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
-    if (displayList.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text("No hay trabajos recientes."),
-      );
-    }
+            // ─── Content ───
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ─── Stats row ───
+                    _buildStatsRow(enCurso.length, pendientes.length,
+                        completados.length),
+                    const SizedBox(height: 24),
 
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: displayList.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        return _buildActiveTrabajoCard(displayList[index]);
-      },
+                    // ─── Precios ───
+                    const PriceTickerWidget(),
+                    const SizedBox(height: 24),
+
+                    // ─── En curso ───
+                    if (enCurso.isNotEmpty) ...[
+                      _buildSectionHeader(
+                        'En curso',
+                        '${enCurso.length}',
+                        AppTheme.warning,
+                        () => _navegarAListaTrabajosPorEstado('En curso'),
+                      ),
+                      const SizedBox(height: 10),
+                      ...enCurso
+                          .take(3)
+                          .map((t) => _buildTrabajoCard(t, true, false)),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // ─── Pendientes ───
+                    if (pendientes.isNotEmpty) ...[
+                      _buildSectionHeader(
+                        'Pendientes',
+                        '${pendientes.length}',
+                        AppTheme.info,
+                        () => _navegarAListaTrabajosPorEstado('Pendiente'),
+                      ),
+                      const SizedBox(height: 10),
+                      ...pendientes
+                          .take(3)
+                          .map((t) => _buildTrabajoCard(t, false, false)),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // ─── Completados recientes ───
+                    if (completados.isNotEmpty) ...[
+                      _buildSectionHeader(
+                        'Completados',
+                        '${completados.length}',
+                        AppTheme.success,
+                        () => _navegarAListaTrabajosPorEstado('Todos'),
+                      ),
+                      const SizedBox(height: 10),
+                      ...completados
+                          .take(2)
+                          .map((t) => _buildTrabajoCard(t, false, true)),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // ─── Empty state ───
+                    if (_trabajos.isEmpty) _buildEmptyState(),
+
+                    // Bottom padding for FAB
+                    const SizedBox(height: 100),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildActiveTrabajoCard(Trabajo trabajo) {
-    final estado = trabajo.estado?.toLowerCase().trim() ?? '';
-    final isEnCurso = [
-      'en curso',
-      'en_curso',
-      'en progreso',
-      'en_progreso',
-      'ejecutando',
-      'en ejecución'
-    ].contains(estado);
+  // ════════════════════════════════════════════════
+  //  HEADER
+  // ════════════════════════════════════════════════
 
-    final isCompletado = ['completado', 'finalizado'].contains(estado);
+  Widget _buildHeader(Map<String, dynamic>? user) {
+    final userName =
+        user?['nombre'] ?? user?['username'] ?? user?['email'] ?? 'Usuario';
+    final now = DateTime.now();
+    String greeting;
+    if (now.hour < 12) {
+      greeting = 'Buenos días';
+    } else if (now.hour < 19) {
+      greeting = 'Buenas tardes';
+    } else {
+      greeting = 'Buenas noches';
+    }
+
+    String dateStr;
+    try {
+      dateStr = DateFormat('EEEE d \'de\' MMMM', 'es_ES').format(now);
+      dateStr = dateStr[0].toUpperCase() + dateStr.substring(1);
+    } catch (_) {
+      dateStr = DateFormat('dd/MM/yyyy').format(now);
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$greeting,',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                userName,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textPrimary,
+                  letterSpacing: -0.8,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                dateStr,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textHint,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        _buildHeaderIconButton(
+          Icons.calendar_month_outlined,
+          () {
+            setState(() {
+              _focusedDay = DateTime.now();
+            });
+            _showFullCalendarModal(context);
+          },
+        ),
+        const SizedBox(width: 8),
+        _buildAvatar(userName),
+      ],
+    );
+  }
+
+  Widget _buildHeaderIconButton(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: AppTheme.background,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Icon(icon, color: AppTheme.textSecondary, size: 20),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String name) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primary, AppTheme.primaryLight],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'U',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  STATS ROW
+  // ════════════════════════════════════════════════
+
+  Widget _buildStatsRow(int enCurso, int pendientes, int completados) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            'En curso',
+            '$enCurso',
+            AppTheme.warning,
+            Icons.play_circle_outline_rounded,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildStatCard(
+            'Pendientes',
+            '$pendientes',
+            AppTheme.info,
+            Icons.schedule_rounded,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildStatCard(
+            'Listos',
+            '$completados',
+            AppTheme.success,
+            Icons.check_circle_outline_rounded,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+      String label, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  SECTION HEADERS
+  // ════════════════════════════════════════════════
+
+  Widget _buildSectionHeader(
+      String title, String count, Color color, VoidCallback onSeeAll) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            count,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ),
+        const Spacer(),
+        GestureDetector(
+          onTap: onSeeAll,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Ver todos',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 2),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 18, color: AppTheme.primary),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  TRABAJO CARD
+  // ════════════════════════════════════════════════
+
+  Widget _buildTrabajoCard(
+      Trabajo trabajo, bool isEnCurso, bool isCompletado) {
+    final estado = trabajo.estado?.toLowerCase().trim() ?? '';
+    Color statusColor;
+    if (isEnCurso) {
+      statusColor = AppTheme.warning;
+    } else if (isCompletado) {
+      statusColor = AppTheme.success;
+    } else {
+      statusColor = AppTheme.info;
+    }
 
     IconData laborIcon;
     final tipoLabor = trabajo.tipo.toLowerCase();
     if (tipoLabor.contains('siembra')) {
-      laborIcon = Icons.grass;
+      laborIcon = Icons.grass_rounded;
     } else if (tipoLabor.contains('cosecha')) {
-      laborIcon = Icons.agriculture;
+      laborIcon = Icons.agriculture_rounded;
     } else if (tipoLabor.contains('pulver')) {
-      laborIcon = Icons.opacity;
+      laborIcon = Icons.water_drop_outlined;
     } else if (tipoLabor.contains('fertiliz')) {
-      laborIcon = Icons.science;
+      laborIcon = Icons.science_outlined;
     } else {
-      laborIcon = Icons.work_outline;
+      laborIcon = Icons.work_outline_rounded;
     }
 
-    Color statusColor;
-
-    if (isEnCurso) {
-      statusColor = const Color(AppConstants.accentColor);
-    } else if (isCompletado) {
-      statusColor = const Color(AppConstants.successColor);
-    } else {
-      statusColor = const Color(AppConstants.infoColor);
-    }
-
-    String ownershipInfo = 'Propio';
+    String subtitle = 'Propio';
     if (trabajo.esTercero) {
-      ownershipInfo = trabajo.cliente != null && trabajo.cliente!.isNotEmpty
-          ? 'Cliente: ${trabajo.cliente}'
+      subtitle = trabajo.cliente != null && trabajo.cliente!.isNotEmpty
+          ? trabajo.cliente!
           : 'A terceros';
     } else if (trabajo.servicioContratado) {
-      ownershipInfo = 'Servicio Contratado';
+      subtitle = 'Servicio contratado';
     }
 
-    return OptimizedCard(
-      margin: EdgeInsets.zero,
-      padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: statusColor,
-                width: 4,
-              ),
-            ),
+                builder: (_) => TrabajoDetailScreen(trabajo: trabajo)),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      laborIcon,
-                      color: statusColor,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${trabajo.tipo} - ${trabajo.cultivo}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Color(0xFF1C1C1E),
-                          ),
-                        ),
-                        Text(
-                          ownershipInfo,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isEnCurso)
-                    IconButton(
-                      icon: const Icon(Icons.add_circle, size: 24),
-                      color: const Color(AppConstants.primaryColor),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        // Calcular hectáreas disponibles
-                        double? maxHectares;
-                        if (trabajo.campoHa != null &&
-                            trabajo.haRealizadas != null) {
-                          maxHectares =
-                              trabajo.campoHa! - trabajo.haRealizadas!;
-                          if (maxHectares < 0) maxHectares = 0;
-                        }
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RegistrarHorasForm(
-                              trabajoId: trabajo.id!,
-                              trabajoTitulo:
-                                  '${trabajo.tipo} - ${trabajo.cultivo}',
-                              maxHectares: maxHectares,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.landscape_rounded,
-                      size: 12, color: Colors.grey[400]),
-                  const SizedBox(width: 4),
-                  Text(
-                    trabajo.campoInfo,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      trabajo.estado?.toUpperCase() ?? 'PENDIENTE',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: statusColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (isEnCurso) ...[
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: (trabajo.porcentajeProgreso ?? 0.0) / 100,
-                    backgroundColor: statusColor.withOpacity(0.1),
-                    valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                    minHeight: 4,
-                  ),
-                ),
-                const SizedBox(height: 4),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (trabajo.haRealizadas != null && trabajo.campoHa != null)
-                      Text(
-                        '${trabajo.haRealizadas!.toStringAsFixed(1)} / ${trabajo.campoHa!.toStringAsFixed(1)} ha',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      )
-                    else
-                      const SizedBox.shrink(),
-                    Text(
-                      '${(trabajo.porcentajeProgreso ?? 0.0).toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold,
+                    // Icon
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(laborIcon, color: statusColor, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    // Title & subtitle
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${trabajo.tipo} · ${trabajo.cultivo}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                              letterSpacing: -0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              const Icon(Icons.landscape_outlined,
+                                  size: 13, color: AppTheme.textHint),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  trabajo.campoInfo,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '· $subtitle',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textHint,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    // Action buttons
+                    if (isEnCurso)
+                      _buildAddHoursButton(trabajo)
+                    else
+                      Icon(Icons.chevron_right_rounded,
+                          size: 20, color: AppTheme.textHint),
                   ],
                 ),
+
+                // Progress bar for en-curso
+                if (isEnCurso) ...[
+                  const SizedBox(height: 12),
+                  _buildProgressBar(trabajo, statusColor),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCalendarioOld(
-      List<Trabajo> trabajos, List<Mantenimiento> mantenimientos) {
-    // Mostrar TODOS los trabajos sin importar el estado
-    final todosLosTrabajos = trabajos;
+  Widget _buildAddHoursButton(Trabajo trabajo) {
+    return Material(
+      color: AppTheme.primary.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: () {
+          double? maxHectares;
+          if (trabajo.campoHa != null && trabajo.haRealizadas != null) {
+            maxHectares = trabajo.campoHa! - trabajo.haRealizadas!;
+            if (maxHectares < 0) maxHectares = 0;
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RegistrarHorasForm(
+                trabajoId: trabajo.id!,
+                trabajoTitulo: '${trabajo.tipo} - ${trabajo.cultivo}',
+                maxHectares: maxHectares,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          child: const Icon(Icons.add_rounded, color: AppTheme.primary, size: 20),
+        ),
+      ),
+    );
+  }
 
-    // Crear mapa de fechas con trabajos
+  Widget _buildProgressBar(Trabajo trabajo, Color color) {
+    final progress = (trabajo.porcentajeProgreso ?? 0.0) / 100;
+    final haRealiz = trabajo.haRealizadas;
+    final campoHa = trabajo.campoHa;
+
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            backgroundColor: color.withOpacity(0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 5,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (haRealiz != null && campoHa != null)
+              Text(
+                '${haRealiz.toStringAsFixed(1)} / ${campoHa.toStringAsFixed(1)} ha',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              )
+            else
+              const SizedBox.shrink(),
+            Text(
+              '${(trabajo.porcentajeProgreso ?? 0.0).toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  EMPTY STATE
+  // ════════════════════════════════════════════════
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.06),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.agriculture_rounded,
+              size: 44,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Sin trabajos aún',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Creá tu primer trabajo con el botón +\npara empezar a gestionar tu campo',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.textSecondary,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  NAVIGATION
+  // ════════════════════════════════════════════════
+
+  void _navegarAListaTrabajosPorEstado(String estado) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OptimizedTrabajosListScreen(
+          showAppBar: true,
+          estadoFiltro: estado,
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  CALENDAR MODAL
+  // ════════════════════════════════════════════════
+
+  void _showFullCalendarModal(BuildContext context) {
     _trabajosPorFecha = {};
-    for (final trabajo in todosLosTrabajos) {
+    for (final trabajo in _trabajos) {
       final fecha = DateTime(trabajo.fechaInicio.year,
           trabajo.fechaInicio.month, trabajo.fechaInicio.day);
-      _trabajosPorFecha[fecha] = [...(_trabajosPorFecha[fecha] ?? []), trabajo];
+      _trabajosPorFecha[fecha] = [
+        ...(_trabajosPorFecha[fecha] ?? []),
+        trabajo
+      ];
     }
 
-    // Crear mapa de fechas con mantenimientos próximos (solo pendientes y próximos)
     _mantenimientosPorFecha = {};
     final hoy = DateTime.now();
-    final proximosDias = hoy.add(const Duration(days: 30)); // Próximos 30 días
-
-    for (final mantenimiento in mantenimientos) {
-      // Solo mostrar mantenimientos pendientes que estén próximos (hasta 30 días)
-      if (mantenimiento.estado.toLowerCase() == 'pendiente' &&
-          mantenimiento.fecha.isAfter(hoy.subtract(const Duration(days: 1))) &&
-          mantenimiento.fecha.isBefore(proximosDias)) {
-        final fecha = DateTime(mantenimiento.fecha.year,
-            mantenimiento.fecha.month, mantenimiento.fecha.day);
+    final proximosDias = hoy.add(const Duration(days: 30));
+    for (final m in _mantenimientos) {
+      if (m.estado.toLowerCase() == 'pendiente' &&
+          m.fecha.isAfter(hoy.subtract(const Duration(days: 1))) &&
+          m.fecha.isBefore(proximosDias)) {
+        final fecha = DateTime(m.fecha.year, m.fecha.month, m.fecha.day);
         _mantenimientosPorFecha[fecha] = [
           ...(_mantenimientosPorFecha[fecha] ?? []),
-          mantenimiento
+          m
         ];
       }
     }
 
-    _logger.info('📅 Calendario: ${todosLosTrabajos.length} trabajos totales');
-    _logger
-        .info('📅 Calendario: ${_trabajosPorFecha.length} fechas con trabajos');
-    _logger
-        .info('📅 Calendario: ${mantenimientos.length} mantenimientos totales');
-    _logger.info(
-        '📅 Calendario: ${_mantenimientosPorFecha.length} fechas con mantenimientos próximos');
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          String mesActual;
+          try {
+            mesActual = DateFormat('MMMM yyyy', 'es_ES').format(_focusedDay);
+            mesActual = mesActual[0].toUpperCase() + mesActual.substring(1);
+          } catch (_) {
+            mesActual = DateFormat('MM/yyyy').format(_focusedDay);
+          }
 
-    // Debug: mostrar algunos trabajos
-    for (int i = 0; i < todosLosTrabajos.length && i < 3; i++) {
-      final trabajo = todosLosTrabajos[i];
-      _logger.info(
-          '📅 Trabajo $i: ${trabajo.tipo} - ${trabajo.cultivo} - ${DateFormat('dd/MM/yyyy').format(trabajo.fechaInicio)} - Estado: ${trabajo.estado}');
-    }
-
-    // Debug: mostrar fechas con trabajos
-    _logger.info('📅 Fechas con trabajos:');
-    _trabajosPorFecha.forEach((fecha, trabajos) {
-      _logger.info(
-          '📅   ${DateFormat('dd/MM/yyyy').format(fecha)}: ${trabajos.length} trabajos');
-    });
-
-    // Debug: mostrar algunos mantenimientos
-    for (int i = 0; i < mantenimientos.length && i < 3; i++) {
-      final mantenimiento = mantenimientos[i];
-      _logger.info(
-          '📅 Mantenimiento $i: ${mantenimiento.descripcion} - ${DateFormat('dd/MM/yyyy').format(mantenimiento.fecha)} - Estado: ${mantenimiento.estado}');
-    }
-
-    // Debug: mostrar fechas con mantenimientos
-    _logger.info('📅 Fechas con mantenimientos próximos:');
-    _mantenimientosPorFecha.forEach((fecha, mantenimientos) {
-      _logger.info(
-          '📅   ${DateFormat('dd/MM/yyyy').format(fecha)}: ${mantenimientos.length} mantenimientos');
-    });
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.72,
+            decoration: const BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
+            child: Column(
               children: [
-                Container(
-                  height: 24,
-                  width: 4,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(AppConstants.primaryColor),
-                        const Color(AppConstants.primaryColor).withOpacity(0.7),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                // Handle bar
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 4),
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.border,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Calendario',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                // Header
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        mesActual,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                // Legend
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendDot(AppTheme.info, 'Pendiente'),
+                      const SizedBox(width: 16),
+                      _buildLegendDot(AppTheme.warning, 'En curso'),
+                      const SizedBox(width: 16),
+                      _buildLegendDot(AppTheme.success, 'Listo'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Calendar
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: TableCalendar<Trabajo>(
+                      firstDay: DateTime.now()
+                          .subtract(const Duration(days: 365)),
+                      lastDay:
+                          DateTime.now().add(const Duration(days: 365)),
+                      focusedDay: _focusedDay,
+                      calendarFormat: CalendarFormat.month,
+                      headerVisible: true,
+                      headerStyle: const HeaderStyle(
+                        formatButtonVisible: false,
+                        titleCentered: true,
+                        titleTextStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        leftChevronIcon: Icon(Icons.chevron_left_rounded,
+                            color: AppTheme.primary),
+                        rightChevronIcon: Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppTheme.primary),
+                      ),
+                      selectedDayPredicate: (day) =>
+                          isSameDay(_selectedDay, day),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        setModalState(() {
+                          _selectedDay = selectedDay;
+                          _focusedDay = focusedDay;
+                        });
+                        final fechaN = DateTime(selectedDay.year,
+                            selectedDay.month, selectedDay.day);
+                        final trabajosDelDia =
+                            _trabajosPorFecha[fechaN] ?? [];
+                        final mantDelDia =
+                            _mantenimientosPorFecha[fechaN] ?? [];
+                        _mostrarDetallesDia(context, trabajosDelDia,
+                            mantDelDia, selectedDay);
+                      },
+                      onPageChanged: (focusedDay) {
+                        setModalState(() => _focusedDay = focusedDay);
+                      },
+                      eventLoader: (day) {
+                        final fechaN =
+                            DateTime(day.year, day.month, day.day);
+                        return _trabajosPorFecha[fechaN] ?? [];
+                      },
+                      calendarBuilders: CalendarBuilders(
+                        defaultBuilder: (ctx, day, focused) =>
+                            _buildDayCell(day, focused),
+                        selectedBuilder: (ctx, day, focused) =>
+                            _buildDayCell(day, focused, isSelected: true),
+                        todayBuilder: (ctx, day, focused) =>
+                            _buildDayCell(day, focused, isToday: true),
+                      ),
+                      calendarStyle: const CalendarStyle(
+                        outsideDaysVisible: false,
+                        markersMaxCount: 0,
+                      ),
+                      daysOfWeekStyle: const DaysOfWeekStyle(
+                        weekdayStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondary,
+                        ),
+                        weekendStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textHint,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _calendarFormat = _calendarFormat == CalendarFormat.week
-                      ? CalendarFormat.month
-                      : CalendarFormat.week;
-                });
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color:
-                      const Color(AppConstants.primaryColor).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _calendarFormat == CalendarFormat.week
-                          ? 'Ver Mes'
-                          : 'Ver Semana',
-                      style: const TextStyle(
-                        color: Color(AppConstants.primaryColor),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      _calendarFormat == CalendarFormat.week
-                          ? Icons.keyboard_arrow_down_rounded
-                          : Icons.keyboard_arrow_up_rounded,
-                      color: const Color(AppConstants.primaryColor),
-                      size: 18,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // Leyenda de colores
-        _buildLeyendaColores(),
-        const SizedBox(height: 16),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLegendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TableCalendar<Trabajo>(
-            calendarFormat: _calendarFormat,
-            onFormatChanged: (format) {
-              setState(() {
-                _calendarFormat = format;
-              });
-            },
-            firstDay: DateTime.now().subtract(const Duration(days: 365)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: _focusedDay,
-            rowHeight: 52,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              // Solo actualizar si es un día diferente
-              if (!isSameDay(_selectedDay, selectedDay)) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-
-                // Normalizar la fecha seleccionada para comparar correctamente
-                final fechaNormalizada = DateTime(
-                    selectedDay.year, selectedDay.month, selectedDay.day);
-                final trabajosDelDia =
-                    _trabajosPorFecha[fechaNormalizada] ?? [];
-                final mantenimientosDelDia =
-                    _mantenimientosPorFecha[fechaNormalizada] ?? [];
-
-                _logger.info(
-                    '📅 Clic en día: ${DateFormat('dd/MM/yyyy').format(selectedDay)}');
-                _logger.info(
-                    '📅 Fecha normalizada: ${DateFormat('dd/MM/yyyy').format(fechaNormalizada)}');
-                _logger
-                    .info('📅 Trabajos encontrados: ${trabajosDelDia.length}');
-                _logger.info(
-                    '📅 Mantenimientos encontrados: ${mantenimientosDelDia.length}');
-
-                _mostrarDetallesTrabajosYMantenimientos(
-                    context, trabajosDelDia, mantenimientosDelDia, selectedDay);
-              }
-            },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-              });
-            },
-            eventLoader: (day) {
-              final fechaNormalizada = DateTime(day.year, day.month, day.day);
-              final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
-              if (trabajosDelDia.isNotEmpty) {
-                _logger.info(
-                    '📅 EventLoader - Día ${DateFormat('dd/MM/yyyy').format(day)}: ${trabajosDelDia.length} trabajos');
-              }
-              return trabajosDelDia;
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay);
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay, isSelected: true);
-              },
-              todayBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, focusedDay, isToday: true);
-              },
-            ),
-            calendarStyle: CalendarStyle(
-              outsideDaysVisible: false,
-              weekendTextStyle: TextStyle(color: Colors.red[400]),
-              holidayTextStyle: TextStyle(color: Colors.red[400]),
-              defaultTextStyle: const TextStyle(color: Colors.black87),
-              selectedDecoration: BoxDecoration(
-                color: const Color(AppConstants.primaryColor).withOpacity(0.7),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(AppConstants.primaryColor),
-                  width: 2,
-                ),
-              ),
-              selectedTextStyle: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-              todayDecoration: BoxDecoration(
-                color: const Color(AppConstants.primaryColor).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color:
-                      const Color(AppConstants.primaryColor).withOpacity(0.5),
-                  width: 1,
-                ),
-              ),
-              todayTextStyle: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w600,
-              ),
-              markersMaxCount: 0, // Desactivar los marcadores
-            ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-              leftChevronIcon: const Icon(
-                Icons.chevron_left,
-                color: Color(AppConstants.primaryColor),
-              ),
-              rightChevronIcon: const Icon(
-                Icons.chevron_right,
-                color: Color(AppConstants.primaryColor),
-              ),
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: TextStyle(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w600,
-              ),
-              weekendStyle: TextStyle(
-                color: Colors.red[400],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
+        const SizedBox(width: 4),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 11, color: AppTheme.textSecondary)),
       ],
     );
   }
 
-  /// Construye una celda del calendario con círculo de color según trabajos y mantenimientos
   Widget _buildDayCell(DateTime day, DateTime focusedDay,
       {bool isSelected = false, bool isToday = false}) {
-    final fechaNormalizada = DateTime(day.year, day.month, day.day);
-    final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
-    final mantenimientosDelDia =
-        _mantenimientosPorFecha[fechaNormalizada] ?? [];
+    final fechaN = DateTime(day.year, day.month, day.day);
+    final trabajosDelDia = _trabajosPorFecha[fechaN] ?? [];
+    final mantDelDia = _mantenimientosPorFecha[fechaN] ?? [];
 
-    // Determinar el color del círculo según trabajos y mantenimientos
-    Color circleColor = Colors.transparent;
-    Color textColor = Colors.black87;
-
-    if (mantenimientosDelDia.isNotEmpty) {
-      // Si hay mantenimientos próximos, usar color amarillo
-      circleColor = Colors.yellow[600]!;
-      textColor = Colors.black87;
+    Color? dotColor;
+    if (mantDelDia.isNotEmpty) {
+      dotColor = AppTheme.warning;
     } else if (trabajosDelDia.isNotEmpty) {
-      // Si hay trabajos, usar el color del estado predominante
-      final estadoPredominante = _getEstadoPredominante(trabajosDelDia);
-      circleColor = _getColorPorEstado(estadoPredominante);
-      textColor = Colors.white;
-    } else if (isSelected) {
-      circleColor = const Color(AppConstants.primaryColor).withOpacity(0.7);
+      final estado = _getEstadoPredominante(trabajosDelDia);
+      dotColor = _getColorPorEstado(estado);
+    }
+
+    Color bgColor = Colors.transparent;
+    Color textColor = AppTheme.textPrimary;
+    if (isSelected) {
+      bgColor = AppTheme.primary;
       textColor = Colors.white;
     } else if (isToday) {
-      circleColor = const Color(AppConstants.primaryColor).withOpacity(0.2);
-      textColor = Colors.black87;
+      bgColor = AppTheme.primary.withOpacity(0.1);
     }
 
     return Container(
-      margin: const EdgeInsets.all(2),
-      child: Center(
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: circleColor,
-            borderRadius:
-                BorderRadius.circular(8), // Square with rounded corners
-            border: isSelected
-                ? Border.all(
-                    color: const Color(AppConstants.primaryColor),
-                    width: 2,
-                  )
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              '${day.day}',
-              style: TextStyle(
-                color: textColor,
-                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                fontSize: 14,
+      margin: const EdgeInsets.all(3),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                '${day.day}',
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                  fontSize: 13,
+                ),
               ),
             ),
           ),
+          const SizedBox(height: 2),
+          if (dotColor != null)
+            Container(
+              width: 5,
+              height: 5,
+              decoration:
+                  BoxDecoration(color: dotColor, shape: BoxShape.circle),
+            )
+          else
+            const SizedBox(height: 5),
+        ],
+      ),
+    );
+  }
+
+  String _getEstadoPredominante(List<Trabajo> trabajos) {
+    if (trabajos.isEmpty) return 'pendiente';
+    final Map<String, int> count = {};
+    for (final t in trabajos) {
+      final e = t.estado?.toLowerCase() ?? 'pendiente';
+      count[e] = (count[e] ?? 0) + 1;
+    }
+    String best = 'pendiente';
+    int max = 0;
+    count.forEach((e, c) {
+      if (c > max) {
+        max = c;
+        best = e;
+      }
+    });
+    return best;
+  }
+
+  Color _getColorPorEstado(String estado) {
+    switch (estado.toLowerCase()) {
+      case 'completado':
+      case 'finalizado':
+        return AppTheme.success;
+      case 'en curso':
+      case 'en_progreso':
+        return AppTheme.warning;
+      case 'pendiente':
+      case 'programado':
+        return AppTheme.info;
+      default:
+        return AppTheme.textHint;
+    }
+  }
+
+  // ════════════════════════════════════════════════
+  //  DAY DETAILS BOTTOM SHEET
+  // ════════════════════════════════════════════════
+
+  void _mostrarDetallesDia(BuildContext context, List<Trabajo> trabajos,
+      List<Mantenimiento> mantenimientos, DateTime fecha) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.55,
+        ),
+        decoration: const BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Title
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _formatDayTitle(fecha),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            if (trabajos.isEmpty && mantenimientos.isEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+                child: Column(
+                  children: [
+                    Icon(Icons.event_available_rounded,
+                        size: 40, color: AppTheme.textHint),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Día libre',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'No hay actividades programadas',
+                      style: TextStyle(
+                          fontSize: 13, color: AppTheme.textHint),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    ...trabajos.map((t) => _buildDayTrabajoItem(t)),
+                    ...mantenimientos
+                        .map((m) => _buildDayMantenimientoItem(m)),
+                  ],
+                ),
+              ),
+            // Action buttons
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                MantenimientoFormScreen(fechaInicial: fecha),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.build_outlined, size: 18),
+                      label: const Text('Manten.'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                TrabajoFormScreen(fechaInicial: fecha),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Trabajo'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// Obtiene el estado predominante de una lista de trabajos
-  String _getEstadoPredominante(List<Trabajo> trabajos) {
-    if (trabajos.isEmpty) return 'pendiente';
-
-    // Contar estados
-    final Map<String, int> estadoCount = {};
-    for (final trabajo in trabajos) {
-      final estado = trabajo.estado?.toLowerCase() ?? 'pendiente';
-      estadoCount[estado] = (estadoCount[estado] ?? 0) + 1;
-    }
-
-    // Encontrar el estado con más trabajos
-    String estadoPredominante = 'pendiente';
-    int maxCount = 0;
-
-    estadoCount.forEach((estado, count) {
-      if (count > maxCount) {
-        maxCount = count;
-        estadoPredominante = estado;
-      }
-    });
-
-    return estadoPredominante;
-  }
-
-  /// Obtiene el color correspondiente a un estado
-  Color _getColorPorEstado(String estado) {
-    switch (estado.toLowerCase()) {
-      case 'completado':
-      case 'finalizado':
-        return Colors.green;
-      case 'en curso':
-      case 'en_progreso':
-        return Colors.orange;
-      case 'pendiente':
-      case 'programado':
-        return Colors.blue;
-      default:
-        return Colors.grey;
+  String _formatDayTitle(DateTime fecha) {
+    try {
+      final str =
+          DateFormat('EEEE d \'de\' MMMM', 'es_ES').format(fecha);
+      return str[0].toUpperCase() + str.substring(1);
+    } catch (_) {
+      return DateFormat('dd/MM/yyyy').format(fecha);
     }
   }
 
-  // Métodos auxiliares
-  Widget _buildGreetingSection(Map<String, dynamic>? user) {
-    final userName =
-        user?['nombre'] ?? user?['username'] ?? user?['email'] ?? 'Usuario';
+  Widget _buildDayTrabajoItem(Trabajo trabajo) {
+    final estado = trabajo.estado?.toLowerCase() ?? '';
+    Color color = AppTheme.info;
+    if (['en curso', 'en_progreso'].contains(estado)) {
+      color = AppTheme.warning;
+    }
+    if (['completado', 'finalizado'].contains(estado)) {
+      color = AppTheme.success;
+    }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Hola,',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w400,
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TrabajoDetailScreen(trabajo: trabajo),
           ),
-        ),
-        Text(
-          userName,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1C1C1E),
-            height: 1.1,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          'San Justo, Santa Fe',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[500],
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _mostrarDetallesTrabajosYMantenimientos(
-      BuildContext context,
-      List<Trabajo> trabajos,
-      List<Mantenimiento> mantenimientos,
-      DateTime fecha) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                color: const Color(AppConstants.primaryColor),
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                DateFormat('dd/MM/yyyy').format(fecha),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (trabajos.isEmpty && mantenimientos.isEmpty) ...[
-                    Icon(
-                      Icons.event_busy,
-                      size: 48,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No hay trabajos ni mantenimientos',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'programados para esta fecha',
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ] else ...[
-                    if (trabajos.isNotEmpty) ...[
-                      Text(
-                        '${trabajos.length} trabajo${trabajos.length > 1 ? 's' : ''} programado${trabajos.length > 1 ? 's' : ''}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ...trabajos
-                          .map((trabajo) => _buildTrabajoCard(trabajo))
-                          .toList(),
-                    ],
-                    if (mantenimientos.isNotEmpty) ...[
-                      if (trabajos.isNotEmpty) const SizedBox(height: 16),
-                      Text(
-                        '${mantenimientos.length} mantenimiento${mantenimientos.length > 1 ? 's' : ''} próximo${mantenimientos.length > 1 ? 's' : ''}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ...mantenimientos
-                          .map((mantenimiento) =>
-                              _buildMantenimientoCard(mantenimiento))
-                          .toList(),
-                    ],
-                  ],
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cerrar el modal primero
-                _navegarAFormularioMantenimiento(fecha);
-              },
-              icon: const Icon(Icons.build, size: 18),
-              label: const Text('Agregar Mantenimiento'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.yellow[600],
-                foregroundColor: Colors.black87,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cerrar el modal primero
-                _navegarAFormularioTrabajo(fecha);
-              },
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Agregar Trabajo'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(AppConstants.primaryColor),
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-            ),
-          ],
         );
       },
-    );
-  }
-
-  Widget _buildMantenimientoCard(Mantenimiento mantenimiento) {
-    return InkWell(
-      onTap: () => _navegarADetallesMantenimiento(mantenimiento),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.yellow.withOpacity(0.05),
+          color: color.withOpacity(0.04),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.yellow.withOpacity(0.2),
-            width: 1,
-          ),
+          border: Border.all(color: color.withOpacity(0.12)),
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.build,
-              color: Colors.yellow[600],
-              size: 20,
+            Container(
+              width: 4,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1328,412 +1404,71 @@ class _OptimizedDashboardScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    mantenimiento.descripcion,
+                    '${trabajo.tipo} · ${trabajo.cultivo}',
                     style: const TextStyle(
-                      fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
-                    'Estado: ${mantenimiento.estado}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    trabajo.estado ?? 'Pendiente',
+                    style: TextStyle(fontSize: 12, color: color),
                   ),
-                  if (mantenimiento.costoTotal != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      'Costo: \$${mantenimiento.costoTotal!.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
+            Icon(Icons.chevron_right_rounded,
+                color: AppTheme.textHint, size: 20),
           ],
         ),
       ),
     );
   }
 
-  void _navegarADetallesMantenimiento(Mantenimiento mantenimiento) {
-    // TODO: Implementar navegación a detalles de mantenimiento
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text('Detalles de mantenimiento: ${mantenimiento.descripcion}'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  /// Navega al formulario de mantenimientos con fecha preestablecida
-  void _navegarAFormularioMantenimiento(DateTime fecha) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MantenimientoFormScreen(fechaInicial: fecha),
-      ),
-    );
-  }
-
-  /// Navega al formulario de trabajos con fecha preestablecida
-  void _navegarAFormularioTrabajo(DateTime fecha) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TrabajoFormScreen(fechaInicial: fecha),
-      ),
-    );
-  }
-
-  Widget _buildTrabajoCard(Trabajo trabajo) {
-    // Determinar color según el estado
-    Color cardColor = Colors.grey.withOpacity(0.05);
-    Color borderColor = Colors.grey.withOpacity(0.2);
-    Color iconColor = Colors.grey;
-
-    final estado = trabajo.estado?.toLowerCase() ?? '';
-    if (estado == 'pendiente' || estado == 'programado') {
-      cardColor = Colors.blue.withOpacity(0.05);
-      borderColor = Colors.blue.withOpacity(0.2);
-      iconColor = Colors.blue;
-    } else if (estado == 'en curso' || estado == 'en_progreso') {
-      cardColor = Colors.orange.withOpacity(0.05);
-      borderColor = Colors.orange.withOpacity(0.2);
-      iconColor = Colors.orange;
-    } else if (estado == 'completado' || estado == 'finalizado') {
-      cardColor = Colors.green.withOpacity(0.05);
-      borderColor = Colors.green.withOpacity(0.2);
-      iconColor = Colors.green;
-    }
-
-    return InkWell(
-      onTap: () => _navegarADetallesTrabajo(trabajo),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.work,
-                  color: iconColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${trabajo.tipo} - ${trabajo.cultivo}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (trabajo.cliente != null) ...[
-              Row(
-                children: [
-                  Icon(
-                    Icons.person,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Cliente: ${trabajo.cliente}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-            ] else ...[
-              Row(
-                children: [
-                  Icon(
-                    Icons.home,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Trabajo propio',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-            ],
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.landscape,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Campo ID: ${trabajo.idCampo}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Inicio: ${DateFormat('HH:mm').format(trabajo.fechaInicio)}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            if (trabajo.fechaFin != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Fin: ${DateFormat('HH:mm').format(trabajo.fechaFin!)}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (trabajo.observaciones != null &&
-                trabajo.observaciones!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                trabajo.observaciones!,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: 13,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-            // Estado del trabajo
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: iconColor,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Estado: ${trabajo.estado ?? 'Sin estado'}',
-                  style: TextStyle(
-                    color: iconColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLeyendaColores() {
+  Widget _buildDayMantenimientoItem(Mantenimiento m) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        color: AppTheme.warning.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.warning.withOpacity(0.12)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildLeyendaItem(Colors.blue, 'Pendientes'),
-          _buildLeyendaItem(Colors.orange, 'En Curso'),
-          _buildLeyendaItem(Colors.green, 'Completados'),
+          Container(
+            width: 4,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.warning,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  m.descripcion,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Mantenimiento · ${m.estado}',
+                  style:
+                      const TextStyle(fontSize: 12, color: AppTheme.warning),
+                ),
+              ],
+            ),
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLeyendaItem(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[700],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _navegarADetallesTrabajo(Trabajo trabajo) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TrabajoDetailScreen(trabajo: trabajo),
-      ),
-    );
-  }
-
-  void _onDaySelected(DateTime dia) {
-    final fechaNormalizada = DateTime(dia.year, dia.month, dia.day);
-    final trabajosDelDia = _trabajosPorFecha[fechaNormalizada] ?? [];
-    final mantenimientosDelDia =
-        _mantenimientosPorFecha[fechaNormalizada] ?? [];
-
-    _mostrarDetallesTrabajosYMantenimientos(
-        context, trabajosDelDia, mantenimientosDelDia, dia);
-  }
-
-  /// Muestra el calendario completo en un diálogo modal
-  void _showFullCalendarModal(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          final mesActual =
-              DateFormat('MMMM yyyy', 'es_ES').format(_focusedDay);
-
-          return Dialog(
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        mesActual[0].toUpperCase() + mesActual.substring(1),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1C1C1E),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildLeyendaColores(),
-                  const SizedBox(height: 16),
-                  TableCalendar<Trabajo>(
-                    firstDay:
-                        DateTime.now().subtract(const Duration(days: 365)),
-                    lastDay: DateTime.now().add(const Duration(days: 365)),
-                    focusedDay: _focusedDay,
-                    calendarFormat: CalendarFormat.month,
-                    headerVisible: true,
-                    headerStyle: const HeaderStyle(
-                      formatButtonVisible: false,
-                      titleCentered: true,
-                    ),
-                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                    onDaySelected: (selectedDay, focusedDay) {
-                      setModalState(() {
-                        _selectedDay = selectedDay;
-                        _focusedDay = focusedDay;
-                      });
-                      _onDaySelected(selectedDay);
-                    },
-                    onPageChanged: (focusedDay) {
-                      setModalState(() {
-                        _focusedDay = focusedDay;
-                      });
-                    },
-                    eventLoader: (day) {
-                      final fechaNormalizada =
-                          DateTime(day.year, day.month, day.day);
-                      return _trabajosPorFecha[fechaNormalizada] ?? [];
-                    },
-                    calendarBuilders: CalendarBuilders(
-                      defaultBuilder: (context, day, focusedDay) {
-                        return _buildDayCell(day, focusedDay);
-                      },
-                      selectedBuilder: (context, day, focusedDay) {
-                        return _buildDayCell(day, focusedDay, isSelected: true);
-                      },
-                      todayBuilder: (context, day, focusedDay) {
-                        return _buildDayCell(day, focusedDay, isToday: true);
-                      },
-                    ),
-                    calendarStyle: const CalendarStyle(
-                      outsideDaysVisible: false,
-                      markersMaxCount: 0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

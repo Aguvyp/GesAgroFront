@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/costo.dart';
+import '../../themes/app_theme.dart';
 import '../forms/costo_form_screen.dart';
 import 'costos_list_screen.dart';
 import 'costos_resumen_screen.dart';
 import 'costos_categoria_screen.dart';
 
-/// Pantalla principal de costos con menú
+/// Pantalla principal de finanzas
 class CostosMainScreen extends ConsumerStatefulWidget {
   final bool showAppBar;
-
   const CostosMainScreen({Key? key, this.showAppBar = false}) : super(key: key);
 
   @override
@@ -18,8 +18,7 @@ class CostosMainScreen extends ConsumerStatefulWidget {
 }
 
 class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _selectedIndex = 0;
+  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -31,65 +30,122 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final body = _getBody();
-
-    if (widget.showAppBar) {
-      return Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF1C1C1E),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: body,
-        floatingActionButton: _selectedIndex == 1 || _selectedIndex == 0
-            ? FloatingActionButton(
-                onPressed: () => _navigateToFormulario(),
-                backgroundColor: const Color(0xFF2E7D32),
-                child: const Icon(Icons.add),
-              )
-            : null,
-      );
-    }
-
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: CustomScrollView(
-        slivers: [
-          // AppBar moderno estilo iOS
-          SliverAppBar(
-            expandedHeight: 56,
-            floating: false,
-            pinned: true,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            toolbarHeight: 56,
-            flexibleSpace: const FlexibleSpaceBar(
-              centerTitle: false,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: body,
-          ),
-        ],
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // ── Header ──
+            if (widget.showAppBar)
+              _buildBackHeader()
+            else
+              _buildInlineHeader(),
+
+            // ── Tab bar ──
+            _buildTabBar(),
+
+            // ── Content ──
+            Expanded(child: _getBody()),
+          ],
+        ),
       ),
-      floatingActionButton: _selectedIndex == 1 || _selectedIndex == 0
+      floatingActionButton: _selectedTab == 0 || _selectedTab == 1
           ? FloatingActionButton(
               onPressed: () => _navigateToFormulario(),
-              backgroundColor: const Color(0xFF2E7D32),
-              child: const Icon(Icons.add),
+              elevation: 2,
+              child: const Icon(Icons.add_rounded, size: 28),
             )
           : null,
     );
   }
 
+  Widget _buildBackHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 16, 0),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Text(
+            'Finanzas',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInlineHeader() {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(20, 8, 20, 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Finanzas',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.8,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    final tabs = ['Resumen', 'Movimientos', 'Análisis', 'Categorías'];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: SizedBox(
+        height: 36,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: tabs.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 6),
+          itemBuilder: (context, index) {
+            final isActive = _selectedTab == index;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedTab = index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isActive ? AppTheme.primary : AppTheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isActive
+                        ? AppTheme.primary
+                        : AppTheme.border,
+                  ),
+                ),
+                child: Text(
+                  tabs[index],
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isActive ? Colors.white : AppTheme.textSecondary,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _getBody() {
-    switch (_selectedIndex) {
+    switch (_selectedTab) {
       case 0:
         return _buildDashboard();
       case 1:
@@ -103,244 +159,55 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
     }
   }
 
+  // ════════════════════════════════════════════════
+  //  DASHBOARD TAB
+  // ════════════════════════════════════════════════
+
   Widget _buildDashboard() {
     final costosState = ref.watch(costosProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.read(costosProvider.notifier).loadCostos();
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
-          // Botones de navegación de finanzas (arriba, más pequeños)
-          _buildNavigationButtons(),
-          const SizedBox(height: 16),
+          // ── Quick actions ──
+          _buildQuickActions(),
+          const SizedBox(height: 20),
 
-          // Accesos rápidos (más pequeños)
-          _buildQuickAccessButtons(),
-          const SizedBox(height: 24),
+          // ── Balance card ──
+          _buildBalanceCard(costosState),
+          const SizedBox(height: 20),
 
-          // Resumen rápido
-          _buildResumenRapido(costosState),
-          const SizedBox(height: 24),
-
-          // Movimientos recientes
-          _buildMovimientosRecientes(costosState),
+          // ── Recent movements ──
+          _buildRecentMovements(costosState),
         ],
       ),
     );
   }
 
-  Widget _buildNavigationButtons() {
+  Widget _buildQuickActions() {
     return Row(
       children: [
         Expanded(
-          child: _buildNavButton(
-            'Movimientos',
-            Icons.list,
-            () {
-              setState(() {
-                _selectedIndex = 1;
-              });
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildNavButton(
-            'Resumen',
-            Icons.analytics,
-            () {
-              setState(() {
-                _selectedIndex = 2;
-              });
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildNavButton(
-            'Categorías',
-            Icons.category,
-            () {
-              setState(() {
-                _selectedIndex = 3;
-              });
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNavButton(String label, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFF2E7D32)),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF2E7D32),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResumenRapido(BaseState state) {
-    if (state is! LoadedState<List<Costo>>) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
-
-    final costos = state.data;
-    final gastos = costos.where((c) => !c.esCobro).toList();
-    final cobros = costos.where((c) => c.esCobro).toList();
-
-    final totalGastos = gastos.fold(0.0, (sum, c) => sum + c.monto);
-    final totalCobros = cobros.fold(0.0, (sum, c) => sum + c.monto);
-    final balance = totalCobros - totalGastos;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Resumen Rápido',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildResumenCard(
-                    'Gastos',
-                    totalGastos,
-                    Colors.red,
-                    Icons.call_made,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildResumenCard(
-                    'Cobros',
-                    totalCobros,
-                    Colors.green,
-                    Icons.call_received,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: balance >= 0
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Balance',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    '\$${balance.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: balance >= 0 ? Colors.green : Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResumenCard(
-      String title, double amount, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '\$${amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickAccessButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildQuickAccessButton(
+          child: _buildQuickActionBtn(
             'Nuevo Gasto',
-            Icons.call_made,
-            Colors.red,
+            Icons.arrow_upward_rounded,
+            AppTheme.error,
             () => _navigateToFormulario(esCobro: false),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
-          child: _buildQuickAccessButton(
+          child: _buildQuickActionBtn(
             'Nuevo Cobro',
-            Icons.call_received,
-            Colors.green,
+            Icons.arrow_downward_rounded,
+            const Color(0xFF16A34A),
             () => _navigateToFormulario(esCobro: true),
           ),
         ),
@@ -348,156 +215,321 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
     );
   }
 
-  Widget _buildQuickAccessButton(
-      String title, IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
+  Widget _buildQuickActionBtn(
+      String label, IconData icon, Color color, VoidCallback onTap) {
+    return Material(
+      color: color.withOpacity(0.06),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.15)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMovimientosRecientes(BaseState state) {
-    if (state is LoadingState || state is InitialState) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: CircularProgressIndicator()),
+  Widget _buildBalanceCard(BaseState state) {
+    if (state is! LoadedState<List<Costo>>) {
+      return Container(
+        height: 140,
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
       );
     }
+
+    final costos = state.data;
+    final gastos = costos.where((c) => !c.esCobro).toList();
+    final cobros = costos.where((c) => c.esCobro).toList();
+    final totalGastos = gastos.fold(0.0, (sum, c) => sum + c.monto);
+    final totalCobros = cobros.fold(0.0, (sum, c) => sum + c.monto);
+    final balance = totalCobros - totalGastos;
+    final isPositive = balance >= 0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Balance general',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${isPositive ? '+' : ''}\$${balance.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: isPositive ? const Color(0xFF16A34A) : AppTheme.error,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildBalanceMetric(
+                  'Cobros',
+                  '+\$${totalCobros.toStringAsFixed(0)}',
+                  const Color(0xFF16A34A),
+                  Icons.arrow_downward_rounded,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildBalanceMetric(
+                  'Gastos',
+                  '-\$${totalGastos.toStringAsFixed(0)}',
+                  AppTheme.error,
+                  Icons.arrow_upward_rounded,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceMetric(
+      String label, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentMovements(BaseState state) {
+    if (state is LoadingState || state is InitialState) {
+      return Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
     if (state is ErrorState) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Center(child: Text('Error: ${state.message}')),
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline_rounded,
+                size: 36, color: AppTheme.textHint),
+            const SizedBox(height: 10),
+            Text(
+              'Error: ${state.message}',
+              style: const TextStyle(
+                  color: AppTheme.textSecondary, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => ref.read(costosProvider.notifier).loadCostos(),
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Reintentar'),
+            ),
+          ],
         ),
       );
     }
 
     final costos = (state as LoadedState<List<Costo>>).data;
     if (costos.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(Icons.receipt_long, size: 48, color: Colors.grey[400]),
-              const SizedBox(height: 8),
-              Text(
-                'No hay movimientos',
-                style: TextStyle(color: Colors.grey[600]),
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.06),
+                shape: BoxShape.circle,
               ),
-            ],
-          ),
+              child: const Icon(Icons.receipt_long_outlined,
+                  size: 32, color: AppTheme.primary),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Sin movimientos',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Registrá tu primer gasto o cobro',
+              style: TextStyle(
+                  fontSize: 13, color: AppTheme.textSecondary),
+            ),
+          ],
         ),
       );
     }
 
-    // Ordenar por fecha (más recientes primero)
-    final sortedCostos = List<Costo>.from(costos)
+    final sorted = List<Costo>.from(costos)
       ..sort((a, b) => b.fecha.compareTo(a.fecha));
-    final recentCostos = sortedCostos.take(10).toList();
+    final recent = sorted.take(8).toList();
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
             child: Row(
               children: [
                 const Text(
-                  'Movimientos Recientes',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  'Movimientos recientes',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = 1;
-                    });
-                  },
-                  child: const Text('Ver todos'),
+                  onPressed: () => setState(() => _selectedTab = 1),
+                  child: const Text('Ver todos',
+                      style: TextStyle(fontSize: 13)),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          ...recentCostos.map((costo) => _buildMovimientoItem(costo)),
+          ...recent.map((costo) => _buildMovementRow(costo)),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  Widget _buildMovimientoItem(Costo costo) {
+  Widget _buildMovementRow(Costo costo) {
     final isCobro = costo.esCobro;
-    final color = isCobro ? Colors.green : Colors.red;
-    final icon = isCobro ? Icons.call_received : Icons.call_made;
-    final tipoTexto = isCobro ? 'COBRO' : 'GASTO';
+    final color = isCobro ? const Color(0xFF16A34A) : AppTheme.error;
+    final icon = isCobro
+        ? Icons.arrow_downward_rounded
+        : Icons.arrow_upward_rounded;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Indicador de tipo (cobro/gasto)
+          // Icon
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: color.withOpacity(0.3)),
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  tipoTexto,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+            child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
-          // Descripción
+          // Description
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -507,52 +539,52 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: AppTheme.textPrimary,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (costo.categoria != null) ...[
-                  const SizedBox(height: 2),
+                if (costo.categoria != null)
                   Text(
                     costo.categoria!,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: AppTheme.textHint,
                     ),
                   ),
-                ],
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          // Importe
+          const SizedBox(width: 8),
+          // Amount + status
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isCobro ? '+' : '-'}\$${costo.monto.toStringAsFixed(2)}',
+                '${isCobro ? '+' : '-'}\$${costo.monto.toStringAsFixed(0)}',
                 style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                   color: color,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: costo.pagado
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.orange.withOpacity(0.2),
+                  color: (costo.pagado ? const Color(0xFF16A34A) : AppTheme.warning)
+                      .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   costo.pagado ? 'Pagado' : 'Pendiente',
                   style: TextStyle(
                     fontSize: 10,
-                    color:
-                        costo.pagado ? Colors.green[700] : Colors.orange[700],
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    color: costo.pagado
+                        ? const Color(0xFF16A34A)
+                        : AppTheme.warning,
                   ),
                 ),
               ),

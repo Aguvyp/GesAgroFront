@@ -158,6 +158,12 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
     }
   }
 
+  /// Deduplicates a list of Maquina by id to prevent DropdownButtonFormField assertion errors
+  List<Maquina> _deduplicateMaquinas(List<Maquina> list) {
+    final seen = <int?>{};
+    return list.where((m) => seen.add(m.id)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -232,7 +238,7 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                               prefixIcon: Icon(Icons.build),
                             ),
                             value: _maquinaSeleccionada,
-                            items: _maquinas.map((Maquina maquina) {
+                            items: _deduplicateMaquinas(_maquinas).map((Maquina maquina) {
                               return DropdownMenuItem<Maquina>(
                                 value: maquina,
                                 child: Text('${maquina.nombre} - ${maquina.modelo}'),

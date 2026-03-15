@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:auto_size_text/auto_size_text.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import '../themes/app_theme.dart';
 
-/// Widget de carga ultra optimizado con shimmer
+/// Widget de carga simple
 class OptimizedLoadingWidget extends ConsumerWidget {
   final String? message;
   final double? size;
   final Color? color;
 
-  const OptimizedLoadingWidget({
-    Key? key,
-    this.message,
-    this.size,
-    this.color,
-  }) : super(key: key);
+  const OptimizedLoadingWidget({Key? key, this.message, this.size, this.color})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,31 +18,22 @@ class OptimizedLoadingWidget extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
-            width: size ?? 50,
-            height: size ?? 50,
+            width: size ?? 32,
+            height: size ?? 32,
             child: CircularProgressIndicator(
-              strokeWidth: 3,
+              strokeWidth: 2.5,
               valueColor: AlwaysStoppedAnimation<Color>(
-                color ?? Theme.of(context).primaryColor,
+                color ?? AppTheme.primary,
               ),
             ),
-          )
-              .animate()
-              .fadeIn(duration: 300.ms)
-              .scale(delay: 100.ms, duration: 300.ms),
+          ),
           if (message != null) ...[
             const SizedBox(height: 16),
-            AutoSizeText(
+            Text(
               message!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-              ),
+              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
               textAlign: TextAlign.center,
-              maxLines: 2,
-            )
-                .animate()
-                .fadeIn(delay: 200.ms, duration: 300.ms)
-                .slideY(begin: 0.2, end: 0, delay: 200.ms, duration: 300.ms),
+            ),
           ],
         ],
       ),
@@ -57,7 +41,7 @@ class OptimizedLoadingWidget extends ConsumerWidget {
   }
 }
 
-/// Widget de shimmer para listas
+/// Shimmer para listas
 class OptimizedShimmerList extends StatelessWidget {
   final int itemCount;
   final double itemHeight;
@@ -66,34 +50,30 @@ class OptimizedShimmerList extends StatelessWidget {
   const OptimizedShimmerList({
     Key? key,
     this.itemCount = 5,
-    this.itemHeight = 80,
+    this.itemHeight = 72,
     this.padding,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: ListView.builder(
-        padding: padding,
-        itemCount: itemCount,
-        itemBuilder: (context, index) {
-          return Container(
-            height: itemHeight,
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: padding ?? const EdgeInsets.all(16),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        return Container(
+          height: itemHeight,
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.border.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(14),
+          ),
+        );
+      },
     );
   }
 }
 
-/// Widget de error ultra optimizado
+/// Widget de error
 class OptimizedErrorWidget extends ConsumerWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -112,47 +92,32 @@ class OptimizedErrorWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              icon ?? Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error.withOpacity(0.7),
-            )
-                .animate()
-                .fadeIn(duration: 500.ms)
-                .scale(delay: 100.ms, duration: 400.ms),
-            const SizedBox(height: 24),
-            AutoSizeText(
+              icon ?? Icons.error_outline_rounded,
+              size: 48,
+              color: AppTheme.textHint,
+            ),
+            const SizedBox(height: 16),
+            Text(
               message,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.w600,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
-              maxLines: 3,
-            )
-                .animate()
-                .fadeIn(delay: 200.ms, duration: 400.ms)
-                .slideY(begin: 0.3, end: 0, delay: 200.ms, duration: 400.ms),
+            ),
             if (onRetry != null) ...[
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: Text(retryText ?? 'Reintentar'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              )
-                  .animate()
-                  .fadeIn(delay: 400.ms, duration: 300.ms)
-                  .slideY(begin: 0.2, end: 0, delay: 400.ms, duration: 300.ms),
+              ),
             ],
           ],
         ),
@@ -161,7 +126,7 @@ class OptimizedErrorWidget extends ConsumerWidget {
   }
 }
 
-/// Widget de estado vacío ultra optimizado
+/// Widget de estado vacío
 class OptimizedEmptyWidget extends StatelessWidget {
   final String message;
   final String? subtitle;
@@ -180,51 +145,39 @@ class OptimizedEmptyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon ?? Icons.inbox_outlined,
-              size: 80,
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
-            )
-                .animate()
-                .fadeIn(duration: 600.ms)
-                .scale(delay: 200.ms, duration: 400.ms),
-            const SizedBox(height: 24),
-            AutoSizeText(
+              size: 56,
+              color: AppTheme.textHint,
+            ),
+            const SizedBox(height: 16),
+            Text(
               message,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: const TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                color: AppTheme.textPrimary,
               ),
               textAlign: TextAlign.center,
-              maxLines: 2,
-            )
-                .animate()
-                .fadeIn(delay: 400.ms, duration: 400.ms)
-                .slideY(begin: 0.2, end: 0, delay: 400.ms, duration: 400.ms),
+            ),
             if (subtitle != null) ...[
-              const SizedBox(height: 12),
-              AutoSizeText(
+              const SizedBox(height: 6),
+              Text(
                 subtitle!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textSecondary,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 3,
-              )
-                  .animate()
-                  .fadeIn(delay: 600.ms, duration: 400.ms)
-                  .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 400.ms),
+              ),
             ],
             if (action != null) ...[
-              const SizedBox(height: 32),
-              action!
-                  .animate()
-                  .fadeIn(delay: 800.ms, duration: 300.ms)
-                  .slideY(begin: 0.2, end: 0, delay: 800.ms, duration: 300.ms),
+              const SizedBox(height: 24),
+              action!,
             ],
           ],
         ),
@@ -233,7 +186,7 @@ class OptimizedEmptyWidget extends StatelessWidget {
   }
 }
 
-/// Widget de tarjeta ultra optimizado
+/// Tarjeta simple
 class OptimizedCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -253,44 +206,34 @@ class OptimizedCard extends StatelessWidget {
     this.elevation,
     this.borderRadius,
     this.onTap,
-    this.enableAnimation = true,
+    this.enableAnimation = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final card = Container(
-      margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return Container(
+      margin: margin ?? const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: color ?? Colors.white,
-        borderRadius: borderRadius ?? BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.1),
-          width: 0.5,
-        ),
+        color: color ?? AppTheme.surface,
+        borderRadius: borderRadius ?? BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border, width: 1),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: borderRadius ?? BorderRadius.circular(16),
+          borderRadius: borderRadius ?? BorderRadius.circular(14),
           child: Padding(
-            padding: padding ?? const EdgeInsets.all(16),
+            padding: padding ?? const EdgeInsets.all(14),
             child: child,
           ),
         ),
       ),
     );
-
-    if (!enableAnimation) return card;
-
-    return card
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 0.1, end: 0, duration: 300.ms);
   }
 }
 
-/// Widget de botón ultra optimizado
+/// Botón simple
 class OptimizedButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -313,45 +256,35 @@ class OptimizedButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final button = SizedBox(
+    return SizedBox(
       width: isFullWidth ? double.infinity : null,
+      height: 50,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: style ??
-            ElevatedButton.styleFrom(
-              elevation: 0,
-              shadowColor: Colors.transparent,
-              padding: padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+        style: style,
         child: isLoading
-            ? SizedBox(
-                height: 20,
-                width: 20,
+            ? const SizedBox(
+                height: 20, width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.onPrimary,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon),
+                    Icon(icon, size: 20),
                     const SizedBox(width: 8),
                   ],
                   Flexible(
-                    child: AutoSizeText(
+                    child: Text(
                       text,
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 17,
-                        letterSpacing: -0.41,
+                        fontSize: 16,
                       ),
                     ),
                   ),
@@ -359,15 +292,10 @@ class OptimizedButton extends StatelessWidget {
               ),
       ),
     );
-
-    return button
-        .animate()
-        .fadeIn(duration: 200.ms)
-        .scale(delay: 100.ms, duration: 200.ms);
   }
 }
 
-/// Widget de campo de texto ultra optimizado
+/// Campo de texto simple
 class OptimizedTextField extends StatefulWidget {
   final String? label;
   final String? hint;
@@ -414,20 +342,15 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
   void initState() {
     super.initState();
     _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
+    _focusNode.addListener(() {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    });
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    setState(() {
-      _isFocused = _focusNode.hasFocus;
-    });
   }
 
   @override
@@ -437,15 +360,13 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
       children: [
         if (widget.label != null) ...[
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: 6, left: 2),
             child: Text(
               widget.label!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
                 fontSize: 13,
-                color: _isFocused
-                    ? Theme.of(context).primaryColor
-                    : const Color(0xFF8E8E93),
+                color: _isFocused ? AppTheme.primary : AppTheme.textSecondary,
               ),
             ),
           ),
@@ -462,68 +383,11 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
           maxLines: widget.maxLines,
           maxLength: widget.maxLength,
           enabled: widget.enabled,
-          style: const TextStyle(
-            fontSize: 17,
-            color: Color(0xFF1C1C1E),
-          ),
+          style: const TextStyle(fontSize: 15, color: AppTheme.textPrimary),
           decoration: InputDecoration(
             hintText: widget.hint,
-            hintStyle: const TextStyle(
-              fontSize: 17,
-              color: Color(0xFF8E8E93),
-            ),
-            prefixIcon: widget.prefixIcon != null
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: widget.prefixIcon,
-                  )
-                : null,
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 44,
-              minHeight: 44,
-            ),
+            prefixIcon: widget.prefixIcon,
             suffixIcon: widget.suffixIcon,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.grey.withOpacity(0.2),
-                width: 0.5,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.grey.withOpacity(0.2),
-                width: 0.5,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF2E7D32),
-                width: 2,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFFF3B30),
-                width: 0.5,
-              ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFFF3B30),
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: widget.enabled
-                ? Colors.white
-                : Theme.of(context).disabledColor.withOpacity(0.1),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            isDense: true,
           ),
         ),
       ],
@@ -531,7 +395,7 @@ class _OptimizedTextFieldState extends State<OptimizedTextField> {
   }
 }
 
-/// Widget de lista animada ultra optimizado
+/// Lista animada simple
 class OptimizedAnimatedList extends StatelessWidget {
   final List<Widget> children;
   final EdgeInsetsGeometry? padding;
@@ -548,30 +412,17 @@ class OptimizedAnimatedList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimationLimiter(
-      child: ListView.builder(
-        padding: padding,
-        physics: physics,
-        shrinkWrap: shrinkWrap,
-        itemCount: children.length,
-        itemBuilder: (context, index) {
-          return AnimationConfiguration.staggeredList(
-            position: index,
-            duration: const Duration(milliseconds: 375),
-            child: SlideAnimation(
-              verticalOffset: 50.0,
-              child: FadeInAnimation(
-                child: children[index],
-              ),
-            ),
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: padding,
+      physics: physics,
+      shrinkWrap: shrinkWrap,
+      itemCount: children.length,
+      itemBuilder: (context, index) => children[index],
     );
   }
 }
 
-/// Widget de grid animado ultra optimizado
+/// Grid simple
 class OptimizedAnimatedGrid extends StatelessWidget {
   final List<Widget> children;
   final int crossAxisCount;
@@ -594,65 +445,47 @@ class OptimizedAnimatedGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimationLimiter(
-      child: GridView.builder(
-        padding: padding,
-        physics: physics,
-        shrinkWrap: shrinkWrap,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: crossAxisSpacing,
-          mainAxisSpacing: mainAxisSpacing,
-        ),
-        itemCount: children.length,
-        itemBuilder: (context, index) {
-          return AnimationConfiguration.staggeredGrid(
-            position: index,
-            duration: const Duration(milliseconds: 375),
-            columnCount: crossAxisCount,
-            child: ScaleAnimation(
-              child: FadeInAnimation(
-                child: children[index],
-              ),
-            ),
-          );
-        },
+    return GridView.builder(
+      padding: padding,
+      physics: physics,
+      shrinkWrap: shrinkWrap,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: crossAxisSpacing,
+        mainAxisSpacing: mainAxisSpacing,
       ),
+      itemCount: children.length,
+      itemBuilder: (context, index) => children[index],
     );
   }
 }
 
-/// Widget de snackbar ultra optimizado
+/// Snackbar helper
 class OptimizedSnackBar {
   static void show(
     BuildContext context, {
     required String message,
     String? actionLabel,
     VoidCallback? onAction,
-    Duration duration = const Duration(seconds: 4),
+    Duration duration = const Duration(seconds: 3),
     Color? backgroundColor,
-    Color? textColor,
   }) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: AutoSizeText(
+        content: Text(
           message,
-          style: TextStyle(
-            color: textColor ?? Theme.of(context).colorScheme.onError,
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: 2,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 14),
         ),
-        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.error,
+        backgroundColor: backgroundColor ?? AppTheme.textPrimary,
         duration: duration,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
         action: actionLabel != null && onAction != null
             ? SnackBarAction(
                 label: actionLabel,
-                textColor: textColor ?? Theme.of(context).colorScheme.onError,
+                textColor: Colors.white,
                 onPressed: onAction,
               )
             : null,
@@ -660,48 +493,15 @@ class OptimizedSnackBar {
     );
   }
 
-  static void showSuccess(
-    BuildContext context, {
-    required String message,
-    String? actionLabel,
-    VoidCallback? onAction,
-  }) {
-    show(
-      context,
-      message: message,
-      actionLabel: actionLabel,
-      onAction: onAction,
-      backgroundColor: Colors.green,
-    );
+  static void showSuccess(BuildContext context, {required String message}) {
+    show(context, message: message, backgroundColor: AppTheme.success);
   }
 
-  static void showError(
-    BuildContext context, {
-    required String message,
-    String? actionLabel,
-    VoidCallback? onAction,
-  }) {
-    show(
-      context,
-      message: message,
-      actionLabel: actionLabel,
-      onAction: onAction,
-      backgroundColor: Theme.of(context).colorScheme.error,
-    );
+  static void showError(BuildContext context, {required String message}) {
+    show(context, message: message, backgroundColor: AppTheme.error);
   }
 
-  static void showInfo(
-    BuildContext context, {
-    required String message,
-    String? actionLabel,
-    VoidCallback? onAction,
-  }) {
-    show(
-      context,
-      message: message,
-      actionLabel: actionLabel,
-      onAction: onAction,
-      backgroundColor: Theme.of(context).primaryColor,
-    );
+  static void showInfo(BuildContext context, {required String message}) {
+    show(context, message: message, backgroundColor: AppTheme.info);
   }
 }

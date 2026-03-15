@@ -1466,7 +1466,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 child: Text('No hay clientes disponibles'),
               )
             else
-              ..._clientes.map((cliente) {
+              ..._deduplicateClientes(_clientes).map((cliente) {
                 return DropdownMenuItem<dynamic>(
                   value: cliente,
                   child: Text(
@@ -1557,7 +1557,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 child: Text('No hay campos disponibles'),
               )
             else
-              ...camposParaMostrar.map((campo) {
+              ..._deduplicateCampos(camposParaMostrar).map((campo) {
                 return DropdownMenuItem<dynamic>(
                   value: campo,
                   child: Text(
@@ -1592,6 +1592,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<dynamic>(
+          key: ValueKey('maquina_selector_${_maquinasSeleccionadas.map((m) => m.id).join('_')}'),
           decoration: const InputDecoration(
             labelText: 'Agregar Máquina',
             border: OutlineInputBorder(),
@@ -1631,8 +1632,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 child: Text('No hay máquinas disponibles'),
               )
             else
-              ..._maquinas
+              ..._deduplicateMaquinas(_maquinas
                   .where((m) => !_maquinasSeleccionadas.contains(m))
+                  .toList())
                   .map((maquina) {
                 return DropdownMenuItem<dynamic>(
                   value: maquina,
@@ -1677,11 +1679,36 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
     );
   }
 
+  /// Deduplicates a list of Personal by id to prevent DropdownButtonFormField assertion errors
+  List<Personal> _deduplicatePersonal(List<Personal> list) {
+    final seen = <int?>{};
+    return list.where((p) => seen.add(p.id)).toList();
+  }
+
+  /// Deduplicates a list of Maquina by id to prevent DropdownButtonFormField assertion errors
+  List<Maquina> _deduplicateMaquinas(List<Maquina> list) {
+    final seen = <int?>{};
+    return list.where((m) => seen.add(m.id)).toList();
+  }
+
+  /// Deduplicates a list of Cliente by id
+  List<Cliente> _deduplicateClientes(List<Cliente> list) {
+    final seen = <int?>{};
+    return list.where((c) => seen.add(c.id)).toList();
+  }
+
+  /// Deduplicates a list of Campo by id
+  List<Campo> _deduplicateCampos(List<Campo> list) {
+    final seen = <int?>{};
+    return list.where((c) => seen.add(c.id)).toList();
+  }
+
   Widget _buildPersonalSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<dynamic>(
+          key: ValueKey('personal_selector_${_personalSeleccionado.map((p) => p.id).join('_')}'),
           decoration: const InputDecoration(
             labelText: 'Agregar Operario',
             border: OutlineInputBorder(),
@@ -1720,9 +1747,10 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 child: Text('No hay operarios disponibles'),
               )
             else
-              ..._personal
+              ..._deduplicatePersonal(_personal
                   .where((p) => !_personalSeleccionado
                       .any((selected) => selected.id == p.id))
+                  .toList())
                   .map((persona) {
                 return DropdownMenuItem<dynamic>(
                   value: persona,

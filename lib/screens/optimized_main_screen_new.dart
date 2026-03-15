@@ -2,15 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'optimized_screens.dart';
 import 'optimized_dashboard_screen.dart';
-
-// import 'finanzas/optimized_finanzas_screens.dart'; // Oculto temporalmente
-import 'mantenimientos/optimized_mantenimientos_screen.dart';
-import 'reportes/optimized_reportes_screen.dart';
-import 'test_connection_screen.dart';
-import 'test_screen.dart';
-import 'personal/personal_list_screen.dart';
-import 'clientes/clientes_list_screen.dart';
-import 'maquinas/maquinas_list_screen.dart';
 import 'costos/costos_main_screen.dart';
 import 'forms/trabajo_form_screen.dart';
 import 'forms/maquina_form_screen.dart';
@@ -19,8 +10,16 @@ import 'forms/mantenimiento_form_screen.dart';
 import 'forms/cliente_form_screen.dart';
 import 'forms/campo_form_screen.dart';
 import 'forms/costo_form_screen.dart';
+import 'mantenimientos/optimized_mantenimientos_screen.dart';
+import 'reportes/optimized_reportes_screen.dart';
+import 'test_connection_screen.dart';
+import 'test_screen.dart';
+import 'personal/personal_list_screen.dart';
+import 'clientes/clientes_list_screen.dart';
+import 'maquinas/maquinas_list_screen.dart';
 import '../providers/optimized_providers.dart';
 import '../providers/optimized_auth_provider.dart';
+import '../themes/app_theme.dart';
 
 class OptimizedSplashScreen extends ConsumerStatefulWidget {
   const OptimizedSplashScreen({Key? key}) : super(key: key);
@@ -49,27 +48,28 @@ class _OptimizedSplashScreenState extends ConsumerState<OptimizedSplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: AppTheme.primary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.agriculture,
-              size: 100,
-              color: Colors.white,
-            ),
-            const SizedBox(height: 20),
+            const Icon(Icons.agriculture, size: 80, color: Colors.white),
+            const SizedBox(height: 16),
             Text(
               'GesAgro',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            const SizedBox(height: 20),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            const SizedBox(height: 24),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+              ),
             ),
           ],
         ),
@@ -88,9 +88,7 @@ class OptimizedMainScreen extends ConsumerStatefulWidget {
 
 class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
   int _currentIndex = 0;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _pageController;
-
   late final List<Widget> _screens;
 
   @override
@@ -102,11 +100,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
         onNavigateToIndex: (index) {
           setState(() {
             _currentIndex = index;
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
+            _pageController.jumpToPage(index);
           });
         },
       ),
@@ -125,259 +119,77 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDashboard = _currentIndex == 0;
-    final navBackground = Colors.white;
-    final borderColor = Colors.grey.shade200;
-
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF5F5F7), // Light gray background
+      backgroundColor: AppTheme.background,
       body: PageView(
         controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Disable swipe
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (index) => setState(() => _currentIndex = index),
         children: _screens,
       ),
-      floatingActionButtonLocation: isDashboard
-          ? FloatingActionButtonLocation.centerDocked
-          : FloatingActionButtonLocation.endFloat,
-      floatingActionButton: isDashboard
+      floatingActionButton: _currentIndex != 4
           ? FloatingActionButton(
               onPressed: () => _showQuickActionMenu(context),
-              backgroundColor: const Color(0xFF2E7D32),
-              elevation: 4,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.add, color: Colors.white, size: 32),
+              elevation: 2,
+              child: const Icon(Icons.add, size: 28),
             )
           : null,
-      bottomNavigationBar: isDashboard
-          ? _buildDashboardBottomAppBar(
-              theme, colorScheme, navBackground, borderColor)
-          : _buildStandardBottomNavBar(
-              theme, colorScheme, navBackground, borderColor),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          border: Border(
+            top: BorderSide(color: AppTheme.border, width: 1),
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Inicio'),
+                _buildNavItem(1, Icons.landscape_outlined, Icons.landscape_rounded, 'Campos'),
+                _buildNavItem(2, Icons.work_outline_rounded, Icons.work_rounded, 'Trabajos'),
+                _buildNavItem(3, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded, 'Finanzas'),
+                _buildNavItem(4, Icons.menu_rounded, Icons.menu_rounded, 'Más'),
+              ],
+            ),
+          ),
+        ),
+      ),
       resizeToAvoidBottomInset: false,
     );
   }
 
-  /// Menú de acciones rápidas (botón +)
-  void _showQuickActionMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Crear Nuevo',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1C1C1E),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 24,
-              runSpacing: 24,
-              alignment: WrapAlignment.center,
-              children: [
-                _buildQuickActionItem(
-                  icon: Icons.work_outline_rounded,
-                  label: 'Trabajo',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const TrabajoFormScreen()),
-                    );
-                  },
-                ),
-                _buildQuickActionItem(
-                  icon: Icons.agriculture_rounded,
-                  label: 'Máquina',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const MaquinaFormScreen()),
-                    );
-                  },
-                ),
-                _buildQuickActionItem(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Personal',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const PersonalFormScreen()),
-                    );
-                  },
-                ),
-                _buildQuickActionItem(
-                  icon: Icons.build_circle_outlined,
-                  label: 'Mantenimiento',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              const MantenimientoFormScreen()),
-                    );
-                  },
-                ),
-                _buildQuickActionItem(
-                  icon: Icons.people_outline_rounded,
-                  label: 'Cliente',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const ClienteFormScreen()),
-                    );
-                  },
-                ),
-                _buildQuickActionItem(
-                  icon: Icons.landscape_outlined,
-                  label: 'Campo',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const CampoFormScreen()),
-                    );
-                  },
-                ),
-                _buildQuickActionItem(
-                  icon: Icons.attach_money_rounded,
-                  label: 'Gasto/Cobro',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const CostoFormScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionItem({
-    required IconData icon,
-    // required Color color, // Usamos verde unificado
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    const color = Color(0xFF2E7D32);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        width: 80, // Ancho fijo para alineación en Wrap
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12, // User might have many items, smaller text
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Barra inferior con "Notch" para el Dashboard
-  Widget _buildDashboardBottomAppBar(ThemeData theme, ColorScheme colorScheme,
-      Color navBackground, Color borderColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        color: navBackground,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 0),
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+    final isSelected = _currentIndex == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+            _pageController.jumpToPage(index);
+          });
+        },
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              // Left Group
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem(0, Icons.home_rounded, 'Inicio', true),
-                    _buildNavItem(1, Icons.landscape_rounded, 'Campos', false),
-                  ],
-                ),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? activeIcon : icon,
+                color: isSelected ? AppTheme.primary : AppTheme.textHint,
+                size: 24,
               ),
-              // Space for FAB
-              const SizedBox(width: 48),
-              // Right Group
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem(
-                        3, Icons.receipt_long_rounded, 'Finanzas', false),
-                    _buildNavItem(4, Icons.more_horiz_rounded, 'Más', false),
-                  ],
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? AppTheme.primary : AppTheme.textHint,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ],
@@ -387,34 +199,67 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
     );
   }
 
-  Widget _buildNavItem(
-      int index, IconData icon, String label, bool isSelected) {
-    final color = isSelected
-        ? const Color(0xFF2E7D32) // Green for active layout
-        : Colors.grey.withOpacity(0.6);
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-          _pageController.jumpToPage(index);
-        });
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+  void _showQuickActionMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            // Handle
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.border,
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+            const SizedBox(height: 20),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Crear nuevo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 4,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.85,
+              children: [
+                _buildActionItem(context, Icons.work_outline_rounded, 'Trabajo',
+                    () => _navigateToForm(context, const TrabajoFormScreen())),
+                _buildActionItem(context, Icons.agriculture_outlined, 'Máquina',
+                    () => _navigateToForm(context, const MaquinaFormScreen())),
+                _buildActionItem(context, Icons.person_outline_rounded, 'Personal',
+                    () => _navigateToForm(context, const PersonalFormScreen())),
+                _buildActionItem(context, Icons.build_outlined, 'Manten.',
+                    () => _navigateToForm(context, const MantenimientoFormScreen())),
+                _buildActionItem(context, Icons.people_outline_rounded, 'Cliente',
+                    () => _navigateToForm(context, const ClienteFormScreen())),
+                _buildActionItem(context, Icons.landscape_outlined, 'Campo',
+                    () => _navigateToForm(context, const CampoFormScreen())),
+                _buildActionItem(context, Icons.attach_money_rounded, 'Costo',
+                    () => _navigateToForm(context, const CostoFormScreen())),
+              ],
             ),
           ],
         ),
@@ -422,91 +267,40 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen> {
     );
   }
 
-  /// Barra inferior estándar para otras pantallas
-  Widget _buildStandardBottomNavBar(ThemeData theme, ColorScheme colorScheme,
-      Color navBackground, Color borderColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: navBackground,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        border: Border(
-          top: BorderSide(color: borderColor, width: 0.8),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 26,
-            spreadRadius: 2,
-            offset: const Offset(0, -4),
+  void _navigateToForm(BuildContext context, Widget screen) {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  }
+
+  Widget _buildActionItem(
+      BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: AppTheme.primary, size: 24),
           ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 14,
-            offset: const Offset(0, -1),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              color: AppTheme.textPrimary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-              _pageController.animateToPage(
-                index,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: navBackground,
-          selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor ??
-              colorScheme.primary,
-          unselectedItemColor:
-              theme.bottomNavigationBarTheme.unselectedItemColor ??
-                  colorScheme.onSurface.withOpacity(0.6),
-          selectedLabelStyle: theme.bottomNavigationBarTheme.selectedLabelStyle,
-          unselectedLabelStyle:
-              theme.bottomNavigationBarTheme.unselectedLabelStyle,
-          selectedIconTheme: theme.bottomNavigationBarTheme.selectedIconTheme,
-          unselectedIconTheme:
-              theme.bottomNavigationBarTheme.unselectedIconTheme,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded, size: 26),
-              activeIcon: Icon(Icons.home_rounded, size: 28),
-              label: 'Inicio',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.landscape_rounded, size: 26),
-              activeIcon: Icon(Icons.landscape_rounded, size: 28),
-              label: 'Campos',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.work_rounded, size: 26),
-              activeIcon: Icon(Icons.work_rounded, size: 28),
-              label: 'Trabajos',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_rounded, size: 26),
-              activeIcon: Icon(Icons.receipt_long_rounded, size: 28),
-              label: 'Finanzas',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.more_horiz_rounded, size: 26),
-              activeIcon: Icon(Icons.more_horiz_rounded, size: 28),
-              label: 'Más',
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -533,30 +327,11 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
   @override
   Widget build(BuildContext context) {
     final costosState = ref.watch(costosProvider);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Costos'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(costosProvider.notifier).loadCostos();
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Costos')),
       body: _buildCostosList(costosState),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showCostoForm(context);
-        },
+        onPressed: () => _showCostoForm(context),
         child: const Icon(Icons.add),
       ),
     );
@@ -564,91 +339,68 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
 
   Widget _buildCostosList(BaseState state) {
     if (state is LoadingState) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
-
     if (state is ErrorState) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 48, color: AppTheme.textHint),
+            const SizedBox(height: 12),
+            Text('Error: ${state.message}',
+                style: const TextStyle(color: AppTheme.textSecondary)),
             const SizedBox(height: 16),
-            Text('Error: ${state.message}'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(costosProvider.notifier).loadCostos();
-              },
-              child: const Text('Reintentar'),
+            OutlinedButton.icon(
+              onPressed: () => ref.read(costosProvider.notifier).loadCostos(),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Reintentar'),
             ),
           ],
         ),
       );
     }
-
     if (state is LoadedState<List<dynamic>>) {
       final costos = state.data;
-
       if (costos.isEmpty) {
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text('No hay costos guardados'),
-              SizedBox(height: 8),
-              Text('Toca el botón + para agregar un nuevo costo'),
+              Icon(Icons.receipt_long_outlined, size: 48, color: AppTheme.textHint),
+              const SizedBox(height: 12),
+              const Text('Sin costos registrados',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 4),
+              const Text('Toca + para agregar uno',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
             ],
           ),
         );
       }
-
       return ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: costos.length,
         itemBuilder: (context, index) {
           final costo = costos[index];
           return Card(
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor:
-                    Theme.of(context).primaryColor.withOpacity(0.1),
-                child: Icon(
-                  Icons.receipt,
-                  color: Theme.of(context).primaryColor,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: const Icon(Icons.receipt_outlined, color: AppTheme.primary, size: 22),
               ),
               title: Text(costo.descripcion ?? 'Sin descripción'),
-              subtitle:
-                  Text('Monto: \$${costo.monto?.toStringAsFixed(2) ?? '0.00'}'),
+              subtitle: Text('\$${costo.monto?.toStringAsFixed(2) ?? '0.00'}'),
               trailing: PopupMenuButton<String>(
                 onSelected: (value) => _handleCostoAction(value, costo),
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Editar'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete),
-                        SizedBox(width: 8),
-                        Text('Eliminar'),
-                      ],
-                    ),
-                  ),
+                  const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                  const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
                 ],
               ),
             ),
@@ -656,27 +408,21 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
         },
       );
     }
-
-    return const Center(child: Text('Estado no reconocido'));
+    return const SizedBox();
   }
 
   void _handleCostoAction(String action, dynamic costo) {
-    switch (action) {
-      case 'edit':
-        _showCostoForm(context, costo: costo);
-        break;
-      case 'delete':
-        _showDeleteConfirmation(costo);
-        break;
+    if (action == 'edit') {
+      _showCostoForm(context, costo: costo);
+    } else if (action == 'delete') {
+      _showDeleteConfirmation(costo);
     }
   }
 
   void _showCostoForm(BuildContext context, {dynamic costo}) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => CostoFormScreen(costo: costo),
-      ),
+      MaterialPageRoute(builder: (context) => CostoFormScreen(costo: costo)),
     );
   }
 
@@ -684,35 +430,18 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar Costo'),
-        content: Text('¿Estás seguro de que quieres eliminar este costo?'),
+        title: const Text('Eliminar'),
+        content: const Text('¿Eliminar este costo?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           TextButton(
             onPressed: () async {
-              try {
-                if (costo.id != null) {
-                  await ref.read(costosProvider.notifier).deleteCosto(costo.id);
-                }
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Costo eliminado exitosamente')),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al eliminar costo: $e')),
-                  );
-                }
+              if (costo.id != null) {
+                await ref.read(costosProvider.notifier).deleteCosto(costo.id);
               }
+              if (mounted) Navigator.pop(context);
             },
-            child: const Text('Eliminar'),
+            child: const Text('Eliminar', style: TextStyle(color: AppTheme.error)),
           ),
         ],
       ),
@@ -720,295 +449,93 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
   }
 }
 
-/// Pantalla "Más" con opciones secundarias
+/// Pantalla "Más" — Simple estilo Settings de iOS
 class OptimizedMoreScreen extends ConsumerStatefulWidget {
   const OptimizedMoreScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedMoreScreen> createState() =>
-      _OptimizedMoreScreenState();
+  ConsumerState<OptimizedMoreScreen> createState() => _OptimizedMoreScreenState();
 }
 
 class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: CustomScrollView(
-        slivers: [
-          // AppBar moderno estilo iOS
-          SliverAppBar(
-            expandedHeight: 56,
-            floating: false,
-            pinned: true,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            toolbarHeight: 56,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'Más',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1C1C1E),
-                  letterSpacing: -0.41,
-                ),
-              ),
-              centerTitle: false,
-              titlePadding: const EdgeInsets.only(left: 20, bottom: 12),
-            ),
-          ),
-
-          // Contenido
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Perfil
-                  _buildSectionCard(
-                    'Perfil',
-                    [
-                      _buildMoreItem(
-                        'Mi Perfil',
-                        Icons.person_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const OptimizedProfileScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Gestión
-                  _buildSectionCard(
-                    'Gestión',
-                    [
-                      _buildMoreItem(
-                        'Trabajos',
-                        Icons.work_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const OptimizedTrabajosListScreen(
-                                      showAppBar: true),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMoreItem(
-                        'Máquinas',
-                        Icons.local_shipping_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const OptimizedMaquinasListScreen(
-                                      showAppBar: true),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMoreItem(
-                        'Personal',
-                        Icons.people_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PersonalListScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMoreItem(
-                        'Clientes',
-                        Icons.contacts_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ClientesListScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMoreItem(
-                        'Mantenimientos',
-                        Icons.build_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const OptimizedMantenimientosScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Reportes y Análisis
-                  _buildSectionCard(
-                    'Reportes',
-                    [
-                      _buildMoreItem(
-                        'Reportes',
-                        Icons.analytics_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const OptimizedReportesScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Configuración
-                  _buildSectionCard(
-                    'Configuración',
-                    [
-                      _buildMoreItem(
-                        'Configuración',
-                        Icons.settings_rounded,
-                        () {
-                          // TODO: Implementar pantalla de configuración
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Próximamente')),
-                          );
-                        },
-                      ),
-                      _buildMoreItem(
-                        'Prueba Conexión',
-                        Icons.wifi_find_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TestConnectionScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMoreItem(
-                        'Pruebas y Análisis',
-                        Icons.science_rounded,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TestScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Cerrar Sesión
-                  _buildLogoutButton(context),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-              letterSpacing: -0.08,
-            ),
-          ),
-        ),
-        Card(
-          elevation: 0,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Colors.grey.withOpacity(0.1),
-              width: 0.5,
-            ),
-          ),
-          margin: EdgeInsets.zero,
-          child: Column(
-            children: children,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMoreItem(String title, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2E7D32).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: const Color(0xFF2E7D32),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
+            // Header
+            const Padding(
+              padding: EdgeInsets.only(left: 4, bottom: 20),
               child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF1C1C1E),
+                'Más opciones',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                  letterSpacing: -0.5,
                 ),
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.grey[400],
-              size: 20,
+
+            // Gestión
+            _buildSectionLabel('GESTIÓN'),
+            _buildGroupCard([
+              _buildItem('Trabajos', Icons.work_outline_rounded, () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const OptimizedTrabajosListScreen(showAppBar: true)));
+              }),
+              _buildItem('Máquinas', Icons.agriculture_outlined, () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const OptimizedMaquinasListScreen(showAppBar: true)));
+              }),
+              _buildItem('Personal', Icons.people_outline_rounded, () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const PersonalListScreen()));
+              }),
+              _buildItem('Clientes', Icons.contacts_outlined, () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const ClientesListScreen()));
+              }),
+              _buildItem('Mantenimientos', Icons.build_outlined, () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const OptimizedMantenimientosScreen()));
+              }),
+            ]),
+            const SizedBox(height: 20),
+
+            // Reportes
+            _buildSectionLabel('REPORTES'),
+            _buildGroupCard([
+              _buildItem('Reportes', Icons.analytics_outlined, () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const OptimizedReportesScreen()));
+              }),
+            ]),
+            const SizedBox(height: 20),
+
+            // Cuenta
+            _buildSectionLabel('CUENTA'),
+            _buildGroupCard([
+              _buildItem('Mi Perfil', Icons.person_outline_rounded, () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const OptimizedProfileScreen()));
+              }),
+            ]),
+            const SizedBox(height: 20),
+
+            // Cerrar sesión
+            _buildLogoutButton(context),
+            const SizedBox(height: 16),
+
+            // Versión
+            Center(
+              child: Text(
+                'GesAgro v1.0.0',
+                style: TextStyle(fontSize: 12, color: AppTheme.textHint),
+              ),
             ),
           ],
         ),
@@ -1016,38 +543,99 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Colors.grey.withOpacity(0.1),
-          width: 0.5,
+  Widget _buildSectionLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.textSecondary,
+          letterSpacing: 0.5,
         ),
       ),
-      margin: EdgeInsets.zero,
+    );
+  }
+
+  Widget _buildGroupCard(List<Widget> items) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        children: List.generate(items.length, (i) {
+          return Column(
+            children: [
+              items[i],
+              if (i < items.length - 1)
+                Divider(height: 1, indent: 56, color: AppTheme.border),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildItem(String title, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppTheme.primary, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: AppTheme.textHint, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border),
+      ),
       child: InkWell(
         onTap: () => _handleLogout(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.logout_rounded,
-                color: Colors.red[600],
-                size: 24,
-              ),
-              const SizedBox(width: 12),
+              Icon(Icons.logout_rounded, color: AppTheme.error, size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Cerrar Sesión',
+                'Cerrar sesión',
                 style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red[600],
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.error,
                 ),
               ),
             ],
@@ -1061,8 +649,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cerrar Sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Deseas cerrar tu sesión?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1070,8 +658,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Cerrar Sesión'),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+            child: const Text('Cerrar sesión'),
           ),
         ],
       ),
@@ -1081,15 +669,12 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
       try {
         await ref.read(authProvider.notifier).logout();
         if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/login',
-            (route) => false,
-          );
+          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al cerrar sesión: $e')),
+            SnackBar(content: Text('Error: $e')),
           );
         }
       }
@@ -1097,43 +682,43 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
   }
 }
 
-/// Pantalla de perfil optimizada
-class OptimizedProfileScreen extends ConsumerStatefulWidget {
+/// Pantalla de perfil
+class OptimizedProfileScreen extends ConsumerWidget {
   const OptimizedProfileScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<OptimizedProfileScreen> createState() =>
-      _OptimizedProfileScreenState();
-}
-
-class _OptimizedProfileScreenState
-    extends ConsumerState<OptimizedProfileScreen> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Perfil'),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1C1C1E),
+        title: const Text('Mi Perfil'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person, size: 100, color: Colors.grey),
-            SizedBox(height: 20),
-            Text(
-              'Pantalla de Perfil',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_outline_rounded, size: 64, color: AppTheme.primary),
             ),
-            SizedBox(height: 10),
-            Text('En desarrollo'),
+            const SizedBox(height: 20),
+            const Text(
+              'Mi Perfil',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Próximamente',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            ),
           ],
         ),
       ),

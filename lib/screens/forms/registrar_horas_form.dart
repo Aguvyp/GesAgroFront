@@ -79,6 +79,12 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
     });
   }
 
+  /// Deduplicates a list of Personal by id to prevent DropdownButtonFormField assertion errors
+  List<Personal> _deduplicatePersonal(List<Personal> list) {
+    final seen = <int?>{};
+    return list.where((p) => seen.add(p.id)).toList();
+  }
+
   Future<void> _loadTrabajoPersonalData() async {
     try {
       final apiService = ref.read(apiServiceProvider);
@@ -237,7 +243,6 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
               context,
               message: result['detail'],
               backgroundColor: Colors.amber[700],
-              textColor: Colors.white,
             );
             // No hacemos pop aqui para permitir correccion
           } else {
@@ -304,7 +309,7 @@ class _RegistrarHorasFormState extends ConsumerState<RegistrarHorasForm> {
                 ),
                 value: _selectedPersonal,
                 items: personalState is LoadedState<List<Personal>>
-                    ? personalState.data
+                    ? _deduplicatePersonal(personalState.data)
                         .map((p) => DropdownMenuItem(
                               value: p,
                               child: Text(p.nombre),

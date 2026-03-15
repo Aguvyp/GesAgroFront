@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/optimized_widgets.dart';
 import '../providers/optimized_auth_provider.dart';
+import '../themes/app_theme.dart';
 import 'optimized_main_screen_new.dart';
 
-/// ==================== LOGIN SCREEN OPTIMIZADA ====================
+/// ==================== LOGIN SCREEN ====================
 
 class OptimizedLoginScreen extends ConsumerStatefulWidget {
   const OptimizedLoginScreen({Key? key}) : super(key: key);
@@ -22,7 +23,6 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  // Biometría
   final LocalAuthentication auth = LocalAuthentication();
   bool _canCheckBiometrics = false;
   bool _isAuthenticating = false;
@@ -38,63 +38,44 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
     try {
       canCheckBiometrics =
           await auth.canCheckBiometrics && await auth.isDeviceSupported();
-    } on PlatformException catch (e) {
+    } on PlatformException {
       canCheckBiometrics = false;
-      // print(e);
     }
     if (!mounted) return;
-
-    setState(() {
-      _canCheckBiometrics = canCheckBiometrics;
-    });
+    setState(() => _canCheckBiometrics = canCheckBiometrics);
   }
 
   Future<void> _authenticate() async {
     bool authenticated = false;
     try {
-      setState(() {
-        _isAuthenticating = true;
-      });
+      setState(() => _isAuthenticating = true);
       authenticated = await auth.authenticate(
-        localizedReason: 'Escanea tu huella para ingresar a GesAgro',
+        localizedReason: 'Escanea tu huella para ingresar',
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: true,
         ),
       );
     } on PlatformException catch (e) {
-      // print(e);
       if (mounted) {
         OptimizedSnackBar.showError(context,
-            message: 'Error de autenticación: ${e.message}');
+            message: 'Error: ${e.message}');
       }
       return;
     } finally {
-      if (mounted) {
-        setState(() {
-          _isAuthenticating = false;
-        });
-      }
+      if (mounted) setState(() => _isAuthenticating = false);
     }
 
     if (authenticated && mounted) {
-      // Intentar obtener el nombre si existe una sesión previa o datos guardados
       final authState = ref.read(authProvider);
-      String nombreUsuario = '';
+      String nombre = '';
       if (authState is AuthenticatedState) {
-        nombreUsuario =
-            authState.user['nombre'] ?? authState.user['username'] ?? '';
+        nombre = authState.user['nombre'] ?? authState.user['username'] ?? '';
       }
-
-      OptimizedSnackBar.showSuccess(
-        context,
-        message: nombreUsuario.isNotEmpty
-            ? 'Bienvenido, $nombreUsuario'
-            : 'Bienvenido',
-      );
-
+      OptimizedSnackBar.showSuccess(context,
+          message: nombre.isNotEmpty ? 'Bienvenido, $nombre' : 'Bienvenido');
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const OptimizedMainScreen()),
+        MaterialPageRoute(builder: (_) => const OptimizedMainScreen()),
       );
     }
   }
@@ -111,128 +92,150 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.agriculture,
-                  size: 80,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'GesAgro',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                ),
-                const SizedBox(height: 40),
-                OptimizedTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'Ingresa tu email',
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Por favor ingresa un email válido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                OptimizedTextField(
-                  controller: _passwordController,
-                  label: 'Contraseña',
-                  hint: 'Ingresa tu contraseña',
-                  obscureText: _obscurePassword,
-                  prefixIcon: const Icon(Icons.lock_outlined),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+
+                  // Logo
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.08),
+                      shape: BoxShape.circle,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
+                    child: const Icon(
+                      Icons.agriculture_rounded,
+                      size: 56,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    'GesAgro',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Gestión agrícola simplificada',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+
+                  // Email
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: 'Email',
+                      prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
+                      prefixIconColor: AppTheme.textHint,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Ingresa tu email';
+                      if (!value.contains('@')) return 'Email no válido';
+                      return null;
                     },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
-                OptimizedButton(
-                  text: 'Iniciar Sesión',
-                  onPressed:
-                      authState is LoadingAuthState ? null : _handleLogin,
-                  isLoading: authState is LoadingAuthState,
-                  isFullWidth: true,
-                ),
+                  const SizedBox(height: 14),
 
-                // Botón de Biometría
-                if (_canCheckBiometrics) ...[
-                  const SizedBox(height: 24),
-                  InkWell(
-                    onTap: _isAuthenticating ? null : _authenticate,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 24),
+                  // Password
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      hintText: 'Contraseña',
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      prefixIconColor: AppTheme.textHint,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          size: 20,
+                          color: AppTheme.textHint,
+                        ),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Ingresa tu contraseña';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Login button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: authState is LoadingAuthState ? null : _handleLogin,
+                      child: authState is LoadingAuthState
+                          ? const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text('Iniciar sesión', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+
+                  // Biometrics
+                  if (_canCheckBiometrics) ...[
+                    const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: _isAuthenticating ? null : _authenticate,
+                      icon: const Icon(Icons.fingerprint_rounded, size: 22),
+                      label: const Text('Ingresar con huella'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                    ),
+                  ],
+
+                  // Error
+                  if (authState is ErrorAuthState) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                            color: Theme.of(context)
-                                .primaryColor
-                                .withOpacity(0.5)),
-                        borderRadius: BorderRadius.circular(12),
-                        color: Theme.of(context).primaryColor.withOpacity(0.05),
+                        color: AppTheme.error.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.fingerprint,
-                              color: Theme.of(context).primaryColor, size: 28),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Ingresar con Huella',
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                          Icon(Icons.error_outline, size: 18, color: AppTheme.error),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              authState.message,
+                              style: TextStyle(color: AppTheme.error, fontSize: 13),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                  ],
+                  const SizedBox(height: 40),
                 ],
-
-                if (authState is ErrorAuthState) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    authState.message,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),
@@ -250,36 +253,25 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen> {
           );
 
       if (mounted) {
-        // Obtener nombre del usuario para el mensaje de bienvenida
         final authState = ref.read(authProvider);
-        String nombreUsuario = 'Usuario';
+        String nombre = 'Usuario';
         if (authState is AuthenticatedState) {
-          nombreUsuario = authState.user['nombre'] ??
-              authState.user['username'] ??
-              'Usuario';
+          nombre = authState.user['nombre'] ?? authState.user['username'] ?? 'Usuario';
         }
-
-        OptimizedSnackBar.showSuccess(
-          context,
-          message: 'Bienvenido, $nombreUsuario',
-        );
-
+        OptimizedSnackBar.showSuccess(context, message: 'Bienvenido, $nombre');
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OptimizedMainScreen()),
+          MaterialPageRoute(builder: (_) => const OptimizedMainScreen()),
         );
       }
     } catch (e) {
       if (mounted) {
-        OptimizedSnackBar.showError(
-          context,
-          message: 'Error al iniciar sesión: $e',
-        );
+        OptimizedSnackBar.showError(context, message: 'Error al iniciar sesión');
       }
     }
   }
 }
 
-/// ==================== REGISTER SCREEN OPTIMIZADA ====================
+/// ==================== REGISTER SCREEN ====================
 
 class OptimizedRegisterScreen extends ConsumerStatefulWidget {
   const OptimizedRegisterScreen({Key? key}) : super(key: key);
@@ -317,175 +309,129 @@ class _OptimizedRegisterScreenState
     final authState = ref.watch(authProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Registro'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
+        title: const Text('Crear cuenta'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(
-                  Icons.person_add,
-                  size: 80,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Crear Cuenta',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                OptimizedTextField(
+                TextFormField(
                   controller: _nombreController,
-                  label: 'Nombre Completo',
-                  hint: 'Ingresa tu nombre completo',
-                  prefixIcon: const Icon(Icons.person_outlined),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu nombre';
-                    }
-                    return null;
-                  },
+                  decoration: const InputDecoration(
+                    hintText: 'Nombre completo',
+                    prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
                 ),
-                const SizedBox(height: 20),
-                OptimizedTextField(
+                const SizedBox(height: 12),
+                TextFormField(
                   controller: _dniController,
-                  label: 'DNI',
-                  hint: 'Ingresa tu DNI',
                   keyboardType: TextInputType.number,
-                  prefixIcon: const Icon(Icons.badge_outlined),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu DNI';
-                    }
-                    if (value.length < 7) {
-                      return 'El DNI debe tener al menos 7 dígitos';
-                    }
+                  decoration: const InputDecoration(
+                    hintText: 'DNI',
+                    prefixIcon: Icon(Icons.badge_outlined, size: 20),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Requerido';
+                    if (v.length < 7) return 'Mínimo 7 dígitos';
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-                OptimizedTextField(
+                const SizedBox(height: 12),
+                TextFormField(
                   controller: _telefonoController,
-                  label: 'Teléfono',
-                  hint: 'Ingresa tu teléfono',
                   keyboardType: TextInputType.phone,
-                  prefixIcon: const Icon(Icons.phone_outlined),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu teléfono';
-                    }
-                    return null;
-                  },
+                  decoration: const InputDecoration(
+                    hintText: 'Teléfono',
+                    prefixIcon: Icon(Icons.phone_outlined, size: 20),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
                 ),
-                const SizedBox(height: 20),
-                OptimizedTextField(
+                const SizedBox(height: 12),
+                TextFormField(
                   controller: _emailController,
-                  label: 'Email',
-                  hint: 'Ingresa tu email',
                   keyboardType: TextInputType.emailAddress,
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Por favor ingresa un email válido';
-                    }
+                  decoration: const InputDecoration(
+                    hintText: 'Email',
+                    prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Requerido';
+                    if (!v.contains('@')) return 'Email no válido';
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-                OptimizedTextField(
+                const SizedBox(height: 12),
+                TextFormField(
                   controller: _passwordController,
-                  label: 'Contraseña',
-                  hint: 'Ingresa tu contraseña',
                   obscureText: _obscurePassword,
-                  prefixIcon: const Icon(Icons.lock_outlined),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                  decoration: InputDecoration(
+                    hintText: 'Contraseña',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
-                    }
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Requerido';
+                    if (v.length < 6) return 'Mínimo 6 caracteres';
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-                OptimizedTextField(
+                const SizedBox(height: 12),
+                TextFormField(
                   controller: _confirmPasswordController,
-                  label: 'Confirmar Contraseña',
-                  hint: 'Confirma tu contraseña',
                   obscureText: _obscureConfirmPassword,
-                  prefixIcon: const Icon(Icons.lock_outlined),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                  decoration: InputDecoration(
+                    hintText: 'Confirmar contraseña',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20),
+                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor confirma tu contraseña';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Las contraseñas no coinciden';
-                    }
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Requerido';
+                    if (v != _passwordController.text) return 'No coinciden';
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
-                OptimizedButton(
-                  text: 'Registrarse',
-                  onPressed:
-                      authState is LoadingAuthState ? null : _handleRegister,
-                  isLoading: authState is LoadingAuthState,
-                  isFullWidth: true,
+                const SizedBox(height: 28),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: authState is LoadingAuthState ? null : _handleRegister,
+                    child: authState is LoadingAuthState
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                          )
+                        : const Text('Registrarse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('¿Ya tienes cuenta? Inicia sesión'),
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('¿Ya tienes cuenta? Iniciar sesión'),
+                  ),
                 ),
                 if (authState is ErrorAuthState) ...[
                   const SizedBox(height: 16),
                   Text(
                     authState.message,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: AppTheme.error, fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -511,15 +457,12 @@ class _OptimizedRegisterScreenState
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OptimizedMainScreen()),
+          MaterialPageRoute(builder: (_) => const OptimizedMainScreen()),
         );
       }
     } catch (e) {
       if (mounted) {
-        OptimizedSnackBar.showError(
-          context,
-          message: 'Error al registrarse: $e',
-        );
+        OptimizedSnackBar.showError(context, message: 'Error al registrarse');
       }
     }
   }
