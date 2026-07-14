@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/trabajo.dart';
 import '../../models/trabajo_detalle.dart';
 import '../../widgets/optimized_widgets.dart';
@@ -223,6 +224,22 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
           ),
           const SizedBox(height: 24),
 
+          // Ubicación operativa
+          _buildSection(
+            title: 'Ubicación operativa',
+            content: _buildUbicacionOperativa(trabajoDetalle),
+            estado: trabajoDetalle.estado,
+          ),
+          const SizedBox(height: 24),
+
+          // Indicaciones
+          _buildSection(
+            title: 'Indicaciones para empleado',
+            content: _buildIndicacionesOperativas(trabajoDetalle),
+            estado: trabajoDetalle.estado,
+          ),
+          const SizedBox(height: 24),
+
           // Cliente
           _buildSection(
             title: 'Cliente',
@@ -323,6 +340,253 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildUbicacionOperativa(TrabajoDetalle detalle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildInfoRow(Icons.crop_square_rounded, 'Lote', detalle.loteInfo),
+        const SizedBox(height: 8),
+        _buildStatusLine(
+          detalle.tieneContornoLote,
+          detalle.tieneContornoLote
+              ? 'Contorno cargado'
+              : 'Falta contorno del lote',
+        ),
+        _buildStatusLine(
+          detalle.lotePuntoAccesoLatitud != null &&
+              detalle.lotePuntoAccesoLongitud != null,
+          detalle.lotePuntoAccesoLatitud != null &&
+                  detalle.lotePuntoAccesoLongitud != null
+              ? 'Punto de acceso cargado'
+              : 'Falta punto de acceso',
+        ),
+        _buildStatusLine(
+          detalle.tienePuntoEntrada,
+          detalle.tienePuntoEntrada
+              ? 'Punto de entrada cargado'
+              : 'Falta punto de entrada',
+        ),
+        if (detalle.loteNotasAcceso?.isNotEmpty == true) ...[
+          const SizedBox(height: 12),
+          Text(
+            detalle.loteNotasAcceso!,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (detalle.lotePuntoAccesoLatitud != null &&
+                detalle.lotePuntoAccesoLongitud != null)
+              OutlinedButton.icon(
+                onPressed: () => _openMaps(
+                  detalle.lotePuntoAccesoLatitud!,
+                  detalle.lotePuntoAccesoLongitud!,
+                ),
+                icon: const Icon(Icons.route_rounded, size: 18),
+                label: const Text('Ir al acceso'),
+              ),
+            if (detalle.tienePuntoEntrada)
+              OutlinedButton.icon(
+                onPressed: () => _openMaps(
+                  detalle.lotePuntoEntradaLatitud!,
+                  detalle.lotePuntoEntradaLongitud!,
+                ),
+                icon: const Icon(Icons.place_rounded, size: 18),
+                label: const Text('Ir a entrada'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIndicacionesOperativas(TrabajoDetalle detalle) {
+    final indicaciones = detalle.indicaciones?.trim();
+    final destinatarios = detalle.personal.map((p) => p.nombre).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (indicaciones == null || indicaciones.isEmpty)
+          const Text(
+            'Todavía no hay indicaciones cargadas para este trabajo.',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          )
+        else
+          Text(indicaciones, style: const TextStyle(fontSize: 15)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildTinyChip(
+              detalle.indicacionesEnviadas ? 'Enviadas' : 'Sin enviar',
+              detalle.indicacionesEnviadas ? Colors.green : Colors.orange,
+            ),
+            _buildTinyChip(
+              destinatarios.isEmpty
+                  ? 'Sin empleados'
+                  : '${destinatarios.length} empleado${destinatarios.length > 1 ? 's' : ''}',
+              Colors.blueGrey,
+            ),
+          ],
+        ),
+        if (detalle.indicacionesEnviadasAt != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Último envío: ${DateFormat('dd/MM/yyyy HH:mm').format(detalle.indicacionesEnviadasAt!)}',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _sendIndicaciones(detalle),
+            icon: const Icon(Icons.send_rounded),
+            label: const Text('Enviar indicaciones'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(AppConstants.primaryColor),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: const Color(AppConstants.primaryColor)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '$label: $value',
+            style: const TextStyle(fontSize: 15),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusLine(bool ok, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          Icon(
+            ok ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+            size: 18,
+            color: ok ? Colors.green : Colors.orange,
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTinyChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Text(
+        label,
+        style:
+            TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Future<void> _openMaps(double lat, double lng) async {
+    final uri =
+        Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _sendIndicaciones(TrabajoDetalle detalle) async {
+    final message = _buildIndicacionesMessage(detalle);
+    final uri =
+        Uri.parse('https://wa.me/?text=${Uri.encodeComponent(message)}');
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched || widget.trabajo.id == null) return;
+
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.marcarIndicacionesEnviadas(
+        widget.trabajo.id!,
+        destinatarios: detalle.personal.map((p) => p.nombre).toList(),
+      );
+      if (mounted) {
+        OptimizedSnackBar.showSuccess(context,
+            message: 'Indicaciones marcadas como enviadas');
+        ref.read(dashboardRefreshProvider.notifier).state++;
+        ref
+            .read(trabajoDetalleProvider.notifier)
+            .loadTrabajoDetalle(widget.trabajo.id!);
+      }
+    } catch (e) {
+      if (mounted) {
+        OptimizedSnackBar.showError(context,
+            message: 'No se pudo marcar el envío: $e');
+      }
+    }
+  }
+
+  String _buildIndicacionesMessage(TrabajoDetalle detalle) {
+    String mapsLink(double? lat, double? lng) {
+      if (lat == null || lng == null) return 'Sin coordenadas';
+      return 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    }
+
+    final buffer = StringBuffer()
+      ..writeln('Trabajo: ${detalle.tipo} ${detalle.cultivo}'.trim())
+      ..writeln('Cliente: ${detalle.clienteNombre}')
+      ..writeln('Campo: ${detalle.campoNombre}')
+      ..writeln('Lote: ${detalle.loteInfo}')
+      ..writeln(
+          'Fecha: ${DateFormat('dd/MM/yyyy').format(detalle.fechaInicio)}')
+      ..writeln('')
+      ..writeln('Acceso:')
+      ..writeln(mapsLink(
+          detalle.lotePuntoAccesoLatitud, detalle.lotePuntoAccesoLongitud))
+      ..writeln('')
+      ..writeln('Entrada al lote:')
+      ..writeln(mapsLink(
+          detalle.lotePuntoEntradaLatitud, detalle.lotePuntoEntradaLongitud));
+
+    if (detalle.loteNotasAcceso?.isNotEmpty == true) {
+      buffer
+        ..writeln('')
+        ..writeln('Notas de acceso:')
+        ..writeln(detalle.loteNotasAcceso!);
+    }
+
+    if (detalle.indicaciones?.isNotEmpty == true) {
+      buffer
+        ..writeln('')
+        ..writeln('Indicaciones:')
+        ..writeln(detalle.indicaciones!);
+    }
+
+    return buffer.toString();
   }
 
   Widget _buildPersonalItem(PersonalTrabajo personal, String? estado) {
@@ -717,23 +981,44 @@ class _TrabajoDetailScreenState extends ConsumerState<TrabajoDetailScreen> {
   void _deleteTrabajo(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Confirmar Eliminación'),
         content: const Text(
             '¿Estás seguro de que quieres eliminar este trabajo? Esta acción no se puede deshacer.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implementar eliminación del trabajo
-              OptimizedSnackBar.showInfo(
-                context,
-                message: 'Eliminación en desarrollo',
-              );
+            onPressed: () async {
+              Navigator.pop(dialogContext); // Cerrar diálogo
+
+              try {
+                if (widget.trabajo.id != null) {
+                  await ref
+                      .read(trabajosProvider.notifier)
+                      .deleteTrabajo(widget.trabajo.id!);
+
+                  // Actualizar dashboard
+                  ref.read(dashboardRefreshProvider.notifier).state++;
+
+                  if (mounted) {
+                    Navigator.pop(context); // Volver a la lista
+                    OptimizedSnackBar.showSuccess(
+                      context,
+                      message: 'Trabajo eliminado exitosamente',
+                    );
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  OptimizedSnackBar.showError(
+                    context,
+                    message: 'Error al eliminar: $e',
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

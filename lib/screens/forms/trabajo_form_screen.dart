@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../providers/optimized_providers.dart';
 import '../../providers/trabajo_detalle_provider.dart';
 import '../../models/campo.dart';
+import '../../models/lote.dart';
 import '../../models/maquina.dart';
 import '../../models/personal.dart';
 import '../../models/cliente.dart';
@@ -12,6 +13,7 @@ import '../../models/personal_con_hectareas.dart';
 import '../../models/trabajo_detalle.dart';
 import '../../models/tipo_trabajo.dart';
 import '../../services/cliente_service.dart';
+import '../../services/optimized_api_service.dart';
 import '../../services/tipo_trabajo_service.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
@@ -46,6 +48,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   List<TipoTrabajo> _tiposTrabajo = [];
   late TextEditingController _cultivoController;
   late TextEditingController _descripcionController;
+  late TextEditingController _indicacionesController;
   late TextEditingController _fechaInicioController;
   late TextEditingController _fechaFinController;
   late TextEditingController _clienteController;
@@ -67,6 +70,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
 
   // Selectores
   Campo? _campoSeleccionado;
+  Lote? _loteSeleccionado;
   List<Maquina> _maquinasSeleccionadas = [];
   List<PersonalConHectareas> _personalSeleccionado = [];
 
@@ -78,6 +82,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   // Variables para cliente y campos filtrados
   Cliente? _clienteSeleccionado;
   List<Campo> _camposFiltrados = []; // Campos filtrados por cliente
+  List<Lote> _lotesFiltrados = [];
   List<Cliente> _clientes = [];
 
   bool _isLoadingData = false;
@@ -96,6 +101,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         TextEditingController(text: widget.trabajo?.cultivo ?? '');
     _descripcionController =
         TextEditingController(text: widget.trabajo?.observaciones ?? '');
+    _indicacionesController =
+        TextEditingController(text: widget.trabajo?.indicaciones ?? '');
     _fechaInicio =
         widget.fechaInicial ?? widget.trabajo?.fechaInicio ?? DateTime.now();
     _fechaFin = widget.trabajo?.fechaFin ?? DateTime.now();
@@ -157,6 +164,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
   void dispose() {
     _cultivoController.dispose();
     _descripcionController.dispose();
+    _indicacionesController.dispose();
     _fechaInicioController.dispose();
     _fechaFinController.dispose();
     _clienteController.dispose();
@@ -282,6 +290,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               : Campo(id: 0, nombre: '', superficieHa: 0),
         );
 
+        await _loadLotesForSelectedCampo(widget.trabajo?.loteId);
+
         // Seleccionar máquinas usando los detalles completos
         _maquinasSeleccionadas = _maquinas
             .where(
@@ -335,6 +345,7 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               ? _camposFiltrados.first
               : Campo(id: 0, nombre: '', superficieHa: 0),
         );
+        await _loadLotesForSelectedCampo(widget.trabajo?.loteId);
       }
     } catch (e) {
       // Manejar errores silenciosamente
@@ -423,6 +434,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
         setState(() {
           _camposFiltrados = camposLocales;
           _campoSeleccionado = null;
+          _loteSeleccionado = null;
+          _lotesFiltrados = [];
           _isLoadingData = false;
         });
         return;
@@ -437,14 +450,46 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
       setState(() {
         _camposFiltrados = camposApi;
         _campoSeleccionado = null;
+        _loteSeleccionado = null;
+        _lotesFiltrados = [];
         _isLoadingData = false;
       });
     } catch (e) {
       print('Error filtrando campos: $e');
       setState(() {
         _camposFiltrados = [];
+        _lotesFiltrados = [];
+        _loteSeleccionado = null;
         _isLoadingData = false;
       });
+    }
+  }
+
+  Future<void> _loadLotesForSelectedCampo([int? selectedLoteId]) async {
+    if (_campoSeleccionado?.id == null) {
+      _lotesFiltrados = [];
+      _loteSeleccionado = null;
+      return;
+    }
+
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      final lotes = await apiService.getLotes(campoId: _campoSeleccionado!.id);
+      _lotesFiltrados = lotes;
+      if (selectedLoteId != null) {
+        _loteSeleccionado = lotes
+            .where((lote) => lote.id == selectedLoteId)
+            .cast<Lote?>()
+            .firstWhere((lote) => lote != null, orElse: () => null);
+      } else if (_loteSeleccionado != null &&
+          !lotes.any((lote) => lote.id == _loteSeleccionado!.id)) {
+        _loteSeleccionado = null;
+      }
+    } catch (e) {
+      print('Error cargando lotes del campo: $e');
+      _lotesFiltrados = [];
+      _loteSeleccionado = null;
     }
   }
 
@@ -540,6 +585,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                                       _cobrado = false;
                                       _clienteSeleccionado = null;
                                       _campoSeleccionado = null;
+                                      _loteSeleccionado = null;
+                                      _lotesFiltrados = [];
                                       _camposFiltrados = List.from(_campos);
                                     });
                                   },
@@ -560,6 +607,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                                       _servicioContratado = false;
                                       _cobrado = false;
                                       _campoSeleccionado = null;
+                                      _loteSeleccionado = null;
+                                      _lotesFiltrados = [];
                                     });
                                   },
                                 ),
@@ -580,6 +629,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                                       _servicioContratado = true;
                                       _cobrado = false;
                                       _campoSeleccionado = null;
+                                      _loteSeleccionado = null;
+                                      _lotesFiltrados = [];
                                       _camposFiltrados = List.from(_campos);
                                     });
                                   },
@@ -595,6 +646,33 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                     // Campos condicionales según el tipo
                     if (_tipoTrabajoForm != null) ...[
                       _buildCamposCondicionales(),
+                      const SizedBox(height: 16),
+                      OptimizedCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Indicaciones para el empleado',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1C1C1E),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            OptimizedTextField(
+                              controller: _indicacionesController,
+                              label: 'Indicaciones operativas',
+                              hint:
+                                  'Ej: entrar por tranquera norte, empezar por bajo oeste, llamar al llegar...',
+                              prefixIcon: const Icon(Icons.assignment_rounded,
+                                  size: 20),
+                              maxLines: 4,
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       // Descripción al final del formulario
                       OptimizedCard(
@@ -1495,6 +1573,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 _clienteSeleccionado = value as Cliente;
                 _clienteController.text = _clienteSeleccionado?.nombre ?? '';
                 _campoSeleccionado = null; // Reset campo
+                _loteSeleccionado = null;
+                _lotesFiltrados = [];
               });
               await _aplicarFiltrosCampos();
             }
@@ -1571,13 +1651,17 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
                 );
               }),
           ],
-          onChanged: (dynamic value) {
+          onChanged: (dynamic value) async {
             if (value == 'NEW_CAMPO') {
               _showCampoForm();
             } else if (value != 'EMPTY') {
               setState(() {
                 _campoSeleccionado = value as Campo;
+                _loteSeleccionado = null;
+                _lotesFiltrados = [];
               });
+              await _loadLotesForSelectedCampo();
+              if (mounted) setState(() {});
             }
           },
           validator: (value) {
@@ -1587,7 +1671,58 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
             return null;
           },
         ),
+        if (_campoSeleccionado != null) ...[
+          const SizedBox(height: 16),
+          _buildLotesSelector(),
+        ],
       ],
+    );
+  }
+
+  Widget _buildLotesSelector() {
+    return DropdownButtonFormField<dynamic>(
+      decoration: const InputDecoration(
+        labelText: 'Lote (opcional)',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.crop_square_rounded, size: 20),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        isDense: true,
+      ),
+      isExpanded: true,
+      borderRadius: BorderRadius.circular(12),
+      menuMaxHeight: 260,
+      hint: const Text('Sin lote asignado'),
+      value: _loteSeleccionado,
+      items: [
+        const DropdownMenuItem<dynamic>(
+          value: 'NONE',
+          child: Text('Sin lote asignado'),
+        ),
+        if (_lotesFiltrados.isEmpty)
+          const DropdownMenuItem<dynamic>(
+            enabled: false,
+            value: 'EMPTY',
+            child: Text('No hay lotes cargados para este campo'),
+          )
+        else
+          ..._lotesFiltrados.map((lote) {
+            return DropdownMenuItem<dynamic>(
+              value: lote,
+              child: Text(
+                '${lote.nombre} · ${lote.hectareas.toStringAsFixed(1)} ha',
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }),
+      ],
+      onChanged: (dynamic value) {
+        if (value == 'EMPTY') return;
+        setState(() {
+          _loteSeleccionado = value == 'NONE' ? null : value as Lote?;
+        });
+      },
     );
   }
 
@@ -1596,7 +1731,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<dynamic>(
-          key: ValueKey('maquina_selector_${_maquinasSeleccionadas.map((m) => m.id).join('_')}'),
+          key: ValueKey(
+              'maquina_selector_${_maquinasSeleccionadas.map((m) => m.id).join('_')}'),
           decoration: const InputDecoration(
             labelText: 'Agregar Máquina',
             border: OutlineInputBorder(),
@@ -1637,8 +1773,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               )
             else
               ..._deduplicateMaquinas(_maquinas
-                  .where((m) => !_maquinasSeleccionadas.contains(m))
-                  .toList())
+                      .where((m) => !_maquinasSeleccionadas.contains(m))
+                      .toList())
                   .map((maquina) {
                 return DropdownMenuItem<dynamic>(
                   value: maquina,
@@ -1712,7 +1848,8 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<dynamic>(
-          key: ValueKey('personal_selector_${_personalSeleccionado.map((p) => p.id).join('_')}'),
+          key: ValueKey(
+              'personal_selector_${_personalSeleccionado.map((p) => p.id).join('_')}'),
           decoration: const InputDecoration(
             labelText: 'Agregar Operario',
             border: OutlineInputBorder(),
@@ -1752,9 +1889,9 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               )
             else
               ..._deduplicatePersonal(_personal
-                  .where((p) => !_personalSeleccionado
-                      .any((selected) => selected.id == p.id))
-                  .toList())
+                      .where((p) => !_personalSeleccionado
+                          .any((selected) => selected.id == p.id))
+                      .toList())
                   .map((persona) {
                 return DropdownMenuItem<dynamic>(
                   value: persona,
@@ -1943,9 +2080,16 @@ class _TrabajoFormScreenState extends ConsumerState<TrabajoFormScreen> {
               ?.toIso8601String()
               .split('T')[0], // Formato YYYY-MM-DD
           'campo': _campoSeleccionado?.id,
+          'lote': _loteSeleccionado?.id,
           'cultivo': _cultivoController.text,
           'observaciones': _descripcionController.text.isNotEmpty
               ? _descripcionController.text
+              : null,
+          'indicaciones': _indicacionesController.text.isNotEmpty
+              ? _indicacionesController.text
+              : null,
+          'estado_indicaciones': _indicacionesController.text.isNotEmpty
+              ? (widget.trabajo?.estadoIndicaciones ?? 'Borrador')
               : null,
           'estado': _estadoSeleccionado ?? 'Pendiente',
           'a_terceros': esTercero,

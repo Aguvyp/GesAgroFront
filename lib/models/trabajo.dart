@@ -11,10 +11,23 @@ class Trabajo {
   final List<int> idPersonal;
   final List<int> idMaquinas;
   final int idCampo;
+  final int? loteId;
   final String? campoNombre;
   final double? campoHa;
+  final String? loteNombre;
+  final double? loteHa;
+  final Map<String, dynamic>? lotePolygonGeoJson;
+  final double? lotePuntoAccesoLatitud;
+  final double? lotePuntoAccesoLongitud;
+  final double? lotePuntoEntradaLatitud;
+  final double? lotePuntoEntradaLongitud;
+  final String? loteNotasAcceso;
   final String? estado;
   final String? observaciones;
+  final String? indicaciones;
+  final String? estadoIndicaciones;
+  final DateTime? indicacionesEnviadasAt;
+  final List<String> indicacionesEnviadasA;
   final bool esTercero;
   final bool cobrado;
   final double? montoCobrado;
@@ -33,10 +46,23 @@ class Trabajo {
     required this.idPersonal,
     required this.idMaquinas,
     required this.idCampo,
+    this.loteId,
     this.campoNombre,
     this.campoHa,
+    this.loteNombre,
+    this.loteHa,
+    this.lotePolygonGeoJson,
+    this.lotePuntoAccesoLatitud,
+    this.lotePuntoAccesoLongitud,
+    this.lotePuntoEntradaLatitud,
+    this.lotePuntoEntradaLongitud,
+    this.loteNotasAcceso,
     this.estado,
     this.observaciones,
+    this.indicaciones,
+    this.estadoIndicaciones,
+    this.indicacionesEnviadasAt,
+    this.indicacionesEnviadasA = const [],
     this.esTercero = false,
     this.cobrado = false,
     this.montoCobrado,
@@ -83,6 +109,17 @@ class Trabajo {
       campoNombre = json['campo']['nombre'];
     }
 
+    int? loteId;
+    if (json['lote'] != null) {
+      loteId = json['lote'] is int
+          ? json['lote']
+          : int.tryParse(json['lote'].toString());
+    } else if (json['lote_id'] != null) {
+      loteId = json['lote_id'] is int
+          ? json['lote_id']
+          : int.tryParse(json['lote_id'].toString());
+    }
+
     return Trabajo(
       id: json['id'],
       idTipoTrabajo: idTipoTrabajo,
@@ -112,10 +149,34 @@ class Trabajo {
                 ])
           : [],
       idCampo: idCampo,
+      loteId: loteId,
       campoNombre: campoNombre,
       campoHa: _toDoubleSafe(json['campo_ha']),
+      loteNombre: json['lote_nombre']?.toString(),
+      loteHa: _toDoubleSafe(json['lote_ha']),
+      lotePolygonGeoJson: json['lote_polygon_geojson'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(json['lote_polygon_geojson'])
+          : null,
+      lotePuntoAccesoLatitud: _toDoubleSafe(json['lote_punto_acceso_latitud']),
+      lotePuntoAccesoLongitud:
+          _toDoubleSafe(json['lote_punto_acceso_longitud']),
+      lotePuntoEntradaLatitud:
+          _toDoubleSafe(json['lote_punto_entrada_latitud']),
+      lotePuntoEntradaLongitud:
+          _toDoubleSafe(json['lote_punto_entrada_longitud']),
+      loteNotasAcceso: json['lote_notas_acceso']?.toString(),
       estado: json['estado'],
       observaciones: json['observaciones'],
+      indicaciones: json['indicaciones']?.toString(),
+      estadoIndicaciones: json['estado_indicaciones']?.toString(),
+      indicacionesEnviadasAt: json['indicaciones_enviadas_at'] != null
+          ? DateTime.tryParse(json['indicaciones_enviadas_at'].toString())
+          : null,
+      indicacionesEnviadasA: json['indicaciones_enviadas_a'] is List
+          ? (json['indicaciones_enviadas_a'] as List)
+              .map((value) => value.toString())
+              .toList()
+          : const [],
       esTercero: _parseBoolean(json['a_terceros']),
       cobrado: (json['cobrado'] ?? false) == true || (json['cobrado'] == 1),
       montoCobrado:
@@ -159,10 +220,23 @@ class Trabajo {
       'id_personal': idPersonal,
       'id_maquinas': idMaquinas,
       'campo_id': idCampo,
+      'lote': loteId,
       'campo_nombre': campoNombre,
       'campo_ha': campoHa,
+      'lote_nombre': loteNombre,
+      'lote_ha': loteHa,
+      'lote_polygon_geojson': lotePolygonGeoJson,
+      'lote_punto_acceso_latitud': lotePuntoAccesoLatitud,
+      'lote_punto_acceso_longitud': lotePuntoAccesoLongitud,
+      'lote_punto_entrada_latitud': lotePuntoEntradaLatitud,
+      'lote_punto_entrada_longitud': lotePuntoEntradaLongitud,
+      'lote_notas_acceso': loteNotasAcceso,
       'estado': estado,
       'observaciones': observaciones,
+      'indicaciones': indicaciones,
+      'estado_indicaciones': estadoIndicaciones,
+      'indicaciones_enviadas_at': indicacionesEnviadasAt?.toIso8601String(),
+      'indicaciones_enviadas_a': indicacionesEnviadasA,
       'a_terceros': esTercero,
       'cobrado': cobrado,
       'monto_cobrado': montoCobrado,
@@ -183,8 +257,23 @@ class Trabajo {
     List<int>? idPersonal,
     List<int>? idMaquinas,
     int? idCampo,
+    int? loteId,
+    String? campoNombre,
+    double? campoHa,
+    String? loteNombre,
+    double? loteHa,
+    Map<String, dynamic>? lotePolygonGeoJson,
+    double? lotePuntoAccesoLatitud,
+    double? lotePuntoAccesoLongitud,
+    double? lotePuntoEntradaLatitud,
+    double? lotePuntoEntradaLongitud,
+    String? loteNotasAcceso,
     String? estado,
     String? observaciones,
+    String? indicaciones,
+    String? estadoIndicaciones,
+    DateTime? indicacionesEnviadasAt,
+    List<String>? indicacionesEnviadasA,
     bool? esTercero,
     bool? cobrado,
     double? montoCobrado,
@@ -203,8 +292,29 @@ class Trabajo {
       idPersonal: idPersonal ?? this.idPersonal,
       idMaquinas: idMaquinas ?? this.idMaquinas,
       idCampo: idCampo ?? this.idCampo,
+      loteId: loteId ?? this.loteId,
+      campoNombre: campoNombre ?? this.campoNombre,
+      campoHa: campoHa ?? this.campoHa,
+      loteNombre: loteNombre ?? this.loteNombre,
+      loteHa: loteHa ?? this.loteHa,
+      lotePolygonGeoJson: lotePolygonGeoJson ?? this.lotePolygonGeoJson,
+      lotePuntoAccesoLatitud:
+          lotePuntoAccesoLatitud ?? this.lotePuntoAccesoLatitud,
+      lotePuntoAccesoLongitud:
+          lotePuntoAccesoLongitud ?? this.lotePuntoAccesoLongitud,
+      lotePuntoEntradaLatitud:
+          lotePuntoEntradaLatitud ?? this.lotePuntoEntradaLatitud,
+      lotePuntoEntradaLongitud:
+          lotePuntoEntradaLongitud ?? this.lotePuntoEntradaLongitud,
+      loteNotasAcceso: loteNotasAcceso ?? this.loteNotasAcceso,
       estado: estado ?? this.estado,
       observaciones: observaciones ?? this.observaciones,
+      indicaciones: indicaciones ?? this.indicaciones,
+      estadoIndicaciones: estadoIndicaciones ?? this.estadoIndicaciones,
+      indicacionesEnviadasAt:
+          indicacionesEnviadasAt ?? this.indicacionesEnviadasAt,
+      indicacionesEnviadasA:
+          indicacionesEnviadasA ?? this.indicacionesEnviadasA,
       esTercero: esTercero ?? this.esTercero,
       cobrado: cobrado ?? this.cobrado,
       montoCobrado: montoCobrado ?? this.montoCobrado,
@@ -230,4 +340,21 @@ class Trabajo {
       return 'Campo $idCampo';
     }
   }
+
+  String get loteInfo {
+    if (loteNombre != null && loteNombre!.isNotEmpty) {
+      if (loteHa != null && loteHa! > 0) {
+        return '$loteNombre - ${loteHa!.toStringAsFixed(1)} ha';
+      }
+      return loteNombre!;
+    }
+    return 'Sin lote asignado';
+  }
+
+  bool get tieneLote => loteId != null || loteNombre != null;
+  bool get tieneContornoLote => lotePolygonGeoJson != null;
+  bool get tienePuntoEntrada =>
+      lotePuntoEntradaLatitud != null && lotePuntoEntradaLongitud != null;
+  bool get indicacionesEnviadas =>
+      (estadoIndicaciones ?? '').toLowerCase().contains('enviad');
 }

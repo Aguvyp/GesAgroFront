@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../core/network/optimized_http_client.dart';
 import '../core/logger/app_logger.dart';
 import '../../models/campo.dart';
+import '../../models/lote.dart';
 import '../../models/cliente.dart';
 import '../../models/costo.dart';
 import '../../models/credito.dart';
@@ -210,6 +211,45 @@ class ApiService {
   /// Eliminar campo
   Future<void> deleteCampo(int id) async {
     await _httpClient.delete('/api/campos/$id/delete/');
+  }
+
+  /// ==================== LOTES ====================
+
+  /// Listar lotes, opcionalmente filtrados por campo
+  Future<List<Lote>> getLotes(
+      {int? campoId, int skip = 0, int limit = 100}) async {
+    final query = <String, dynamic>{
+      'skip': skip,
+      'limit': limit,
+      if (campoId != null) 'campo_id': campoId,
+    };
+    final response =
+        await _httpClient.get('/api/lotes/', queryParameters: query);
+    return (response.data as List).map((json) => Lote.fromJson(json)).toList();
+  }
+
+  /// Obtener lote por ID
+  Future<Lote> getLote(int id) async {
+    final response = await _httpClient.get('/api/lotes/$id/');
+    return Lote.fromJson(response.data);
+  }
+
+  /// Crear lote
+  Future<Lote> createLote(Map<String, dynamic> data) async {
+    final response = await _httpClient.post('/api/lotes/create/', data: data);
+    return Lote.fromJson(response.data);
+  }
+
+  /// Actualizar lote
+  Future<Lote> updateLote(int id, Map<String, dynamic> data) async {
+    final response =
+        await _httpClient.put('/api/lotes/$id/update/', data: data);
+    return Lote.fromJson(response.data);
+  }
+
+  /// Eliminar lote
+  Future<void> deleteLote(int id) async {
+    await _httpClient.delete('/api/lotes/$id/delete/');
   }
 
   /// ==================== MÁQUINAS ====================
@@ -447,13 +487,26 @@ class ApiService {
 
   /// Editar un trabajo existente
   Future<Trabajo> updateTrabajo(int id, Map<String, dynamic> data) async {
-    final response = await _httpClient.put('/api/trabajos/$id', data: data);
+    final response =
+        await _httpClient.put('/api/trabajos/$id/update/', data: data);
     return Trabajo.fromJson(response.data);
   }
 
   /// Eliminar un trabajo
   Future<void> deleteTrabajo(int id) async {
-    await _httpClient.delete('/api/trabajos/$id');
+    await _httpClient.delete('/api/trabajos/$id/delete/');
+  }
+
+  /// Marca indicaciones como enviadas y guarda destinatarios
+  Future<Trabajo> marcarIndicacionesEnviadas(
+    int id, {
+    List<String> destinatarios = const [],
+  }) async {
+    final response = await _httpClient.post(
+      '/api/trabajos/$id/indicaciones/enviadas/',
+      data: {'destinatarios': destinatarios},
+    );
+    return Trabajo.fromJson(response.data);
   }
 
   /// Registrar horas y hectáreas para un operario en un trabajo

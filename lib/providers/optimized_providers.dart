@@ -5,6 +5,7 @@ import '../core/logger/app_logger.dart';
 import '../services/optimized_api_service.dart';
 import '../services/campo_service.dart';
 import '../models/campo.dart';
+import '../models/lote.dart';
 import '../models/cliente.dart';
 import '../models/costo.dart';
 import '../models/credito.dart';
@@ -125,6 +126,75 @@ class CamposNotifier extends StateNotifier<BaseState> {
     } catch (e) {
       state = ErrorState('Error eliminando campo: $e');
       _logger.error('Error deleting campo', e);
+    }
+  }
+}
+
+/// ==================== LOTES PROVIDER ====================
+
+final lotesProvider = StateNotifierProvider<LotesNotifier, BaseState>((ref) {
+  return LotesNotifier();
+});
+
+class LotesNotifier extends StateNotifier<BaseState> {
+  final AppLogger _logger = AppLogger.instance;
+
+  LotesNotifier() : super(const InitialState());
+
+  Future<void> loadLotes({int? campoId}) async {
+    try {
+      state = const LoadingState();
+
+      final apiService = ApiService();
+      await apiService.initialize();
+      final lotes = await apiService.getLotes(campoId: campoId);
+
+      state = LoadedState<List<Lote>>(lotes);
+      _logger.info('Lotes loaded successfully: ${lotes.length} items');
+    } catch (e) {
+      state = ErrorState('Error cargando lotes: $e');
+      _logger.error('Error loading lotes', e);
+    }
+  }
+
+  Future<Lote?> createLote(Map<String, dynamic> data, {int? campoId}) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      final lote = await apiService.createLote(data);
+      await loadLotes(campoId: campoId);
+      return lote;
+    } catch (e) {
+      state = ErrorState('Error creando lote: $e');
+      _logger.error('Error creating lote', e);
+      return null;
+    }
+  }
+
+  Future<Lote?> updateLote(int id, Map<String, dynamic> data,
+      {int? campoId}) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      final lote = await apiService.updateLote(id, data);
+      await loadLotes(campoId: campoId);
+      return lote;
+    } catch (e) {
+      state = ErrorState('Error actualizando lote: $e');
+      _logger.error('Error updating lote', e);
+      return null;
+    }
+  }
+
+  Future<void> deleteLote(int id, {int? campoId}) async {
+    try {
+      final apiService = ApiService();
+      await apiService.initialize();
+      await apiService.deleteLote(id);
+      await loadLotes(campoId: campoId);
+    } catch (e) {
+      state = ErrorState('Error eliminando lote: $e');
+      _logger.error('Error deleting lote', e);
     }
   }
 }

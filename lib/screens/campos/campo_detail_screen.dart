@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
+import '../../models/lote.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/custom_card.dart';
 import '../../widgets/loading_widget.dart';
 import '../../utils/constants.dart';
+import '../forms/lote_form_screen.dart';
 
 class CampoDetailScreen extends ConsumerStatefulWidget {
   final dynamic campo;
@@ -23,10 +25,19 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
   void initState() {
     super.initState();
     _loadTrabajos();
+    _loadLotes();
   }
 
   Future<void> _loadTrabajos() async {
     await ref.read(trabajosProvider.notifier).loadTrabajos();
+  }
+
+  Future<void> _loadLotes() async {
+    if (widget.campo.id != null) {
+      await ref
+          .read(lotesProvider.notifier)
+          .loadLotes(campoId: widget.campo.id);
+    }
   }
 
   @override
@@ -67,6 +78,8 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
           children: [
             _buildCampoInfo(),
             const SizedBox(height: 24),
+            _buildLotesSection(),
+            const SizedBox(height: 24),
             _buildTrabajosSection(),
           ],
         ),
@@ -84,7 +97,8 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(AppConstants.primaryColor).withOpacity(0.1),
+                  color:
+                      const Color(AppConstants.primaryColor).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -119,7 +133,8 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
               ),
             ],
           ),
-          if (widget.campo.detalles != null && widget.campo.detalles!.isNotEmpty) ...[
+          if (widget.campo.detalles != null &&
+              widget.campo.detalles!.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
@@ -140,7 +155,8 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
               ),
             ),
           ],
-          if (widget.campo.latitud != null && widget.campo.longitud != null) ...[
+          if (widget.campo.latitud != null &&
+              widget.campo.longitud != null) ...[
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
@@ -176,6 +192,175 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
     );
   }
 
+  Widget _buildLotesSection() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final lotesState = ref.watch(lotesProvider);
+
+        return CustomCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Lotes y accesos',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(AppConstants.textColor),
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _navigateToLoteForm,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Agregar'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (lotesState is LoadingState)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (lotesState is ErrorState)
+                Column(
+                  children: [
+                    Text(lotesState.message,
+                        style: const TextStyle(color: Colors.red)),
+                    TextButton(
+                      onPressed: _loadLotes,
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                )
+              else if (lotesState is LoadedState<List<Lote>>)
+                _buildLotesList(lotesState.data)
+              else
+                const SizedBox.shrink(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLotesList(List<Lote> lotes) {
+    if (lotes.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.grey),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                  'Todavía no hay lotes. Agregá uno para marcar acceso, entrada y contorno.'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: lotes.map(_buildLoteItem).toList(),
+    );
+  }
+
+  Widget _buildLoteItem(Lote lote) {
+    final completitud = [
+      if (lote.tieneAcceso) 'Acceso OK' else 'Sin acceso',
+      if (lote.tieneEntrada) 'Entrada OK' else 'Sin entrada',
+      if (lote.tieneContorno) 'Contorno OK' else 'Sin contorno',
+    ].join(' · ');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(AppConstants.primaryColor).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.crop_square_rounded,
+              color: Color(AppConstants.primaryColor)),
+        ),
+        title: Text(
+          lote.nombre,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle:
+            Text('${lote.hectareas.toStringAsFixed(1)} ha · $completitud'),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'edit') {
+              _navigateToLoteForm(lote: lote);
+            } else if (value == 'delete') {
+              _deleteLote(lote);
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: 'edit', child: Text('Editar')),
+            PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToLoteForm({Lote? lote}) async {
+    final result = await Navigator.push<Lote>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LoteFormScreen(campo: widget.campo, lote: lote),
+      ),
+    );
+
+    if (result != null) {
+      await _loadLotes();
+      ref.read(camposProvider.notifier).loadCampos();
+    }
+  }
+
+  Future<void> _deleteLote(Lote lote) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar lote'),
+        content: Text('¿Eliminar ${lote.nombre}?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Eliminar')),
+        ],
+      ),
+    );
+
+    if (confirm != true || lote.id == null) return;
+    await ref
+        .read(lotesProvider.notifier)
+        .deleteLote(lote.id!, campoId: widget.campo.id);
+    await _loadLotes();
+  }
+
   Widget _buildTrabajosSection() {
     return Consumer(
       builder: (context, ref, child) {
@@ -186,7 +371,9 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
 
         List<dynamic> trabajos = [];
         if (trabajosState is LoadedState) {
-          trabajos = trabajosState.data.where((trabajo) => trabajo.idCampo == widget.campo.id).toList();
+          trabajos = trabajosState.data
+              .where((trabajo) => trabajo.idCampo == widget.campo.id)
+              .toList();
         }
 
         return CustomCard(
@@ -357,13 +544,13 @@ class _CampoDetailScreenState extends ConsumerState<CampoDetailScreen> {
           '¿Estás seguro de que quieres eliminar el campo "${widget.campo.nombre}"? Esta acción no se puede deshacer.',
         ),
         actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(AppConstants.cancelColor),
-              ),
-              child: const Text('Cancelar'),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(AppConstants.cancelColor),
             ),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();

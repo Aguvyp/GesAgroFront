@@ -307,7 +307,7 @@ class _OptimizedCamposListScreenState
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    '${campo.superficieHa.toStringAsFixed(2)} hectáreas',
+                    '${campo.superficieHa.toStringAsFixed(2)} ha · ${campo.lotesCount} lote${campo.lotesCount == 1 ? '' : 's'}',
                     style: const TextStyle(
                       fontSize: 15,
                       color: Color(0xFF8E8E93),
@@ -1043,22 +1043,69 @@ class _OptimizedTrabajosListScreenState
                         ),
                       ],
                     ),
+                    if (trabajo.tieneLote) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.crop_square_rounded,
+                              size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              trabajo.loteInfo,
+                              style: TextStyle(
+                                  fontSize: 13, color: Colors.grey[600]),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        trabajo.estado ?? 'Desconocido',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: statusColor,
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            trabajo.estado ?? 'Desconocido',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: statusColor,
+                            ),
+                          ),
                         ),
-                      ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (trabajo.indicacionesEnviadas
+                                    ? Colors.green
+                                    : Colors.orange)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            trabajo.indicacionesEnviadas
+                                ? 'Indicaciones enviadas'
+                                : 'Sin enviar',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: trabajo.indicacionesEnviadas
+                                  ? Colors.green
+                                  : Colors.orange,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

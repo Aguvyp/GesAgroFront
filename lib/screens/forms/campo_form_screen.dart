@@ -5,6 +5,7 @@ import '../../models/campo.dart';
 import '../../models/cliente.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
+import '../campos/lote_polygon_map_screen.dart';
 
 /// Pantalla completa para crear/editar campos
 class CampoFormScreen extends ConsumerStatefulWidget {
@@ -23,6 +24,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
   late TextEditingController _latitudController;
   late TextEditingController _longitudController;
   late TextEditingController _detallesController;
+  Map<String, dynamic>? _polygonGeoJson;
 
   bool _isSaving = false;
   bool _esPropio = true;
@@ -38,6 +40,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
         TextEditingController(text: widget.campo?.latitud?.toString() ?? '');
     _longitudController =
         TextEditingController(text: widget.campo?.longitud?.toString() ?? '');
+    _polygonGeoJson = widget.campo?.polygonGeoJson;
     _detallesController =
         TextEditingController(text: widget.campo?.detalles ?? '');
 
@@ -239,51 +242,13 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Ubicación
+              // Contorno
               OptimizedCard(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Ubicación',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1C1C1E),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OptimizedTextField(
-                            controller: _latitudController,
-                            label: 'Latitud',
-                            hint: 'Ej: -34.6037',
-                            prefixIcon: const Icon(Icons.location_on),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: OptimizedTextField(
-                            controller: _longitudController,
-                            label: 'Longitud',
-                            hint: 'Ej: -58.3816',
-                            prefixIcon: const Icon(Icons.location_on),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Las coordenadas son opcionales y se pueden obtener desde Google Maps',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                    ),
+                    _buildPolygonSection(),
                   ],
                 ),
               ),
@@ -351,6 +316,134 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
     );
   }
 
+  Widget _buildPolygonSection() {
+    final pointsCount = _polygonPointsCount(_polygonGeoJson);
+    final hasPolygon = pointsCount >= 3;
+    final hasLocation = _latitudController.text.isNotEmpty &&
+        _longitudController.text.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4FAF5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD8EAD9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.polyline_rounded,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Contorno del campo',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hasPolygon
+                          ? '$pointsCount puntos marcados'
+                          : hasLocation
+                              ? 'Ubicación previa cargada'
+                              : 'Sin contorno marcado',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Marcá el perímetro tocando el mapa. No hace falta cargar latitud ni longitud manualmente.',
+            style:
+                TextStyle(fontSize: 12, color: Colors.grey[700], height: 1.35),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _openPolygonEditor,
+                  icon: const Icon(Icons.map_rounded),
+                  label: Text(hasPolygon ? 'Editar en mapa' : 'Marcar en mapa'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF2E7D32),
+                    side: const BorderSide(color: Color(0xFF2E7D32)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              if (hasPolygon || hasLocation) ...[
+                const SizedBox(width: 10),
+                IconButton.filledTonal(
+                  onPressed: _clearMapSelection,
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  tooltip: 'Quitar contorno',
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openPolygonEditor() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LotePolygonMapScreen(
+          initialPolygon: _polygonGeoJson,
+          initialLatitude: _toDouble(_latitudController.text),
+          initialLongitude: _toDouble(_longitudController.text),
+          title: 'Marcar contorno del campo',
+        ),
+      ),
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    final center = _polygonCenter(result);
+    setState(() {
+      _polygonGeoJson = result;
+      _latitudController.text = center?.$1.toString() ?? '';
+      _longitudController.text = center?.$2.toString() ?? '';
+    });
+  }
+
+  void _clearMapSelection() {
+    setState(() {
+      _polygonGeoJson = null;
+      _latitudController.clear();
+      _longitudController.clear();
+    });
+  }
+
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -367,6 +460,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
           'longitud': _longitudController.text.isNotEmpty
               ? double.parse(_longitudController.text)
               : null,
+          'polygon_geojson': _polygonGeoJson,
           'detalles': _detallesController.text.isNotEmpty
               ? _detallesController.text
               : null,
@@ -402,6 +496,7 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
               longitud: _longitudController.text.isNotEmpty
                   ? double.parse(_longitudController.text)
                   : null,
+              polygonGeoJson: _polygonGeoJson,
               detalles: _detallesController.text,
               esPropio: _esPropio,
               clienteId: _esPropio ? null : _clienteId,
@@ -427,5 +522,86 @@ class _CampoFormScreenState extends ConsumerState<CampoFormScreen> {
         }
       }
     }
+  }
+
+  int _polygonPointsCount(Map<String, dynamic>? geoJson) {
+    final ring = _polygonRing(geoJson);
+    if (ring.isEmpty) {
+      return 0;
+    }
+
+    if (ring.length > 1 &&
+        ring.first.length >= 2 &&
+        ring.last.length >= 2 &&
+        ring.first[0] == ring.last[0] &&
+        ring.first[1] == ring.last[1]) {
+      return ring.length - 1;
+    }
+
+    return ring.length;
+  }
+
+  (double, double)? _polygonCenter(Map<String, dynamic>? geoJson) {
+    final ring = _polygonRing(geoJson);
+    if (ring.isEmpty) {
+      return null;
+    }
+
+    final points = ring.length > 1 &&
+            ring.first.length >= 2 &&
+            ring.last.length >= 2 &&
+            ring.first[0] == ring.last[0] &&
+            ring.first[1] == ring.last[1]
+        ? ring.sublist(0, ring.length - 1)
+        : ring;
+
+    if (points.isEmpty) {
+      return null;
+    }
+
+    final lat =
+        points.map((point) => point[1]).reduce((a, b) => a + b) / points.length;
+    final lng =
+        points.map((point) => point[0]).reduce((a, b) => a + b) / points.length;
+
+    return (lat, lng);
+  }
+
+  List<List<double>> _polygonRing(Map<String, dynamic>? geoJson) {
+    if (geoJson == null) {
+      return [];
+    }
+
+    final geometry = geoJson['type'] == 'Feature' && geoJson['geometry'] is Map
+        ? Map<String, dynamic>.from(geoJson['geometry'])
+        : geoJson;
+
+    final coordinates = geometry['coordinates'];
+    if (geometry['type'] != 'Polygon' ||
+        coordinates is! List ||
+        coordinates.isEmpty ||
+        coordinates.first is! List) {
+      return [];
+    }
+
+    final ring = <List<double>>[];
+    for (final coordinate in coordinates.first as List) {
+      if (coordinate is List && coordinate.length >= 2) {
+        final lng = _toDouble(coordinate[0]?.toString() ?? '');
+        final lat = _toDouble(coordinate[1]?.toString() ?? '');
+        if (lat != null && lng != null) {
+          ring.add([lng, lat]);
+        }
+      }
+    }
+
+    return ring;
+  }
+
+  double? _toDouble(String value) {
+    if (value.trim().isEmpty) {
+      return null;
+    }
+    return double.tryParse(value.trim().replaceAll(',', '.'));
   }
 }

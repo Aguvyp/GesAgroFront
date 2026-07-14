@@ -4,9 +4,11 @@ class Campo {
   final double superficieHa;
   final double? latitud;
   final double? longitud;
+  final Map<String, dynamic>? polygonGeoJson;
   final String? detalles;
   final bool esPropio;
   final int? clienteId;
+  final int lotesCount;
 
   Campo({
     this.id,
@@ -14,9 +16,11 @@ class Campo {
     required this.superficieHa,
     this.latitud,
     this.longitud,
+    this.polygonGeoJson,
     this.detalles,
     this.esPropio = true,
     this.clienteId,
+    this.lotesCount = 0,
   });
 
   factory Campo.fromJson(Map<String, dynamic> json) {
@@ -66,6 +70,9 @@ class Campo {
         superficieHa: _toDouble(hectareasValue) ?? 0.0,
         latitud: _toDouble(json['latitud']),
         longitud: _toDouble(json['longitud']),
+        polygonGeoJson: json['polygon_geojson'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(json['polygon_geojson'])
+            : null,
         detalles: json['detalles']?.toString(),
         esPropio: json['propio'] == 1 || json['propio'] == true,
         clienteId: json['cliente_id'] is int
@@ -77,6 +84,11 @@ class Campo {
                     : (json['id_cliente'] != null
                         ? int.tryParse(json['id_cliente'].toString())
                         : null))),
+        lotesCount: json['lotes_count'] is int
+            ? json['lotes_count']
+            : (json['lotes_count'] != null
+                ? int.tryParse(json['lotes_count'].toString()) ?? 0
+                : 0),
       );
     } catch (e) {
       // Si hay un error al crear el Campo, lanzar una excepción más descriptiva
@@ -91,10 +103,12 @@ class Campo {
       'hectareas': superficieHa,
       'latitud': latitud,
       'longitud': longitud,
+      'polygon_geojson': polygonGeoJson,
       'detalles': detalles,
       'propio': esPropio ? 1 : 0,
       'cliente_id': clienteId,
       'id_cliente': clienteId, // Fallback key
+      'lotes_count': lotesCount,
     };
   }
 
@@ -104,9 +118,11 @@ class Campo {
     double? superficieHa,
     double? latitud,
     double? longitud,
+    Map<String, dynamic>? polygonGeoJson,
     String? detalles,
     bool? esPropio,
     int? clienteId,
+    int? lotesCount,
   }) {
     return Campo(
       id: id ?? this.id,
@@ -114,9 +130,11 @@ class Campo {
       superficieHa: superficieHa ?? this.superficieHa,
       latitud: latitud ?? this.latitud,
       longitud: longitud ?? this.longitud,
+      polygonGeoJson: polygonGeoJson ?? this.polygonGeoJson,
       detalles: detalles ?? this.detalles,
       esPropio: esPropio ?? this.esPropio,
       clienteId: clienteId ?? this.clienteId,
+      lotesCount: lotesCount ?? this.lotesCount,
     );
   }
 

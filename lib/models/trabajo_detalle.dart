@@ -9,11 +9,24 @@ class TrabajoDetalle {
   final String cliente;
   final String cultivo;
   final String? observaciones;
+  final String? indicaciones;
+  final String? estadoIndicaciones;
+  final DateTime? indicacionesEnviadasAt;
+  final List<String> indicacionesEnviadasA;
   final String? estado;
   final bool aTerceros;
   final DateTime fechaInicio;
   final DateTime? fechaFin;
   final int campoId;
+  final int? loteId;
+  final String? loteNombre;
+  final double? loteHa;
+  final Map<String, dynamic>? lotePolygonGeoJson;
+  final double? lotePuntoAccesoLatitud;
+  final double? lotePuntoAccesoLongitud;
+  final double? lotePuntoEntradaLatitud;
+  final double? lotePuntoEntradaLongitud;
+  final String? loteNotasAcceso;
   final double? haRealizadas;
   final double? porcentajeProgreso;
 
@@ -39,11 +52,24 @@ class TrabajoDetalle {
     required this.cliente,
     required this.cultivo,
     this.observaciones,
+    this.indicaciones,
+    this.estadoIndicaciones,
+    this.indicacionesEnviadasAt,
+    this.indicacionesEnviadasA = const [],
     this.estado,
     this.aTerceros = false,
     required this.fechaInicio,
     this.fechaFin,
     required this.campoId,
+    this.loteId,
+    this.loteNombre,
+    this.loteHa,
+    this.lotePolygonGeoJson,
+    this.lotePuntoAccesoLatitud,
+    this.lotePuntoAccesoLongitud,
+    this.lotePuntoEntradaLatitud,
+    this.lotePuntoEntradaLongitud,
+    this.loteNotasAcceso,
     this.campo,
     this.clienteInfo,
     this.maquinas = const [],
@@ -55,12 +81,28 @@ class TrabajoDetalle {
   });
 
   factory TrabajoDetalle.fromJson(Map<String, dynamic> json) {
+    final campoJson = json['campo'];
+    final campoId = _toIntSafe(
+          json['campo_id'] ?? (campoJson is Map ? campoJson['id'] : campoJson),
+        ) ??
+        0;
+
     return TrabajoDetalle(
       id: json['id'],
       tipo: json['tipo'] ?? '',
       cliente: json['cliente'] ?? '',
       cultivo: json['cultivo'] ?? '',
       observaciones: json['observaciones'],
+      indicaciones: json['indicaciones'],
+      estadoIndicaciones: json['estado_indicaciones'],
+      indicacionesEnviadasAt: json['indicaciones_enviadas_at'] != null
+          ? DateTime.tryParse(json['indicaciones_enviadas_at'].toString())
+          : null,
+      indicacionesEnviadasA: json['indicaciones_enviadas_a'] is List
+          ? (json['indicaciones_enviadas_a'] as List)
+              .map((value) => value.toString())
+              .toList()
+          : const [],
       estado: json['estado'],
       aTerceros: _parseBoolean(json['a_terceros']),
       fechaInicio: json['fecha_inicio'] != null
@@ -68,7 +110,21 @@ class TrabajoDetalle {
           : DateTime.now(),
       fechaFin:
           json['fecha_fin'] != null ? DateTime.parse(json['fecha_fin']) : null,
-      campoId: json['campo_id'] ?? 0,
+      campoId: campoId,
+      loteId: _toIntSafe(json['lote'] ?? json['lote_id']),
+      loteNombre: json['lote_nombre'],
+      loteHa: _toDoubleSafe(json['lote_ha']),
+      lotePolygonGeoJson: json['lote_polygon_geojson'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(json['lote_polygon_geojson'])
+          : null,
+      lotePuntoAccesoLatitud: _toDoubleSafe(json['lote_punto_acceso_latitud']),
+      lotePuntoAccesoLongitud:
+          _toDoubleSafe(json['lote_punto_acceso_longitud']),
+      lotePuntoEntradaLatitud:
+          _toDoubleSafe(json['lote_punto_entrada_latitud']),
+      lotePuntoEntradaLongitud:
+          _toDoubleSafe(json['lote_punto_entrada_longitud']),
+      loteNotasAcceso: json['lote_notas_acceso'],
 
       // Campo completo
       campo: json['campo'] is Map<String, dynamic>
@@ -118,6 +174,12 @@ class TrabajoDetalle {
     return null;
   }
 
+  static int? _toIntSafe(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
+  }
+
   static bool _parseBoolean(dynamic value) {
     if (value == null) return false;
     if (value is bool) return value;
@@ -133,12 +195,25 @@ class TrabajoDetalle {
       'cliente': cliente,
       'cultivo': cultivo,
       'observaciones': observaciones,
+      'indicaciones': indicaciones,
+      'estado_indicaciones': estadoIndicaciones,
+      'indicaciones_enviadas_at': indicacionesEnviadasAt?.toIso8601String(),
+      'indicaciones_enviadas_a': indicacionesEnviadasA,
       'estado': estado,
       'a_terceros': aTerceros,
       'fecha_inicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
       'fecha_fin':
           fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
       'campo_id': campoId,
+      'lote': loteId,
+      'lote_nombre': loteNombre,
+      'lote_ha': loteHa,
+      'lote_polygon_geojson': lotePolygonGeoJson,
+      'lote_punto_acceso_latitud': lotePuntoAccesoLatitud,
+      'lote_punto_acceso_longitud': lotePuntoAccesoLongitud,
+      'lote_punto_entrada_latitud': lotePuntoEntradaLatitud,
+      'lote_punto_entrada_longitud': lotePuntoEntradaLongitud,
+      'lote_notas_acceso': loteNotasAcceso,
       'campo': campo?.toJson(),
       'cliente_info': clienteInfo?.toJson(),
       'maquinas': maquinas.map((maq) => maq.toJson()).toList(),
@@ -176,6 +251,23 @@ class TrabajoDetalle {
   double get campoHectareas => campo?.superficieHa ?? 0.0;
   String get campoInfo =>
       '${campoNombre} - ${campoHectareas.toStringAsFixed(1)} ha';
+
+  String get loteInfo {
+    if (loteNombre != null && loteNombre!.isNotEmpty) {
+      if (loteHa != null && loteHa! > 0) {
+        return '$loteNombre - ${loteHa!.toStringAsFixed(1)} ha';
+      }
+      return loteNombre!;
+    }
+    return 'Sin lote asignado';
+  }
+
+  bool get tieneLote => loteId != null || loteNombre != null;
+  bool get tieneContornoLote => lotePolygonGeoJson != null;
+  bool get tienePuntoEntrada =>
+      lotePuntoEntradaLatitud != null && lotePuntoEntradaLongitud != null;
+  bool get indicacionesEnviadas =>
+      (estadoIndicaciones ?? '').toLowerCase().contains('enviad');
 
   // Información del cliente
   String get clienteNombre => clienteInfo?.nombreRazonSocial ?? cliente;

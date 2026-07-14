@@ -46,6 +46,8 @@ dependencies:
   # Maps & Location
   geolocator: ^10.1.0
   google_maps_flutter: ^2.5.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   permission_handler: ^11.0.1
   
   # Utilities
