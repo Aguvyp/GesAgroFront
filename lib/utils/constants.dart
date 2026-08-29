@@ -3,7 +3,7 @@ class AppConstants {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.54:8000',
+    defaultValue: 'https://gesagro.site',
   );
 
   static const int apiTimeoutSeconds = 30;
