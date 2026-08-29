@@ -158,26 +158,27 @@ class ApiService {
 
   /// Obtener usuario por ID
   Future<Usuario> getUsuario(int id) async {
-    final response = await _httpClient.get('/api/usuarios/$id');
+    final response = await _httpClient.get('/api/usuarios/$id/');
     return Usuario.fromJson(response.data);
   }
 
   /// Crear usuario
   Future<Usuario> createUsuario(Map<String, dynamic> data) async {
-    final response = await _httpClient.post('/api/usuarios/create', data: data);
+    final response =
+        await _httpClient.post('/api/usuarios/create/', data: data);
     return Usuario.fromJson(response.data);
   }
 
   /// Actualizar usuario
   Future<Usuario> updateUsuario(int id, Map<String, dynamic> data) async {
     final response =
-        await _httpClient.put('/api/usuarios/$id/update', data: data);
+        await _httpClient.put('/api/usuarios/$id/update/', data: data);
     return Usuario.fromJson(response.data);
   }
 
   /// Eliminar usuario
   Future<void> deleteUsuario(int id) async {
-    await _httpClient.delete('/api/usuarios/$id/delete');
+    await _httpClient.delete('/api/usuarios/$id/delete/');
   }
 
   /// ==================== CAMPOS ====================

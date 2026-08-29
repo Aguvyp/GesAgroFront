@@ -2,7 +2,7 @@ class Usuario {
   final int id;
   final String nombre;
   final String email;
-  final String rol; // 'Administrador', 'Contable', 'Operario'
+  final String rol; // 'Superadmin', 'Dueño', 'Empleado'
   final bool activo;
   final DateTime fechaCreacion;
   final DateTime? ultimoAcceso;
@@ -20,7 +20,7 @@ class Usuario {
   factory Usuario.fromJson(Map<String, dynamic> json) {
     return Usuario(
       id: json['id'],
-      nombre: json['nombre'],
+      nombre: json['nombre'] ?? '',
       email: json['email'],
       rol: json['rol'],
       activo: json['activo'] ?? true,
@@ -43,9 +43,9 @@ class Usuario {
     };
   }
 
-  bool get esAdministrador => rol == 'Administrador';
-  bool get esContable => rol == 'Contable';
-  bool get esOperario => rol == 'Operario';
+  bool get esSuperadmin => rol == 'Superadmin';
+  bool get esDuenio => rol == 'Dueño';
+  bool get esEmpleado => rol == 'Empleado';
 
   Usuario copyWith({
     int? id,

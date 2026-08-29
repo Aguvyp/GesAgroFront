@@ -312,23 +312,27 @@ final currentUserProvider = Provider<Map<String, dynamic>?>((ref) {
 /// Provider para verificar permisos de administrador
 final isAdminProvider = Provider<bool>((ref) {
   final role = ref.watch(userRoleProvider);
-  return role == 'Administrador';
+  return role == 'Superadmin' || role == 'Dueño';
 });
 
 /// Provider para verificar permisos de contable
 final isContableProvider = Provider<bool>((ref) {
   final role = ref.watch(userRoleProvider);
-  return role == 'Contable';
+  return role == 'Dueño';
 });
 
 /// Provider para verificar permisos de usuario
 final isUserProvider = Provider<bool>((ref) {
   final role = ref.watch(userRoleProvider);
-  return role == 'Usuario';
+  return role == 'Empleado';
 });
 
 /// Provider para verificar si tiene permisos de administrador o contable
 final hasAdminOrContableAccessProvider = Provider<bool>((ref) {
   final role = ref.watch(userRoleProvider);
-  return role == 'Administrador' || role == 'Contable';
+  return role == 'Superadmin' || role == 'Dueño';
+});
+
+final isSuperadminProvider = Provider<bool>((ref) {
+  return ref.watch(userRoleProvider) == 'Superadmin';
 });

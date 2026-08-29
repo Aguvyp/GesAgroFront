@@ -18,6 +18,7 @@ import 'reportes/optimized_reportes_screen.dart';
 import 'personal/personal_list_screen.dart';
 import 'clientes/clientes_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
+import 'usuarios/usuarios_screen.dart';
 import '../providers/optimized_providers.dart';
 import '../providers/optimized_auth_provider.dart';
 import '../themes/app_theme.dart';
@@ -722,6 +723,7 @@ class OptimizedMoreScreen extends ConsumerStatefulWidget {
 class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
   @override
   Widget build(BuildContext context) {
+    final isSuperadmin = ref.watch(isSuperadminProvider);
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
@@ -784,6 +786,20 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
               }),
             ]),
             const SizedBox(height: 24),
+
+            if (isSuperadmin) ...[
+              _buildSectionLabel('ADMINISTRACIÓN'),
+              _buildGroupCard([
+                _buildItem('Usuarios', Icons.manage_accounts_outlined,
+                    const Color(0xFF00695C), const Color(0xFFE0F2F1), () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UsuariosScreen()),
+                  );
+                }),
+              ]),
+              const SizedBox(height: 24),
+            ],
 
             // Reportes
             _buildSectionLabel('REPORTES'),
