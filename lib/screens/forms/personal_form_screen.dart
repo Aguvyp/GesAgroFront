@@ -117,15 +117,14 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
                     const SizedBox(height: 16),
                     OptimizedTextField(
                       controller: _dniController,
-                      label: 'DNI',
-                      hint: 'Ingresa el número de DNI',
+                      label: 'DNI (opcional)',
+                      hint: 'Ingresa el número de DNI si lo tenés',
                       prefixIcon: const Icon(Icons.badge),
                       keyboardType: TextInputType.number,
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'El DNI es requerido';
-                        }
-                        if (value.length < 7) {
+                        if (value != null &&
+                            value.isNotEmpty &&
+                            value.length < 7) {
                           return 'El DNI debe tener al menos 7 dígitos';
                         }
                         return null;
@@ -187,9 +186,11 @@ class _PersonalFormScreenState extends ConsumerState<PersonalFormScreen> {
 
       try {
         final data = {
-          'nombre': _nombreController.text,
-          'dni': _dniController.text,
-          'telefono': _telefonoController.text,
+          'nombre': _nombreController.text.trim(),
+          'dni': _dniController.text.trim().isEmpty
+              ? null
+              : _dniController.text.trim(),
+          'telefono': _telefonoController.text.trim(),
         };
 
         if (widget.personal == null) {
