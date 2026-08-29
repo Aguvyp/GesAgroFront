@@ -23,8 +23,7 @@ class AppConfig {
   // Configuration
   // Usar la URL de constants.dart para mantener una sola fuente de verdad
   String get apiBaseUrl => _apiBaseUrl;
-  static const Duration _apiTimeout =
-      Duration(seconds: 60); // Aumentado para ngrok
+  static const Duration _apiTimeout = Duration(seconds: 15);
   static const Duration _cacheTimeout = Duration(hours: 1);
   static const int _maxRetries = 3;
   static const Duration _retryDelay = Duration(seconds: 2);
@@ -82,9 +81,11 @@ class AppConfig {
 
       // Initialize shared preferences
       _prefs = await SharedPreferences.getInstance();
-      _apiBaseUrl = _normalizeBaseUrl(
-        _prefs!.getString('api_base_url') ?? AppConstants.apiBaseUrl,
-      );
+      // La aplicación productiva siempre usa el backend oficial. Las versiones
+      // anteriores podían persistir una URL local o de ngrok y dejar el login
+      // esperando hasta agotar el timeout incluso después de actualizar el APK.
+      _apiBaseUrl = _normalizeBaseUrl(AppConstants.apiBaseUrl);
+      await _prefs!.remove('api_base_url');
 
       // Initialize logger
       _logger = Logger(

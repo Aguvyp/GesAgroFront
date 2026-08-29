@@ -31,12 +31,13 @@ class OptimizedHttpClient {
       baseUrl = baseUrl.substring(0, baseUrl.length - 1);
     }
 
-    // Configurar opciones base con timeouts amplios para ngrok
+    // Producción responde normalmente en menos de un segundo. Un timeout breve
+    // permite informar problemas de red sin congelar la interfaz un minuto.
     _dio.options = BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 60), // Aumentado para ngrok
-      receiveTimeout: const Duration(seconds: 60), // Aumentado para ngrok
-      sendTimeout: const Duration(seconds: 60), // Aumentado para ngrok
+      connectTimeout: AppConfig.instance.apiTimeout,
+      receiveTimeout: AppConfig.instance.apiTimeout,
+      sendTimeout: AppConfig.instance.apiTimeout,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -46,9 +47,7 @@ class OptimizedHttpClient {
 
     _logger.info('🌐 OptimizedHttpClient configured');
     _logger.info('   Base URL: $baseUrl');
-    _logger.info('   Connect Timeout: 60s');
-    _logger.info('   Receive Timeout: 60s');
-    _logger.info('   Send Timeout: 60s');
+    _logger.info('   Timeout: ${AppConfig.instance.apiTimeout.inSeconds}s');
 
     // Configurar interceptores
     _setupInterceptors();
