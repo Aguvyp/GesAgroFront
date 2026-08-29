@@ -3,7 +3,7 @@ import 'optimized_api_service.dart';
 
 class TrabajoDetalleService {
   static final ApiService _apiService = ApiService();
-  
+
   static Future<void> _ensureInitialized() async {
     if (!_apiService.isInitialized) {
       await _apiService.initialize();
@@ -15,13 +15,13 @@ class TrabajoDetalleService {
   static Future<TrabajoDetalle> getTrabajoDetalle(int trabajoId) async {
     try {
       await _ensureInitialized();
-      
+
       // Usar el nuevo endpoint específico para detalles
-      final response = await _apiService.get('/api/trabajos/detalle/$trabajoId');
-      
+      final response =
+          await _apiService.get('/api/trabajos/detalle/$trabajoId');
+
       // El endpoint ya devuelve toda la información estructurada
       return TrabajoDetalle.fromJson(response);
-      
     } catch (e) {
       throw Exception('Error al obtener detalles del trabajo: $e');
     }
@@ -31,10 +31,10 @@ class TrabajoDetalleService {
   static Future<List<TrabajoDetalle>> getTrabajosDetalle() async {
     try {
       await _ensureInitialized();
-      
+
       final trabajos = await _apiService.getTrabajos();
       final trabajosDetalle = <TrabajoDetalle>[];
-      
+
       // Procesar cada trabajo para obtener sus detalles
       for (final trabajo in trabajos) {
         try {
@@ -59,9 +59,8 @@ class TrabajoDetalleService {
           ));
         }
       }
-      
+
       return trabajosDetalle;
-      
     } catch (e) {
       throw Exception('Error al obtener lista de trabajos con detalles: $e');
     }
@@ -71,11 +70,11 @@ class TrabajoDetalleService {
   static Future<List<TrabajoDetalle>> getTrabajosDetalleOptimizado() async {
     try {
       await _ensureInitialized();
-      
+
       // Obtener lista de trabajos básicos
       final trabajos = await _apiService.getTrabajos();
       final trabajosDetalle = <TrabajoDetalle>[];
-      
+
       // Procesar cada trabajo para obtener sus detalles usando el endpoint específico
       for (final trabajo in trabajos) {
         try {
@@ -100,9 +99,8 @@ class TrabajoDetalleService {
           ));
         }
       }
-      
+
       return trabajosDetalle;
-      
     } catch (e) {
       throw Exception('Error al obtener trabajos con detalles optimizado: $e');
     }

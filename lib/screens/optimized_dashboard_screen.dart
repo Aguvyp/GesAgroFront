@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -205,8 +204,8 @@ class _OptimizedDashboardScreenState
                     const SizedBox(height: 20),
 
                     // Stats
-                    _buildStatsRow(
-                        enCurso.length, pendientes.length, completados.length)
+                    _buildStatsRow(enCurso.length, pendientes.length,
+                            completados.length)
                         .animate()
                         .fadeIn(delay: 100.ms, duration: 400.ms)
                         .slideY(begin: 0.1, end: 0, duration: 400.ms),
@@ -222,16 +221,12 @@ class _OptimizedDashboardScreenState
                         () => _navegarAListaTrabajosPorEstado('En curso'),
                       ),
                       const SizedBox(height: 12),
-                      ...enCurso
-                          .take(3)
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((entry) => _buildTrabajoCard(
-                                  entry.value, true, false)
+                      ...enCurso.take(3).toList().asMap().entries.map((entry) =>
+                          _buildTrabajoCard(entry.value, true, false)
                               .animate()
                               .fadeIn(
-                                  delay: Duration(milliseconds: 100 + entry.key * 80),
+                                  delay: Duration(
+                                      milliseconds: 100 + entry.key * 80),
                                   duration: 400.ms)
                               .slideX(begin: 0.05, end: 0, duration: 400.ms)),
                       const SizedBox(height: 24),
@@ -247,16 +242,13 @@ class _OptimizedDashboardScreenState
                         () => _navegarAListaTrabajosPorEstado('Pendiente'),
                       ),
                       const SizedBox(height: 12),
-                      ...pendientes
-                          .take(3)
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((entry) => _buildTrabajoCard(
+                      ...pendientes.take(3).toList().asMap().entries.map(
+                          (entry) => _buildTrabajoCard(
                                   entry.value, false, false)
                               .animate()
                               .fadeIn(
-                                  delay: Duration(milliseconds: 200 + entry.key * 80),
+                                  delay: Duration(
+                                      milliseconds: 200 + entry.key * 80),
                                   duration: 400.ms)
                               .slideX(begin: 0.05, end: 0, duration: 400.ms)),
                       const SizedBox(height: 24),
@@ -318,9 +310,9 @@ class _OptimizedDashboardScreenState
                   color: AppTheme.primary,
                 ),
               ),
-            )
-                .animate(onPlay: (c) => c.repeat())
-                .shimmer(duration: 1200.ms, color: AppTheme.primarySoft.withOpacity(0.3)),
+            ).animate(onPlay: (c) => c.repeat()).shimmer(
+                duration: 1200.ms,
+                color: AppTheme.primarySoft.withOpacity(0.3)),
             const SizedBox(height: 24),
             Text(
               'Cargando tu campo...',
@@ -446,8 +438,7 @@ class _OptimizedDashboardScreenState
                         Row(
                           children: [
                             Icon(greetingIcon,
-                                size: 16,
-                                color: Colors.white.withOpacity(0.6)),
+                                size: 16, color: Colors.white.withOpacity(0.6)),
                             const SizedBox(width: 6),
                             Text(
                               greeting,
@@ -554,18 +545,15 @@ class _OptimizedDashboardScreenState
     return Row(
       children: [
         Expanded(
-            child: _buildStatCard(
-                'En curso', '$enCurso', AppTheme.warning,
+            child: _buildStatCard('En curso', '$enCurso', AppTheme.warning,
                 Icons.play_circle_outline_rounded)),
         const SizedBox(width: 10),
         Expanded(
-            child: _buildStatCard(
-                'Pendientes', '$pendientes', AppTheme.info,
+            child: _buildStatCard('Pendientes', '$pendientes', AppTheme.info,
                 Icons.schedule_rounded)),
         const SizedBox(width: 10),
         Expanded(
-            child: _buildStatCard(
-                'Listos', '$completados', AppTheme.success,
+            child: _buildStatCard('Listos', '$completados', AppTheme.success,
                 Icons.check_circle_outline_rounded)),
       ],
     );
@@ -618,8 +606,8 @@ class _OptimizedDashboardScreenState
   //  SECTION HEADERS
   // ════════════════════════════════════════════════
 
-  Widget _buildSectionHeader(
-      String title, String count, Color color, IconData icon, VoidCallback onSeeAll) {
+  Widget _buildSectionHeader(String title, String count, Color color,
+      IconData icon, VoidCallback onSeeAll) {
     return Row(
       children: [
         Container(
@@ -691,9 +679,7 @@ class _OptimizedDashboardScreenState
   //  TRABAJO CARD
   // ════════════════════════════════════════════════
 
-  Widget _buildTrabajoCard(
-      Trabajo trabajo, bool isEnCurso, bool isCompletado) {
-    final estado = trabajo.estado?.toLowerCase().trim() ?? '';
+  Widget _buildTrabajoCard(Trabajo trabajo, bool isEnCurso, bool isCompletado) {
     Color statusColor;
     if (isEnCurso) {
       statusColor = AppTheme.warning;
@@ -793,7 +779,8 @@ class _OptimizedDashboardScreenState
                                 ),
                               ),
                               Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 6),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 6),
                                 width: 3,
                                 height: 3,
                                 decoration: BoxDecoration(
@@ -1026,10 +1013,7 @@ class _OptimizedDashboardScreenState
     for (final trabajo in _trabajos) {
       final fecha = DateTime(trabajo.fechaInicio.year,
           trabajo.fechaInicio.month, trabajo.fechaInicio.day);
-      _trabajosPorFecha[fecha] = [
-        ...(_trabajosPorFecha[fecha] ?? []),
-        trabajo
-      ];
+      _trabajosPorFecha[fecha] = [...(_trabajosPorFecha[fecha] ?? []), trabajo];
     }
 
     _mantenimientosPorFecha = {};
@@ -1135,10 +1119,9 @@ class _OptimizedDashboardScreenState
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: TableCalendar<Trabajo>(
-                      firstDay: DateTime.now()
-                          .subtract(const Duration(days: 365)),
-                      lastDay:
-                          DateTime.now().add(const Duration(days: 365)),
+                      firstDay:
+                          DateTime.now().subtract(const Duration(days: 365)),
+                      lastDay: DateTime.now().add(const Duration(days: 365)),
                       focusedDay: _focusedDay,
                       calendarFormat: CalendarFormat.month,
                       headerVisible: true,
@@ -1164,19 +1147,17 @@ class _OptimizedDashboardScreenState
                         });
                         final fechaN = DateTime(selectedDay.year,
                             selectedDay.month, selectedDay.day);
-                        final trabajosDelDia =
-                            _trabajosPorFecha[fechaN] ?? [];
+                        final trabajosDelDia = _trabajosPorFecha[fechaN] ?? [];
                         final mantDelDia =
                             _mantenimientosPorFecha[fechaN] ?? [];
-                        _mostrarDetallesDia(context, trabajosDelDia,
-                            mantDelDia, selectedDay);
+                        _mostrarDetallesDia(
+                            context, trabajosDelDia, mantDelDia, selectedDay);
                       },
                       onPageChanged: (focusedDay) {
                         setModalState(() => _focusedDay = focusedDay);
                       },
                       eventLoader: (day) {
-                        final fechaN =
-                            DateTime(day.year, day.month, day.day);
+                        final fechaN = DateTime(day.year, day.month, day.day);
                         return _trabajosPorFecha[fechaN] ?? [];
                       },
                       calendarBuilders: CalendarBuilders(
@@ -1225,8 +1206,8 @@ class _OptimizedDashboardScreenState
         ),
         const SizedBox(width: 4),
         Text(label,
-            style: GoogleFonts.inter(
-                fontSize: 11, color: AppTheme.textSecondary)),
+            style:
+                GoogleFonts.inter(fontSize: 11, color: AppTheme.textSecondary)),
       ],
     );
   }
@@ -1271,7 +1252,8 @@ class _OptimizedDashboardScreenState
                 '${day.day}',
                 style: GoogleFonts.inter(
                   color: textColor,
-                  fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w400,
+                  fontWeight:
+                      isToday || isSelected ? FontWeight.w700 : FontWeight.w400,
                   fontSize: 13,
                 ),
               ),
@@ -1418,12 +1400,10 @@ class _OptimizedDashboardScreenState
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     ...trabajos.map((t) => _buildDayTrabajoItem(t)),
-                    ...mantenimientos
-                        .map((m) => _buildDayMantenimientoItem(m)),
+                    ...mantenimientos.map((m) => _buildDayMantenimientoItem(m)),
                   ],
                 ),
               ),
@@ -1476,8 +1456,7 @@ class _OptimizedDashboardScreenState
 
   String _formatDayTitle(DateTime fecha) {
     try {
-      final str =
-          DateFormat('EEEE d \'de\' MMMM', 'es_ES').format(fecha);
+      final str = DateFormat('EEEE d \'de\' MMMM', 'es_ES').format(fecha);
       return str[0].toUpperCase() + str.substring(1);
     } catch (_) {
       return DateFormat('dd/MM/yyyy').format(fecha);
@@ -1587,8 +1566,8 @@ class _OptimizedDashboardScreenState
                 const SizedBox(height: 2),
                 Text(
                   'Mantenimiento · ${m.estado}',
-                  style: GoogleFonts.inter(
-                      fontSize: 12, color: AppTheme.warning),
+                  style:
+                      GoogleFonts.inter(fontSize: 12, color: AppTheme.warning),
                 ),
               ],
             ),

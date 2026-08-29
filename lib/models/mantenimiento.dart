@@ -39,7 +39,7 @@ class Mantenimiento {
 
     return Mantenimiento(
       id: json['id'],
-      idMaquina: json['id_maquina'],
+      idMaquina: json['id_maquina'] ?? json['maquina'],
       fecha: DateTime.parse(json['fecha']),
       descripcion: json['descripcion'],
       estado: json['estado'] ?? 'Pendiente',
@@ -50,7 +50,7 @@ class Mantenimiento {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'id_maquina': idMaquina,
+      'maquina': idMaquina,
       'fecha': fecha.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
       'descripcion': descripcion,
       'estado': estado,

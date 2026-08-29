@@ -9,7 +9,7 @@ import '../../utils/constants.dart';
 class AppConfig {
   static AppConfig? _instance;
   static AppConfig get instance => _instance ??= AppConfig._();
-  
+
   AppConfig._();
 
   // Storage instances
@@ -18,11 +18,13 @@ class AppConfig {
   Box? _hiveBox;
   Logger? _logger;
   bool _isInitialized = false;
+  late String _apiBaseUrl;
 
   // Configuration
   // Usar la URL de constants.dart para mantener una sola fuente de verdad
-  String get apiBaseUrl => AppConstants.apiBaseUrl;
-  static const Duration _apiTimeout = Duration(seconds: 60); // Aumentado para ngrok
+  String get apiBaseUrl => _apiBaseUrl;
+  static const Duration _apiTimeout =
+      Duration(seconds: 60); // Aumentado para ngrok
   static const Duration _cacheTimeout = Duration(hours: 1);
   static const int _maxRetries = 3;
   static const Duration _retryDelay = Duration(seconds: 2);
@@ -44,7 +46,7 @@ class AppConfig {
     if (_isInitialized) {
       return;
     }
-    
+
     try {
       // Initialize Hive (solo si no está inicializado)
       try {
@@ -55,7 +57,7 @@ class AppConfig {
           rethrow;
         }
       }
-      
+
       // Abrir box solo si no está ya abierto
       try {
         if (!Hive.isBoxOpen('gesagro_cache')) {
@@ -80,6 +82,9 @@ class AppConfig {
 
       // Initialize shared preferences
       _prefs = await SharedPreferences.getInstance();
+      _apiBaseUrl = _normalizeBaseUrl(
+        _prefs!.getString('api_base_url') ?? AppConstants.apiBaseUrl,
+      );
 
       // Initialize logger
       _logger = Logger(
@@ -89,7 +94,7 @@ class AppConfig {
           lineLength: 120,
           colors: true,
           printEmojis: true,
-          printTime: true,
+          dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
         ),
         level: kDebugMode ? Level.debug : Level.warning,
       );
@@ -99,6 +104,28 @@ class AppConfig {
     } catch (e) {
       throw Exception('Failed to initialize AppConfig: $e');
     }
+  }
+
+  /// Actualiza la API usada por toda la aplicación y la persiste.
+  Future<void> setApiBaseUrl(String value) async {
+    final normalized = _normalizeBaseUrl(value);
+    final uri = Uri.tryParse(normalized);
+    if (uri == null ||
+        !uri.hasScheme ||
+        !uri.hasAuthority ||
+        (uri.scheme != 'http' && uri.scheme != 'https')) {
+      throw const FormatException('La URL de la API no es válida');
+    }
+
+    _apiBaseUrl = normalized;
+    await _prefs!.setString('api_base_url', normalized);
+  }
+
+  String _normalizeBaseUrl(String value) {
+    final trimmed = value.trim();
+    return trimmed.endsWith('/')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
   }
 
   /// Obtener configuración de caché
@@ -126,7 +153,11 @@ class AppConfig {
       await _hiveBox!.clear();
     }
     if (_prefs != null) {
+      final savedApiBaseUrl = _prefs!.getString('api_base_url');
       await _prefs!.clear();
+      if (savedApiBaseUrl != null) {
+        await _prefs!.setString('api_base_url', savedApiBaseUrl);
+      }
     }
     _logger?.i('Cache cleared successfully');
   }

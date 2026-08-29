@@ -137,14 +137,18 @@ class Costo {
   bool get estaVencido {
     if (fechaPagoLimite == null) return false;
     final hoy = DateTime.now();
-    return !pagado && fechaPagoLimite!.isBefore(DateTime(hoy.year, hoy.month, hoy.day).add(const Duration(days: 1)));
+    return !pagado &&
+        fechaPagoLimite!.isBefore(DateTime(hoy.year, hoy.month, hoy.day)
+            .add(const Duration(days: 1)));
   }
 
   bool venceEnProximosDias(int dias) {
     if (fechaPagoLimite == null) return false;
     final hoy = DateTime.now();
     final limite = hoy.add(Duration(days: dias));
-    return !pagado && !fechaPagoLimite!.isBefore(hoy) && !fechaPagoLimite!.isAfter(limite);
+    return !pagado &&
+        !fechaPagoLimite!.isBefore(hoy) &&
+        !fechaPagoLimite!.isAfter(limite);
   }
 
   @override

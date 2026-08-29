@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
-import '../config/auth_config.dart';
 import '../logger/app_logger.dart';
 import '../../services/optimized_auth_service.dart';
 
@@ -25,9 +24,6 @@ class OptimizedHttpClient {
       _logger.debug('OptimizedHttpClient already initialized, skipping...');
       return;
     }
-
-    // Inicializar token de autenticación
-    await AuthConfig.initializeToken();
 
     // Normalizar la URL base (eliminar barra final si existe)
     String baseUrl = AppConfig.instance.apiBaseUrl.trim();
@@ -61,6 +57,16 @@ class OptimizedHttpClient {
     _logger.info('OptimizedHttpClient initialized');
   }
 
+  /// Aplica una nueva URL base sin reiniciar la aplicación.
+  Future<void> reconfigure() async {
+    var baseUrl = AppConfig.instance.apiBaseUrl.trim();
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+    _dio.options.baseUrl = baseUrl;
+    _logger.info('🌐 API reconfigurada: $baseUrl');
+  }
+
   /// Configurar todos los interceptores
   void _setupInterceptors() {
     // Retry interceptor removido - sin reintentos automáticos
@@ -69,9 +75,9 @@ class OptimizedHttpClient {
     if (kDebugMode) {
       _dio.interceptors.add(
         LogInterceptor(
-          requestBody: true,
-          responseBody: true,
-          requestHeader: true,
+          requestBody: false,
+          responseBody: false,
+          requestHeader: false,
           responseHeader: false,
           logPrint: (object) => _logger.debug(object.toString()),
         ),
@@ -118,18 +124,13 @@ class OptimizedHttpClient {
           _logger.info('📋 Headers:');
           options.headers.forEach((key, value) {
             if (key == 'Authorization') {
-              final tokenValue = value.toString();
-              if (tokenValue.length > 20) {
-                _logger
-                    .info('   $key: Bearer ${tokenValue.substring(7, 27)}...');
-              } else {
-                _logger.info('   $key: $value');
-              }
+              _logger.info('   $key: [REDACTED]');
             } else {
               _logger.info('   $key: $value');
             }
           });
-          if (options.data != null) {
+          if (options.data != null &&
+              !options.path.toLowerCase().contains('/auth/')) {
             _logger.info('📦 Body: ${options.data}');
           }
           if (options.queryParameters.isNotEmpty) {
@@ -153,16 +154,8 @@ class OptimizedHttpClient {
               await authService.initialize();
               String? token = await authService.getToken();
 
-              // Si no hay token del login, usar el token fijo de AuthConfig como fallback
-              if (token == null || token.isEmpty) {
-                token = await AuthConfig.getToken();
-                _logger.info(
-                    '🔐 Usando token fijo de AuthConfig para: ${options.path}');
-              } else {
-                _logger.info('🔐 Usando token del login para: ${options.path}');
-              }
-
               if (token != null && token.isNotEmpty) {
+                _logger.info('🔐 Usando token del login para: ${options.path}');
                 final authHeader = 'Bearer $token';
                 options.headers['Authorization'] = authHeader;
                 _logger.info(
@@ -189,21 +182,10 @@ class OptimizedHttpClient {
                     '═══════════════════════════════════════════════════════════');
               } else {
                 _logger.warning(
-                    '⚠️ ❌ No se encontró token para la petición: ${options.path}');
+                    '⚠️ ❌ No hay token de login para la petición: ${options.path}');
               }
             } catch (e) {
               _logger.error('❌ Error obteniendo token: $e');
-              // Intentar con token fijo como último recurso
-              try {
-                final token = await AuthConfig.getToken();
-                if (token != null && token.isNotEmpty) {
-                  options.headers['Authorization'] = 'Bearer $token';
-                  _logger.warning(
-                      '⚠️ Usando token fijo después de error: ${options.path}');
-                }
-              } catch (e2) {
-                _logger.error('❌ Error obteniendo token fijo: $e2');
-              }
             }
           } else {
             _logger.debug('🔓 Endpoint sin autenticación: ${options.path}');

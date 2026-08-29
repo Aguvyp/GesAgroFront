@@ -71,12 +71,20 @@ class Movimiento {
       esCobro: json['es_cobro'] ?? false,
       destinatario: json['destinatario'],
       cobrarA: json['cobrar_a'],
-      fechaPagoLimite: json['fecha_pago_limite'] != null ? DateTime.parse(json['fecha_pago_limite']) : null,
+      fechaPagoLimite: json['fecha_pago_limite'] != null
+          ? DateTime.parse(json['fecha_pago_limite'])
+          : null,
       idTrabajo: json['id_trabajo'],
       idFactura: json['id_factura'],
-      fechaPago: json['fecha_pago'] != null ? DateTime.parse(json['fecha_pago']) : null,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+      fechaPago: json['fecha_pago'] != null
+          ? DateTime.parse(json['fecha_pago'])
+          : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
     );
   }
 

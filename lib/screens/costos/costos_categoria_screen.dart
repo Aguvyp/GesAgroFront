@@ -35,11 +35,11 @@ class CostosCategoriaScreen extends ConsumerWidget {
     }
 
     final costos = (costosState as LoadedState<List<Costo>>).data;
-    
+
     // Agrupar por categoría
     final Map<String, List<Costo>> costosPorCategoria = {};
     final Map<String, double> totalesPorCategoria = {};
-    
+
     for (final costo in costos) {
       final categoria = costo.categoria ?? 'Sin categoría';
       if (!costosPorCategoria.containsKey(categoria)) {
@@ -47,8 +47,8 @@ class CostosCategoriaScreen extends ConsumerWidget {
         totalesPorCategoria[categoria] = 0.0;
       }
       costosPorCategoria[categoria]!.add(costo);
-      totalesPorCategoria[categoria] = 
-        (totalesPorCategoria[categoria] ?? 0.0) + costo.monto;
+      totalesPorCategoria[categoria] =
+          (totalesPorCategoria[categoria] ?? 0.0) + costo.monto;
     }
 
     // Ordenar categorías por total (mayor a menor)
@@ -72,7 +72,8 @@ class CostosCategoriaScreen extends ConsumerWidget {
     }
 
     // Calcular total general
-    final totalGeneral = totalesPorCategoria.values.fold(0.0, (sum, total) => sum + total);
+    final totalGeneral =
+        totalesPorCategoria.values.fold(0.0, (sum, total) => sum + total);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -86,7 +87,7 @@ class CostosCategoriaScreen extends ConsumerWidget {
             // Resumen general
             _buildResumenGeneral(totalGeneral, categoriasOrdenadas.length),
             const SizedBox(height: 24),
-            
+
             // Lista de categorías
             const Text(
               'Distribución por Categoría',
@@ -96,13 +97,14 @@ class CostosCategoriaScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             ...categoriasOrdenadas.map((entry) {
               final categoria = entry.key;
               final total = entry.value;
-              final porcentaje = totalGeneral > 0 ? (total / totalGeneral * 100) : 0.0;
+              final porcentaje =
+                  totalGeneral > 0 ? (total / totalGeneral * 100) : 0.0;
               final costosCategoria = costosPorCategoria[categoria]!;
-              
+
               return _buildCategoriaCard(
                 categoria,
                 total,
@@ -268,7 +270,7 @@ class CostosCategoriaScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Lista de costos (máximo 5)
                 if (costos.length > 5)
                   Text(
@@ -378,7 +380,8 @@ class CostosCategoriaScreen extends ConsumerWidget {
     );
   }
 
-  void _mostrarTodosLosCostos(BuildContext context, String categoria, List<Costo> costos) {
+  void _mostrarTodosLosCostos(
+      BuildContext context, String categoria, List<Costo> costos) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -416,7 +419,7 @@ class CostosCategoriaScreen extends ConsumerWidget {
       Colors.indigo,
       Colors.amber,
     ];
-    
+
     final index = categoria.hashCode % colors.length;
     return colors[index.abs()];
   }

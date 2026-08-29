@@ -49,7 +49,7 @@ class PerformanceAnalyzer {
         'runId': 'run1',
         'hypothesisId': 'A',
       };
-      
+
       // Log a consola en formato JSON para fácil parsing
       print('🟢 [PERF_TEST] ${jsonEncode(logEntry)}');
       _logger.debug('📝 Log: ${data['message']}');
@@ -65,7 +65,7 @@ class PerformanceAnalyzer {
   void startMeasurement(String operation, {Map<String, dynamic>? metadata}) {
     final stopwatch = Stopwatch()..start();
     _activeTimers[operation] = stopwatch;
-    
+
     // #region agent log
     _logToFile({
       'message': 'Performance measurement started',
@@ -87,7 +87,7 @@ class PerformanceAnalyzer {
         metadata: metadata,
       );
       _metrics.add(metric);
-      
+
       // #region agent log
       _logToFile({
         'message': 'Performance measurement completed',
@@ -111,7 +111,8 @@ class PerformanceAnalyzer {
       stopMeasurement(operation, metadata: metadata);
       return result;
     } catch (e) {
-      stopMeasurement(operation, metadata: {...?metadata, 'error': e.toString()});
+      stopMeasurement(operation,
+          metadata: {...?metadata, 'error': e.toString()});
       rethrow;
     }
   }
@@ -146,7 +147,8 @@ class PerformanceAnalyzer {
     );
 
     // Análisis de resultados
-    final initMetrics = _metrics.where((m) => m.operation.contains('init')).toList();
+    final initMetrics =
+        _metrics.where((m) => m.operation.contains('init')).toList();
     final totalInitTime = initMetrics
         .map((m) => m.duration.inMilliseconds)
         .fold(0, (a, b) => a + b);
@@ -200,7 +202,7 @@ class PerformanceAnalyzer {
     for (final (operation, fn) in operations) {
       try {
         final durations = <int>[];
-        
+
         // Ejecutar 3 veces para obtener promedio
         for (int i = 0; i < 3; i++) {
           await measureAsync(
@@ -209,11 +211,11 @@ class PerformanceAnalyzer {
             metadata: {'iteration': i},
           );
           durations.add(_metrics.last.duration.inMilliseconds);
-          
+
           // Pequeña pausa entre iteraciones
           await Future.delayed(const Duration(milliseconds: 200));
         }
-        
+
         apiMetrics[operation] = durations;
       } catch (e) {
         _logger.warning('Error en operación $operation: $e');
@@ -257,18 +259,19 @@ class PerformanceAnalyzer {
 
   /// Analizar operaciones lentas
   List<Map<String, dynamic>> getSlowOperations({int thresholdMs = 1000}) {
-    final slowOps = _metrics
-        .where((m) => m.duration.inMilliseconds > thresholdMs)
-        .toList();
-    
+    final slowOps =
+        _metrics.where((m) => m.duration.inMilliseconds > thresholdMs).toList();
+
     slowOps.sort((a, b) => b.duration.compareTo(a.duration));
-    
-    return slowOps.map((m) => {
-      'operation': m.operation,
-      'durationMs': m.duration.inMilliseconds,
-      'timestamp': m.timestamp.toIso8601String(),
-      'metadata': m.metadata,
-    }).toList();
+
+    return slowOps
+        .map((m) => {
+              'operation': m.operation,
+              'durationMs': m.duration.inMilliseconds,
+              'timestamp': m.timestamp.toIso8601String(),
+              'metadata': m.metadata,
+            })
+        .toList();
   }
 
   /// Analizar tiempos muertos (gaps entre operaciones)
@@ -281,10 +284,10 @@ class PerformanceAnalyzer {
     for (int i = 0; i < _metrics.length - 1; i++) {
       final current = _metrics[i];
       final next = _metrics[i + 1];
-      
+
       final gap = next.timestamp.difference(current.timestamp);
       final gapMs = gap.inMilliseconds - current.duration.inMilliseconds;
-      
+
       if (gapMs > thresholdMs) {
         idleTimes.add({
           'afterOperation': current.operation,
@@ -295,8 +298,9 @@ class PerformanceAnalyzer {
       }
     }
 
-    idleTimes.sort((a, b) => (b['idleTimeMs'] as int).compareTo(a['idleTimeMs'] as int));
-    
+    idleTimes.sort(
+        (a, b) => (b['idleTimeMs'] as int).compareTo(a['idleTimeMs'] as int));
+
     return idleTimes;
   }
 
@@ -326,10 +330,11 @@ class PerformanceAnalyzer {
     if (_metrics.isNotEmpty) {
       final durations = _metrics.map((m) => m.duration.inMilliseconds).toList();
       durations.sort();
-      
+
       report['generalStats'] = {
         'totalOperations': _metrics.length,
-        'avgDurationMs': (durations.reduce((a, b) => a + b) / durations.length).toStringAsFixed(2),
+        'avgDurationMs': (durations.reduce((a, b) => a + b) / durations.length)
+            .toStringAsFixed(2),
         'minDurationMs': durations.first,
         'maxDurationMs': durations.last,
         'medianDurationMs': durations[durations.length ~/ 2],
@@ -350,10 +355,12 @@ class PerformanceAnalyzer {
   /// Generar reporte en texto
   String generateTextReport(Map<String, dynamic> report) {
     final buffer = StringBuffer();
-    
-    buffer.writeln('═══════════════════════════════════════════════════════════');
+
+    buffer
+        .writeln('═══════════════════════════════════════════════════════════');
     buffer.writeln('⚡ REPORTE DE RENDIMIENTO DE LA APLICACIÓN');
-    buffer.writeln('═══════════════════════════════════════════════════════════');
+    buffer
+        .writeln('═══════════════════════════════════════════════════════════');
     buffer.writeln('');
 
     // Estadísticas generales
@@ -431,8 +438,9 @@ class PerformanceAnalyzer {
       }
     }
 
-    buffer.writeln('═══════════════════════════════════════════════════════════');
-    
+    buffer
+        .writeln('═══════════════════════════════════════════════════════════');
+
     return buffer.toString();
   }
 

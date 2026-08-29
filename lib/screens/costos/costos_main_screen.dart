@@ -37,10 +37,7 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
         child: Column(
           children: [
             // ── Header ──
-            if (widget.showAppBar)
-              _buildBackHeader()
-            else
-              _buildInlineHeader(),
+            if (widget.showAppBar) _buildBackHeader() else _buildInlineHeader(),
 
             // ── Tab bar ──
             _buildTabBar(),
@@ -50,13 +47,14 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
           ],
         ),
       ),
-      floatingActionButton: widget.showAppBar && (_selectedTab == 0 || _selectedTab == 1)
-          ? FloatingActionButton(
-              onPressed: () => _navigateToFormulario(),
-              elevation: 2,
-              child: const Icon(Icons.add_rounded, size: 28),
-            )
-          : null,
+      floatingActionButton:
+          widget.showAppBar && (_selectedTab == 0 || _selectedTab == 1)
+              ? FloatingActionButton(
+                  onPressed: () => _navigateToFormulario(),
+                  elevation: 2,
+                  child: const Icon(Icons.add_rounded, size: 28),
+                )
+              : null,
     );
   }
 
@@ -123,9 +121,7 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
                   color: isActive ? AppTheme.primary : AppTheme.surface,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isActive
-                        ? AppTheme.primary
-                        : AppTheme.border,
+                    color: isActive ? AppTheme.primary : AppTheme.border,
                   ),
                 ),
                 child: Text(
@@ -413,8 +409,8 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
             const SizedBox(height: 10),
             Text(
               'Error: ${state.message}',
-              style: const TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 13),
+              style:
+                  const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -460,8 +456,7 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
             const SizedBox(height: 4),
             const Text(
               'Registrá tu primer gasto o cobro',
-              style: TextStyle(
-                  fontSize: 13, color: AppTheme.textSecondary),
+              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
             ),
           ],
         ),
@@ -495,8 +490,8 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
                 const Spacer(),
                 TextButton(
                   onPressed: () => setState(() => _selectedTab = 1),
-                  child: const Text('Ver todos',
-                      style: TextStyle(fontSize: 13)),
+                  child:
+                      const Text('Ver todos', style: TextStyle(fontSize: 13)),
                 ),
               ],
             ),
@@ -511,9 +506,8 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
   Widget _buildMovementRow(Costo costo) {
     final isCobro = costo.esCobro;
     final color = isCobro ? const Color(0xFF16A34A) : AppTheme.error;
-    final icon = isCobro
-        ? Icons.arrow_downward_rounded
-        : Icons.arrow_upward_rounded;
+    final icon =
+        isCobro ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -570,10 +564,11 @@ class _CostosMainScreenState extends ConsumerState<CostosMainScreen> {
               ),
               const SizedBox(height: 2),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: (costo.pagado ? const Color(0xFF16A34A) : AppTheme.warning)
+                  color: (costo.pagado
+                          ? const Color(0xFF16A34A)
+                          : AppTheme.warning)
                       .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),

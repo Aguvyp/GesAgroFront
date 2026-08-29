@@ -35,7 +35,7 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
       children: [
         // Barra de filtros
         _buildFiltrosBar(),
-        
+
         // Lista de costos
         Expanded(
           child: _buildCostosList(costosState),
@@ -68,7 +68,7 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
             },
           ),
           const SizedBox(height: 12),
-          
+
           // Filtros rápidos
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -94,13 +94,16 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
                 const SizedBox(width: 8),
                 _buildFiltroChip('Pagados', _filtroEstado == 'Pagado', (value) {
                   setState(() {
-                    _filtroEstado = _filtroEstado == 'Pagado' ? 'Todos' : 'Pagado';
+                    _filtroEstado =
+                        _filtroEstado == 'Pagado' ? 'Todos' : 'Pagado';
                   });
                 }),
                 const SizedBox(width: 8),
-                _buildFiltroChip('Pendientes', _filtroEstado == 'Pendiente', (value) {
+                _buildFiltroChip('Pendientes', _filtroEstado == 'Pendiente',
+                    (value) {
                   setState(() {
-                    _filtroEstado = _filtroEstado == 'Pendiente' ? 'Todos' : 'Pendiente';
+                    _filtroEstado =
+                        _filtroEstado == 'Pendiente' ? 'Todos' : 'Pendiente';
                   });
                 }),
                 const SizedBox(width: 8),
@@ -117,7 +120,8 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
     );
   }
 
-  Widget _buildFiltroChip(String label, bool isSelected, Function(String) onTap) {
+  Widget _buildFiltroChip(
+      String label, bool isSelected, Function(String) onTap) {
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -139,8 +143,8 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
               title: const Text('Rango de Fechas'),
               subtitle: Text(
                 _fechaInicio != null && _fechaFin != null
-                  ? '${DateFormat('dd/MM/yyyy').format(_fechaInicio!)} - ${DateFormat('dd/MM/yyyy').format(_fechaFin!)}'
-                  : 'Seleccionar fechas',
+                    ? '${DateFormat('dd/MM/yyyy').format(_fechaInicio!)} - ${DateFormat('dd/MM/yyyy').format(_fechaFin!)}'
+                    : 'Seleccionar fechas',
               ),
               trailing: const Icon(Icons.calendar_today),
               onTap: () async {
@@ -149,8 +153,8 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
                   firstDate: DateTime(2020),
                   lastDate: DateTime.now(),
                   initialDateRange: _fechaInicio != null && _fechaFin != null
-                    ? DateTimeRange(start: _fechaInicio!, end: _fechaFin!)
-                    : null,
+                      ? DateTimeRange(start: _fechaInicio!, end: _fechaFin!)
+                      : null,
                 );
                 if (picked != null) {
                   setState(() {
@@ -209,36 +213,40 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
     }
 
     final costos = (state as LoadedState<List<Costo>>).data;
-    
+
     // Aplicar filtros
     var costosFiltrados = costos.where((costo) {
       // Filtro por tipo
       if (_filtroTipo == 'Gastos' && costo.esCobro) return false;
       if (_filtroTipo == 'Cobros' && !costo.esCobro) return false;
-      
+
       // Filtro por estado
       if (_filtroEstado == 'Pagado' && !costo.pagado) return false;
       if (_filtroEstado == 'Pendiente' && costo.pagado) return false;
-      
+
       // Filtro por búsqueda
       if (_busqueda.isNotEmpty) {
         final busquedaLower = _busqueda.toLowerCase();
-        if (!(costo.descripcion?.toLowerCase().contains(busquedaLower) ?? false) &&
-            !(costo.categoria?.toLowerCase().contains(busquedaLower) ?? false) &&
+        if (!(costo.descripcion?.toLowerCase().contains(busquedaLower) ??
+                false) &&
+            !(costo.categoria?.toLowerCase().contains(busquedaLower) ??
+                false) &&
             !(costo.destinatario.toLowerCase().contains(busquedaLower)) &&
             !(costo.cobrarA?.toLowerCase().contains(busquedaLower) ?? false)) {
           return false;
         }
       }
-      
+
       // Filtro por fecha
       if (_fechaInicio != null && _fechaFin != null) {
-        final fechaCosto = DateTime(costo.fecha.year, costo.fecha.month, costo.fecha.day);
-        if (fechaCosto.isBefore(_fechaInicio!) || fechaCosto.isAfter(_fechaFin!)) {
+        final fechaCosto =
+            DateTime(costo.fecha.year, costo.fecha.month, costo.fecha.day);
+        if (fechaCosto.isBefore(_fechaInicio!) ||
+            fechaCosto.isAfter(_fechaFin!)) {
           return false;
         }
       }
-      
+
       return true;
     }).toList();
 
@@ -256,7 +264,9 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
               'No hay movimientos',
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
-            if (_busqueda.isNotEmpty || _filtroTipo != 'Todos' || _filtroEstado != 'Todos')
+            if (_busqueda.isNotEmpty ||
+                _filtroTipo != 'Todos' ||
+                _filtroEstado != 'Todos')
               TextButton(
                 onPressed: () {
                   setState(() {
@@ -305,9 +315,9 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
           children: [
             const SizedBox(height: 4),
             Text(
-              isCobro 
-                ? 'Cobrar a: ${costo.cobrarA ?? 'N/A'}'
-                : 'Destinatario: ${costo.destinatario}',
+              isCobro
+                  ? 'Cobrar a: ${costo.cobrarA ?? 'N/A'}'
+                  : 'Destinatario: ${costo.destinatario}',
             ),
             const SizedBox(height: 2),
             Text(
@@ -339,9 +349,9 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
                 costo.pagado ? 'Pagado' : 'Pendiente',
                 style: const TextStyle(fontSize: 10),
               ),
-              backgroundColor: costo.pagado 
-                ? Colors.green.withOpacity(0.2)
-                : Colors.orange.withOpacity(0.2),
+              backgroundColor: costo.pagado
+                  ? Colors.green.withOpacity(0.2)
+                  : Colors.orange.withOpacity(0.2),
               padding: EdgeInsets.zero,
             ),
           ],
@@ -380,7 +390,8 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+              title:
+                  const Text('Eliminar', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 _confirmarEliminacion(costo);
@@ -397,7 +408,8 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Movimiento'),
-        content: Text('¿Estás seguro de que quieres eliminar este ${costo.esCobro ? 'cobro' : 'gasto'}?'),
+        content: Text(
+            '¿Estás seguro de que quieres eliminar este ${costo.esCobro ? 'cobro' : 'gasto'}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -408,10 +420,13 @@ class _CostosListScreenState extends ConsumerState<CostosListScreen> {
               Navigator.pop(context);
               try {
                 if (costo.id != null) {
-                  await ref.read(costosProvider.notifier).deleteCosto(costo.id!);
+                  await ref
+                      .read(costosProvider.notifier)
+                      .deleteCosto(costo.id!);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Movimiento eliminado exitosamente')),
+                      const SnackBar(
+                          content: Text('Movimiento eliminado exitosamente')),
                     );
                   }
                 }

@@ -36,7 +36,8 @@ class Credito {
       'monto_otorgado': montoOtorgado,
       'tasa_interes_anual': tasaInteresAnual,
       'plazo_meses': plazoMeses,
-      'fecha_desembolso': fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
+      'fecha_desembolso':
+          fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
       'estado': estado,
     };
   }
@@ -48,7 +49,8 @@ class Credito {
       'monto_otorgado': montoOtorgado,
       'tasa_interes_anual': tasaInteresAnual,
       'plazo_meses': plazoMeses,
-      'fecha_desembolso': fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
+      'fecha_desembolso':
+          fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
       'estado': estado,
     };
   }
@@ -60,7 +62,8 @@ class Credito {
       'monto_otorgado': montoOtorgado,
       'tasa_interes_anual': tasaInteresAnual,
       'plazo_meses': plazoMeses,
-      'fecha_desembolso': fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
+      'fecha_desembolso':
+          fechaDesembolso.toIso8601String().split('T')[0], // Solo fecha
       'estado': estado,
     };
   }
@@ -111,7 +114,7 @@ class CuotaCredito {
   factory CuotaCredito.fromJson(Map<String, dynamic> json) {
     return CuotaCredito(
       id: json['id'],
-      idCredito: json['id_credito'],
+      idCredito: json['id_credito'] ?? json['credito'],
       numeroCuota: json['numero_cuota'],
       fechaVencimiento: DateTime.parse(json['fecha_vencimiento']),
       montoTotal: json['monto_total'].toDouble(),
@@ -122,9 +125,10 @@ class CuotaCredito {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'id_credito': idCredito,
+      'credito': idCredito,
       'numero_cuota': numeroCuota,
-      'fecha_vencimiento': fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
+      'fecha_vencimiento':
+          fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
       'monto_total': montoTotal,
       'estado': estado,
     };
@@ -133,9 +137,10 @@ class CuotaCredito {
   // Método para crear una nueva cuota (sin ID)
   Map<String, dynamic> toCreateJson() {
     return {
-      'id_credito': idCredito,
+      'credito': idCredito,
       'numero_cuota': numeroCuota,
-      'fecha_vencimiento': fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
+      'fecha_vencimiento':
+          fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
       'monto_total': montoTotal,
       'estado': estado,
     };
@@ -144,16 +149,19 @@ class CuotaCredito {
   // Método para actualizar una cuota (solo campos modificables)
   Map<String, dynamic> toUpdateJson() {
     return {
-      'id_credito': idCredito,
+      'credito': idCredito,
       'numero_cuota': numeroCuota,
-      'fecha_vencimiento': fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
+      'fecha_vencimiento':
+          fechaVencimiento.toIso8601String().split('T')[0], // Solo fecha
       'monto_total': montoTotal,
       'estado': estado,
     };
   }
 
   bool get estaPagada => estado == 'Pagada';
-  bool get estaVencida => estado == 'Vencida' || (DateTime.now().isAfter(fechaVencimiento) && estado == 'Pendiente');
+  bool get estaVencida =>
+      estado == 'Vencida' ||
+      (DateTime.now().isAfter(fechaVencimiento) && estado == 'Pendiente');
   bool get estaPendiente => estado == 'Pendiente' && !estaVencida;
   bool get estaCancelada => estado == 'Cancelada';
 

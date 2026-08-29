@@ -27,7 +27,8 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final buttonColor = backgroundColor ?? const Color(AppConstants.primaryColor);
+    final buttonColor =
+        backgroundColor ?? const Color(AppConstants.primaryColor);
     final textColorFinal = textColor ?? Colors.white;
 
     if (isOutlined) {

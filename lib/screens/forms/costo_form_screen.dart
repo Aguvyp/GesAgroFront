@@ -8,7 +8,7 @@ import '../../utils/validators.dart';
 class CostoFormScreen extends ConsumerStatefulWidget {
   final dynamic costo;
   final bool? esCobro; // Permite pre-seleccionar el tipo
-  
+
   const CostoFormScreen({Key? key, this.costo, this.esCobro}) : super(key: key);
 
   @override
@@ -27,7 +27,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
   late TextEditingController _trabajoIdController;
   DateTime? _fecha;
   DateTime? _fechaPagoLimite;
-  
+
   String? _formaPagoSeleccionada;
   bool _pagado = false;
   bool _esCobro = false; // false = Gasto, true = Cobro
@@ -42,14 +42,20 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
     } else if (widget.costo != null) {
       _esCobro = widget.costo.esCobro ?? false;
     }
-    
-    _descripcionController = TextEditingController(text: widget.costo?.descripcion ?? '');
-    _montoController = TextEditingController(text: widget.costo?.monto?.toString() ?? '');
-    _categoriaController = TextEditingController(text: widget.costo?.categoria ?? '');
-    _destinatarioController = TextEditingController(text: widget.costo?.destinatario ?? '');
-    _cobrarAController = TextEditingController(text: widget.costo?.cobrarA ?? '');
-    _trabajoIdController = TextEditingController(text: widget.costo?.trabajoId?.toString() ?? '');
-    
+
+    _descripcionController =
+        TextEditingController(text: widget.costo?.descripcion ?? '');
+    _montoController =
+        TextEditingController(text: widget.costo?.monto?.toString() ?? '');
+    _categoriaController =
+        TextEditingController(text: widget.costo?.categoria ?? '');
+    _destinatarioController =
+        TextEditingController(text: widget.costo?.destinatario ?? '');
+    _cobrarAController =
+        TextEditingController(text: widget.costo?.cobrarA ?? '');
+    _trabajoIdController =
+        TextEditingController(text: widget.costo?.trabajoId?.toString() ?? '');
+
     if (widget.costo?.fecha != null) {
       _fecha = widget.costo.fecha;
       _fechaController = TextEditingController(
@@ -59,16 +65,17 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
       _fecha = DateTime.now();
       _fechaController = TextEditingController();
     }
-    
+
     if (widget.costo?.fechaPagoLimite != null) {
       _fechaPagoLimite = widget.costo.fechaPagoLimite;
       _fechaPagoLimiteController = TextEditingController(
-        text: '${_fechaPagoLimite!.day}/${_fechaPagoLimite!.month}/${_fechaPagoLimite!.year}',
+        text:
+            '${_fechaPagoLimite!.day}/${_fechaPagoLimite!.month}/${_fechaPagoLimite!.year}',
       );
     } else {
       _fechaPagoLimiteController = TextEditingController();
     }
-    
+
     _formaPagoSeleccionada = widget.costo?.formaPago ?? 'Efectivo';
     _pagado = widget.costo?.pagado ?? false;
   }
@@ -92,9 +99,9 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text(
-          widget.costo == null 
-            ? (_esCobro ? 'Nuevo Cobro' : 'Nuevo Gasto')
-            : 'Editar ${_esCobro ? 'Cobro' : 'Gasto'}',
+          widget.costo == null
+              ? (_esCobro ? 'Nuevo Cobro' : 'Nuevo Gasto')
+              : 'Editar ${_esCobro ? 'Cobro' : 'Gasto'}',
           style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -116,18 +123,18 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text(
-                  'Guardar',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text(
+                    'Guardar',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
           ),
         ],
       ),
@@ -147,9 +154,9 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                     Text(
                       'Tipo de Movimiento',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -187,7 +194,7 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Información básica
               OptimizedCard(
                 padding: const EdgeInsets.all(16),
@@ -197,9 +204,9 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                     Text(
                       'Información Básica',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     OptimizedTextField(
@@ -207,7 +214,8 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                       label: 'Descripción',
                       hint: 'Descripción del costo o gasto',
                       prefixIcon: const Icon(Icons.description, size: 20),
-                      validator: (value) => Validators.validateRequired(value, 'Descripción'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Descripción'),
                     ),
                     const SizedBox(height: 16),
                     OptimizedTextField(
@@ -235,7 +243,8 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         label: 'Destinatario',
                         hint: 'A quién se le paga',
                         prefixIcon: const Icon(Icons.person),
-                        validator: (value) => Validators.validateRequired(value, 'Destinatario'),
+                        validator: (value) =>
+                            Validators.validateRequired(value, 'Destinatario'),
                       ),
                       const SizedBox(height: 16),
                       OptimizedTextField(
@@ -251,7 +260,8 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                         label: 'Cobrar a',
                         hint: 'A quién se le cobra',
                         prefixIcon: const Icon(Icons.person),
-                        validator: (value) => Validators.validateRequired(value, 'Cobrar a'),
+                        validator: (value) =>
+                            Validators.validateRequired(value, 'Cobrar a'),
                       ),
                       const SizedBox(height: 16),
                       OptimizedTextField(
@@ -276,8 +286,8 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                     Text(
                       'Información de Pago',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
@@ -288,10 +298,15 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                       ),
                       value: _formaPagoSeleccionada,
                       items: const [
-                        DropdownMenuItem(value: 'Efectivo', child: Text('Efectivo')),
-                        DropdownMenuItem(value: 'Transferencia', child: Text('Transferencia')),
-                        DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
-                        DropdownMenuItem(value: 'Tarjeta', child: Text('Tarjeta')),
+                        DropdownMenuItem(
+                            value: 'Efectivo', child: Text('Efectivo')),
+                        DropdownMenuItem(
+                            value: 'Transferencia',
+                            child: Text('Transferencia')),
+                        DropdownMenuItem(
+                            value: 'Cheque', child: Text('Cheque')),
+                        DropdownMenuItem(
+                            value: 'Tarjeta', child: Text('Tarjeta')),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -325,8 +340,8 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                     Text(
                       'Fecha',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Column(
@@ -334,9 +349,10 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                       children: [
                         Text(
                           'Fecha del Costo',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -361,7 +377,8 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                             if (date != null) {
                               setState(() {
                                 _fecha = date;
-                                _fechaController.text = '${date.day}/${date.month}/${date.year}';
+                                _fechaController.text =
+                                    '${date.day}/${date.month}/${date.year}';
                               });
                             }
                           },
@@ -375,9 +392,10 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                       children: [
                         Text(
                           'Fecha de Pago Límite (Opcional)',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -397,12 +415,14 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                               context: context,
                               initialDate: _fechaPagoLimite ?? DateTime.now(),
                               firstDate: DateTime(2020),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                              lastDate:
+                                  DateTime.now().add(const Duration(days: 365)),
                             );
                             if (date != null) {
                               setState(() {
                                 _fechaPagoLimite = date;
-                                _fechaPagoLimiteController.text = '${date.day}/${date.month}/${date.year}';
+                                _fechaPagoLimiteController.text =
+                                    '${date.day}/${date.month}/${date.year}';
                               });
                             }
                           },
@@ -419,7 +439,8 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isSaving ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _isSaving ? null : () => Navigator.pop(context),
                       child: const Text('Cancelar'),
                     ),
                   ),
@@ -427,15 +448,15 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _submitForm,
-                      child: _isSaving 
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(widget.costo == null 
-                          ? (_esCobro ? 'Crear Cobro' : 'Crear Gasto')
-                          : 'Actualizar ${_esCobro ? 'Cobro' : 'Gasto'}'),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(widget.costo == null
+                              ? (_esCobro ? 'Crear Cobro' : 'Crear Gasto')
+                              : 'Actualizar ${_esCobro ? 'Cobro' : 'Gasto'}'),
                     ),
                   ),
                 ],
@@ -458,32 +479,36 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
         final data = {
           'descripcion': _descripcionController.text,
           'monto': double.parse(_montoController.text),
-          'fecha': _fecha?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'fecha':
+              _fecha?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
           'pagado': _pagado,
           'forma_pago': _formaPagoSeleccionada ?? 'Efectivo',
           'es_cobro': _esCobro,
-          'fecha_pago_limite': _fechaPagoLimite?.toIso8601String().split('T')[0],
+          'fecha_pago_limite':
+              _fechaPagoLimite?.toIso8601String().split('T')[0],
         };
-        
+
         // Campos específicos según el tipo
         if (_esCobro) {
           // Es un COBRO
-          data['cobrar_a'] = _cobrarAController.text.isNotEmpty ? _cobrarAController.text : null;
-          data['id_trabajo'] = _trabajoIdController.text.isNotEmpty 
-            ? int.tryParse(_trabajoIdController.text) 
-            : null;
-          data['destinatario'] = _cobrarAController.text.isNotEmpty 
-            ? _cobrarAController.text 
-            : 'Cliente';
-          data['categoria'] = _categoriaController.text.isNotEmpty 
-            ? _categoriaController.text 
-            : 'Cobro';
+          data['cobrar_a'] = _cobrarAController.text.isNotEmpty
+              ? _cobrarAController.text
+              : null;
+          data['id_trabajo'] = _trabajoIdController.text.isNotEmpty
+              ? int.tryParse(_trabajoIdController.text)
+              : null;
+          data['destinatario'] = _cobrarAController.text.isNotEmpty
+              ? _cobrarAController.text
+              : 'Cliente';
+          data['categoria'] = _categoriaController.text.isNotEmpty
+              ? _categoriaController.text
+              : 'Cobro';
         } else {
           // Es un GASTO
           data['destinatario'] = _destinatarioController.text;
-          data['categoria'] = _categoriaController.text.isNotEmpty 
-            ? _categoriaController.text 
-            : 'Otros';
+          data['categoria'] = _categoriaController.text.isNotEmpty
+              ? _categoriaController.text
+              : 'Otros';
           data['cobrar_a'] = null;
           data['id_trabajo'] = null;
         }
@@ -491,7 +516,9 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
         if (widget.costo == null) {
           await ref.read(costosProvider.notifier).createCosto(data);
         } else {
-          await ref.read(costosProvider.notifier).updateCosto(widget.costo.id, data);
+          await ref
+              .read(costosProvider.notifier)
+              .updateCosto(widget.costo.id, data);
         }
 
         if (mounted) {
@@ -499,9 +526,11 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                widget.costo == null 
-                  ? (_esCobro ? 'Cobro creado exitosamente' : 'Gasto creado exitosamente')
-                  : '${_esCobro ? 'Cobro' : 'Gasto'} actualizado exitosamente',
+                widget.costo == null
+                    ? (_esCobro
+                        ? 'Cobro creado exitosamente'
+                        : 'Gasto creado exitosamente')
+                    : '${_esCobro ? 'Cobro' : 'Gasto'} actualizado exitosamente',
               ),
             ),
           );
@@ -535,7 +564,9 @@ class _CostoFormScreenState extends ConsumerState<CostoFormScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
+          color: isSelected
+              ? color.withOpacity(0.1)
+              : Colors.grey.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : Colors.grey.withOpacity(0.3),

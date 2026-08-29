@@ -35,27 +35,31 @@ class CostosResumenScreen extends ConsumerWidget {
     }
 
     final costos = (costosState as LoadedState<List<Costo>>).data;
-    
+
     // Separar gastos y cobros
     final gastos = costos.where((c) => !c.esCobro).toList();
     final cobros = costos.where((c) => c.esCobro).toList();
-    
+
     // Calcular totales
     final totalGastos = gastos.fold(0.0, (sum, c) => sum + c.monto);
     final totalCobros = cobros.fold(0.0, (sum, c) => sum + c.monto);
     final balance = totalCobros - totalGastos;
-    
+
     // Gastos pagados vs pendientes
     final gastosPagados = gastos.where((c) => c.pagado).toList();
     final gastosPendientes = gastos.where((c) => !c.pagado).toList();
-    final totalGastosPagados = gastosPagados.fold(0.0, (sum, c) => sum + c.monto);
-    final totalGastosPendientes = gastosPendientes.fold(0.0, (sum, c) => sum + c.monto);
-    
+    final totalGastosPagados =
+        gastosPagados.fold(0.0, (sum, c) => sum + c.monto);
+    final totalGastosPendientes =
+        gastosPendientes.fold(0.0, (sum, c) => sum + c.monto);
+
     // Cobros pagados vs pendientes
     final cobrosPagados = cobros.where((c) => c.pagado).toList();
     final cobrosPendientes = cobros.where((c) => !c.pagado).toList();
-    final totalCobrosPagados = cobrosPagados.fold(0.0, (sum, c) => sum + c.monto);
-    final totalCobrosPendientes = cobrosPendientes.fold(0.0, (sum, c) => sum + c.monto);
+    final totalCobrosPagados =
+        cobrosPagados.fold(0.0, (sum, c) => sum + c.monto);
+    final totalCobrosPendientes =
+        cobrosPendientes.fold(0.0, (sum, c) => sum + c.monto);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -69,7 +73,7 @@ class CostosResumenScreen extends ConsumerWidget {
             // Resumen principal
             _buildResumenPrincipal(totalGastos, totalCobros, balance),
             const SizedBox(height: 24),
-            
+
             // Gastos: Pagados vs Pendientes
             _buildSeccionEstado(
               'Gastos',
@@ -81,7 +85,7 @@ class CostosResumenScreen extends ConsumerWidget {
               gastosPendientes.length,
             ),
             const SizedBox(height: 24),
-            
+
             // Cobros: Pagados vs Pendientes
             _buildSeccionEstado(
               'Cobros',
@@ -93,7 +97,7 @@ class CostosResumenScreen extends ConsumerWidget {
               cobrosPendientes.length,
             ),
             const SizedBox(height: 24),
-            
+
             // Estadísticas adicionales
             _buildEstadisticasAdicionales(
               gastos.length,
@@ -107,7 +111,8 @@ class CostosResumenScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildResumenPrincipal(double totalGastos, double totalCobros, double balance) {
+  Widget _buildResumenPrincipal(
+      double totalGastos, double totalCobros, double balance) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -144,9 +149,9 @@ class CostosResumenScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: balance >= 0 
-                  ? Colors.green.withOpacity(0.1) 
-                  : Colors.red.withOpacity(0.1),
+                color: balance >= 0
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: balance >= 0 ? Colors.green : Colors.red,
@@ -190,7 +195,8 @@ class CostosResumenScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildResumenCard(String title, double amount, Color color, IconData icon) {
+  Widget _buildResumenCard(
+      String title, double amount, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -240,7 +246,8 @@ class CostosResumenScreen extends ConsumerWidget {
   ) {
     final total = totalPagados + totalPendientes;
     final porcentajePagados = total > 0 ? (totalPagados / total * 100) : 0.0;
-    final porcentajePendientes = total > 0 ? (totalPendientes / total * 100) : 0.0;
+    final porcentajePendientes =
+        total > 0 ? (totalPendientes / total * 100) : 0.0;
 
     return Card(
       child: Padding(
@@ -262,7 +269,7 @@ class CostosResumenScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Pagados
             _buildEstadoItem(
               'Pagados',
@@ -272,7 +279,7 @@ class CostosResumenScreen extends ConsumerWidget {
               Colors.green,
             ),
             const SizedBox(height: 12),
-            
+
             // Pendientes
             _buildEstadoItem(
               'Pendientes',
@@ -408,7 +415,8 @@ class CostosResumenScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

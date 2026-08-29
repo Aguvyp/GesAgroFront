@@ -35,8 +35,8 @@ class Insumo {
       stockMinimo: json['stock_minimo'].toDouble(),
       precioUnitario: json['precio_unitario'].toDouble(),
       proveedor: json['proveedor'],
-      fechaVencimiento: json['fecha_vencimiento'] != null 
-          ? DateTime.parse(json['fecha_vencimiento']) 
+      fechaVencimiento: json['fecha_vencimiento'] != null
+          ? DateTime.parse(json['fecha_vencimiento'])
           : null,
       observaciones: json['observaciones'],
       activo: json['activo'] ?? true,
@@ -66,6 +66,7 @@ class Insumo {
     final diasRestantes = fechaVencimiento!.difference(DateTime.now()).inDays;
     return diasRestantes <= 30 && diasRestantes >= 0;
   }
+
   bool get vencido {
     if (fechaVencimiento == null) return false;
     return DateTime.now().isAfter(fechaVencimiento!);

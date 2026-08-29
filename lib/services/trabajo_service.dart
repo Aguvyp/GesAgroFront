@@ -3,7 +3,7 @@ import 'optimized_api_service.dart';
 
 class TrabajoService {
   static final ApiService _apiService = ApiService();
-  
+
   static Future<void> _ensureInitialized() async {
     if (!_apiService.isInitialized) {
       await _apiService.initialize();
@@ -46,7 +46,8 @@ class TrabajoService {
     }
   }
 
-  static Future<Trabajo> updateTrabajoEstado(int trabajoId, String estado) async {
+  static Future<Trabajo> updateTrabajoEstado(
+      int trabajoId, String estado) async {
     try {
       await _ensureInitialized();
       return await _apiService.updateTrabajo(trabajoId, {'estado': estado});
@@ -120,11 +121,13 @@ class TrabajoService {
       await _ensureInitialized();
       final trabajos = await _apiService.getTrabajos();
       final queryLower = query.toLowerCase();
-      return trabajos.where((t) => 
-        (t.tipoTrabajoNombre?.toLowerCase().contains(queryLower) ?? false) ||
-        (t.cliente?.toLowerCase().contains(queryLower) ?? false) ||
-        t.cultivo.toLowerCase().contains(queryLower)
-      ).toList();
+      return trabajos
+          .where((t) =>
+              (t.tipoTrabajoNombre?.toLowerCase().contains(queryLower) ??
+                  false) ||
+              (t.cliente?.toLowerCase().contains(queryLower) ?? false) ||
+              t.cultivo.toLowerCase().contains(queryLower))
+          .toList();
     } catch (e) {
       throw Exception('Error al buscar trabajos: $e');
     }

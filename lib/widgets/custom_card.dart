@@ -63,7 +63,7 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardColor = iconColor ?? Colors.grey[700]!;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,

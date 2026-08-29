@@ -30,15 +30,17 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Establecer ubicación inicial
     if (widget.initialLatitude != null && widget.initialLongitude != null) {
-      _selectedLocation = LatLng(widget.initialLatitude!, widget.initialLongitude!);
+      _selectedLocation =
+          LatLng(widget.initialLatitude!, widget.initialLongitude!);
     } else {
       // Ubicación por defecto desde configuración
-      _selectedLocation = const LatLng(MapsConfig.defaultLatitude, MapsConfig.defaultLongitude);
+      _selectedLocation =
+          const LatLng(MapsConfig.defaultLatitude, MapsConfig.defaultLongitude);
     }
-    
+
     // Simular carga inicial con manejo de errores
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -85,7 +87,8 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
     // Por ahora, mostraremos un mensaje informativo
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Función de ubicación actual próximamente disponible'),
+        content:
+            const Text('Función de ubicación actual próximamente disponible'),
         backgroundColor: const Color(AppConstants.infoColor),
       ),
     );
@@ -107,7 +110,7 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
           _mapType = MapType.terrain;
       }
     });
-    
+
     // Centrar el mapa en la ubicación seleccionada
     if (_mapController != null && _selectedLocation != null) {
       _mapController!.animateCamera(
@@ -174,12 +177,13 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                       Marker(
                         markerId: const MarkerId('selected_location'),
                         position: _selectedLocation!,
-                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueRed),
                       ),
                     }
                   : {},
             ),
-          
+
           // Indicador de carga o error
           if (_isLoading || _hasError)
             Container(
@@ -237,8 +241,7 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                 ),
               ),
             ),
-          
-          
+
           // Información de coordenadas
           Positioned(
             top: 16,
@@ -296,7 +299,7 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
               ),
             ),
           ),
-          
+
           // Instrucciones
           Positioned(
             bottom: 100,
@@ -330,7 +333,7 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
               ),
             ),
           ),
-          
+
           // Botones de acción
           Positioned(
             bottom: 16,
@@ -339,7 +342,7 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child:                   CustomButton(
+                  child: CustomButton(
                     text: 'Cancelar',
                     isOutlined: true,
                     backgroundColor: const Color(AppConstants.cancelColor),
@@ -351,7 +354,8 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                 Expanded(
                   child: CustomButton(
                     text: 'Confirmar',
-                    onPressed: _selectedLocation != null ? _confirmLocation : null,
+                    onPressed:
+                        _selectedLocation != null ? _confirmLocation : null,
                   ),
                 ),
               ],

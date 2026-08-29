@@ -12,7 +12,7 @@ void main() {
     test('Prueba completa de endpoints', () async {
       final endpointTester = EndpointTester();
       final results = await endpointTester.runAllTests();
-      
+
       final summary = results['summary'] as Map<String, dynamic>;
       print('\n═══════════════════════════════════════════════════════════');
       print('📊 RESULTADOS DE ENDPOINTS:');
@@ -23,10 +23,10 @@ void main() {
       print('Tasa de éxito: ${summary['successRate']}%');
       print('Tiempo promedio: ${summary['avgDurationMs']}ms');
       print('═══════════════════════════════════════════════════════════\n');
-      
+
       final report = endpointTester.generateReport(results);
       print(report);
-      
+
       // Verificar que al menos algunos endpoints funcionan
       expect(summary['total'], greaterThan(0));
     }, timeout: const Timeout(Duration(minutes: 10)));
@@ -34,19 +34,22 @@ void main() {
     test('Análisis de rendimiento', () async {
       final performanceAnalyzer = PerformanceAnalyzer();
       final results = await performanceAnalyzer.generateFullReport();
-      
+
       print('\n═══════════════════════════════════════════════════════════');
       print('⚡ RESULTADOS DE RENDIMIENTO:');
       print('═══════════════════════════════════════════════════════════');
-      
+
       final report = performanceAnalyzer.generateTextReport(results);
       print(report);
-      
+
       // Verificar que se generaron métricas
       if (results.containsKey('generalStats')) {
         final stats = results['generalStats'] as Map<String, dynamic>;
         expect(stats['totalOperations'], greaterThan(0));
       }
     }, timeout: const Timeout(Duration(minutes: 10)));
-  });
+  },
+      skip: const bool.fromEnvironment('RUN_INTEGRATION_TESTS')
+          ? false
+          : 'Requiere backend y plugins nativos; ejecutar con RUN_INTEGRATION_TESTS=true');
 }

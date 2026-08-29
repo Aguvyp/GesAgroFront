@@ -3,7 +3,7 @@ import 'optimized_api_service.dart';
 
 class CreditoService {
   static final ApiService _apiService = ApiService();
-  
+
   static Future<void> _ensureInitialized() async {
     if (!_apiService.isInitialized) {
       await _apiService.initialize();
@@ -19,8 +19,9 @@ class CreditoService {
       if (skip != null || limit != null) {
         final start = skip ?? 0;
         final end = limit != null ? start + limit : creditos.length;
-        return creditos.sublist(start < creditos.length ? start : creditos.length, 
-                                end < creditos.length ? end : creditos.length);
+        return creditos.sublist(
+            start < creditos.length ? start : creditos.length,
+            end < creditos.length ? end : creditos.length);
       }
       return creditos;
     } catch (e) {
@@ -52,7 +53,8 @@ class CreditoService {
   static Future<Credito> updateCredito(Credito credito) async {
     try {
       await _ensureInitialized();
-      return await _apiService.updateCredito(credito.id, credito.toUpdateJson());
+      return await _apiService.updateCredito(
+          credito.id, credito.toUpdateJson());
     } catch (e) {
       throw Exception('Error al actualizar crédito: $e');
     }
@@ -71,7 +73,7 @@ class CreditoService {
 
 class CuotaCreditoService {
   static final ApiService _apiService = ApiService();
-  
+
   static Future<void> _ensureInitialized() async {
     if (!_apiService.isInitialized) {
       await _apiService.initialize();
@@ -83,13 +85,14 @@ class CuotaCreditoService {
     try {
       await _ensureInitialized();
       final cuotasData = await _apiService.getCuotasCredito();
-      final cuotas = cuotasData.map((json) => CuotaCredito.fromJson(json)).toList();
+      final cuotas =
+          cuotasData.map((json) => CuotaCredito.fromJson(json)).toList();
       // Aplicar paginación manualmente si es necesario
       if (skip != null || limit != null) {
         final start = skip ?? 0;
         final end = limit != null ? start + limit : cuotas.length;
-        return cuotas.sublist(start < cuotas.length ? start : cuotas.length, 
-                             end < cuotas.length ? end : cuotas.length);
+        return cuotas.sublist(start < cuotas.length ? start : cuotas.length,
+            end < cuotas.length ? end : cuotas.length);
       }
       return cuotas;
     } catch (e) {
@@ -112,7 +115,8 @@ class CuotaCreditoService {
   static Future<CuotaCredito> createCuota(CuotaCredito cuota) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.createCuotaCredito(cuota.toCreateJson());
+      final response =
+          await _apiService.createCuotaCredito(cuota.toCreateJson());
       return CuotaCredito.fromJson(response);
     } catch (e) {
       throw Exception('Error al crear cuota: $e');
@@ -123,7 +127,8 @@ class CuotaCreditoService {
   static Future<CuotaCredito> updateCuota(CuotaCredito cuota) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.updateCuotaCredito(cuota.id, cuota.toUpdateJson());
+      final response =
+          await _apiService.updateCuotaCredito(cuota.id, cuota.toUpdateJson());
       return CuotaCredito.fromJson(response);
     } catch (e) {
       throw Exception('Error al actualizar cuota: $e');
@@ -145,7 +150,8 @@ class CuotaCreditoService {
     try {
       await _ensureInitialized();
       final cuotasData = await _apiService.getCuotasCredito();
-      final cuotas = cuotasData.map((json) => CuotaCredito.fromJson(json)).toList();
+      final cuotas =
+          cuotasData.map((json) => CuotaCredito.fromJson(json)).toList();
       return cuotas.where((cuota) => cuota.idCredito == creditoId).toList();
     } catch (e) {
       throw Exception('Error al obtener cuotas del crédito: $e');

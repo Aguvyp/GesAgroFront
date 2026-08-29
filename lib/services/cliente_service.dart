@@ -4,7 +4,7 @@ import 'optimized_api_service.dart';
 
 class ClienteService {
   static final ApiService _apiService = ApiService();
-  
+
   static Future<void> _ensureInitialized() async {
     if (!_apiService.isInitialized) {
       await _apiService.initialize();
@@ -38,7 +38,8 @@ class ClienteService {
     }
   }
 
-  static Future<Cliente> updateCliente(int id, Map<String, dynamic> data) async {
+  static Future<Cliente> updateCliente(
+      int id, Map<String, dynamic> data) async {
     try {
       await _ensureInitialized();
       return await _apiService.updateCliente(id, data);
@@ -60,8 +61,10 @@ class ClienteService {
   static Future<List<Campo>> getCamposByCliente(int clienteId) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.get('/api/campos-cliente/?cliente_id=$clienteId');
-      final List<dynamic> camposData = response is List ? response : (response['data'] ?? []);
+      final response =
+          await _apiService.get('/api/campos-cliente/?cliente_id=$clienteId');
+      final List<dynamic> camposData =
+          response is List ? response : (response['data'] ?? []);
       return camposData.map((json) => Campo.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Error al obtener campos del cliente: $e');
@@ -73,7 +76,8 @@ class ClienteService {
     try {
       await _ensureInitialized();
       final response = await _apiService.get('/api/campos-cliente/');
-      final List<dynamic> asignacionesData = response is List ? response : (response['data'] ?? []);
+      final List<dynamic> asignacionesData =
+          response is List ? response : (response['data'] ?? []);
       return asignacionesData.cast<Map<String, dynamic>>();
     } catch (e) {
       throw Exception('Error al obtener asignaciones: $e');
@@ -84,7 +88,8 @@ class ClienteService {
   static Future<Map<String, dynamic>> getAsignacion(int asignacionId) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.get('/api/campos-cliente/$asignacionId');
+      final response =
+          await _apiService.get('/api/campos-cliente/$asignacionId');
       return response;
     } catch (e) {
       throw Exception('Error al obtener asignación: $e');
@@ -92,16 +97,19 @@ class ClienteService {
   }
 
   // Asignar un campo a un cliente
-  static Future<Map<String, dynamic>> asignarCampoACliente(int clienteId, int campoId, {String? observaciones}) async {
+  static Future<Map<String, dynamic>> asignarCampoACliente(
+      int clienteId, int campoId,
+      {String? observaciones}) async {
     try {
       await _ensureInitialized();
       final data = {
-        'cliente_id': clienteId,
-        'campo_id': campoId,
+        'cliente': clienteId,
+        'campo': campoId,
         'observaciones': observaciones,
         'activo': true,
       };
-      final response = await _apiService.post('/api/campos-cliente/create', data: data);
+      final response =
+          await _apiService.post('/api/campos-cliente/create', data: data);
       return response;
     } catch (e) {
       throw Exception('Error al asignar campo al cliente: $e');
@@ -109,10 +117,12 @@ class ClienteService {
   }
 
   // Actualizar asignación
-  static Future<Map<String, dynamic>> actualizarAsignacion(int asignacionId, Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> actualizarAsignacion(
+      int asignacionId, Map<String, dynamic> data) async {
     try {
       await _ensureInitialized();
-      final response = await _apiService.put('/api/campos-cliente/$asignacionId/update', data: data);
+      final response = await _apiService
+          .put('/api/campos-cliente/$asignacionId/update', data: data);
       return response;
     } catch (e) {
       throw Exception('Error al actualizar asignación: $e');
@@ -140,15 +150,19 @@ class ClienteService {
   }
 
   // Desasignar un campo de un cliente (busca la asignación y la desactiva)
-  static Future<void> desasignarCampoDeCliente(int clienteId, int campoId) async {
+  static Future<void> desasignarCampoDeCliente(
+      int clienteId, int campoId) async {
     try {
       // Primero obtener todas las asignaciones para encontrar la correcta
       final asignaciones = await getAsignaciones();
       final asignacion = asignaciones.firstWhere(
-        (asig) => asig['cliente_id'] == clienteId && asig['campo_id'] == campoId && asig['activo'] == true,
+        (asig) =>
+            asig['cliente_id'] == clienteId &&
+            asig['campo_id'] == campoId &&
+            asig['activo'] == true,
         orElse: () => throw Exception('Asignación no encontrada'),
       );
-      
+
       // Desactivar la asignación encontrada
       await desactivarAsignacion(asignacion['id']);
     } catch (e) {

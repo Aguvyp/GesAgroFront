@@ -87,7 +87,8 @@ class OptimizedShimmerList extends StatelessWidget {
               color: AppTheme.surface.withOpacity(0.8),
             )
             .animate()
-            .fadeIn(delay: Duration(milliseconds: index * 80), duration: 300.ms);
+            .fadeIn(
+                delay: Duration(milliseconds: index * 80), duration: 300.ms);
       },
     );
   }
@@ -303,7 +304,8 @@ class OptimizedButton extends StatelessWidget {
         style: style,
         child: isLoading
             ? const SizedBox(
-                height: 22, width: 22,
+                height: 22,
+                width: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),

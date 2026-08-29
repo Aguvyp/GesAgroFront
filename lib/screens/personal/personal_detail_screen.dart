@@ -19,7 +19,8 @@ class PersonalDetailScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<PersonalDetailScreen> createState() => _PersonalDetailScreenState();
+  ConsumerState<PersonalDetailScreen> createState() =>
+      _PersonalDetailScreenState();
 }
 
 class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
@@ -35,14 +36,15 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
 
   Future<void> _loadTrabajos() async {
     if (widget.personal.id == null) return;
-    
+
     setState(() {
       _isLoadingTrabajos = true;
       _errorTrabajos = null;
     });
 
     try {
-      final trabajos = await TrabajoService.getTrabajosByPersonal(widget.personal.id!);
+      final trabajos =
+          await TrabajoService.getTrabajosByPersonal(widget.personal.id!);
       setState(() {
         _trabajos = trabajos;
         _isLoadingTrabajos = false;
@@ -79,9 +81,12 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildInfoRow('DNI', widget.personal.dni, Icons.badge),
-                  if (widget.personal.telefono != null && widget.personal.telefono!.isNotEmpty)
-                    _buildInfoRow('Teléfono', widget.personal.telefono!, Icons.phone),
-                  _buildInfoRow('ID', widget.personal.id?.toString() ?? 'N/A', Icons.fingerprint),
+                  if (widget.personal.telefono != null &&
+                      widget.personal.telefono!.isNotEmpty)
+                    _buildInfoRow(
+                        'Teléfono', widget.personal.telefono!, Icons.phone),
+                  _buildInfoRow('ID', widget.personal.id?.toString() ?? 'N/A',
+                      Icons.fingerprint),
                 ],
               ),
             ),
@@ -117,13 +122,15 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
                   icon: const Icon(Icons.edit),
                   label: const Text('Editar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(AppConstants.primaryColor).withOpacity(0.1),
+                    backgroundColor:
+                        const Color(AppConstants.primaryColor).withOpacity(0.1),
                     foregroundColor: const Color(AppConstants.primaryColor),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: const Color(AppConstants.primaryColor).withOpacity(0.3),
+                        color: const Color(AppConstants.primaryColor)
+                            .withOpacity(0.3),
                         width: 1,
                       ),
                     ),
@@ -166,7 +173,8 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: const Color(AppConstants.primaryColor).withOpacity(0.1),
+              backgroundColor:
+                  const Color(AppConstants.primaryColor).withOpacity(0.1),
               child: Text(
                 widget.personal.initials,
                 style: const TextStyle(
@@ -191,9 +199,11 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(AppConstants.successColor).withOpacity(0.1),
+                      color: const Color(AppConstants.successColor)
+                          .withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: const Color(AppConstants.successColor),
@@ -215,7 +225,7 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Línea elegante con gradiente
         Container(
           height: 3,
@@ -276,7 +286,7 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Contenido
         content,
       ],
@@ -416,7 +426,8 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text('Fecha: ${DateFormat('dd/MM/yyyy').format(trabajo.fechaInicio)}'),
+            Text(
+                'Fecha: ${DateFormat('dd/MM/yyyy').format(trabajo.fechaInicio)}'),
             if (trabajo.estado != null)
               Container(
                 margin: const EdgeInsets.only(top: 4),
@@ -487,7 +498,8 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: Text('¿Estás seguro de que deseas eliminar a ${widget.personal.nombre}?'),
+        content: Text(
+            '¿Estás seguro de que deseas eliminar a ${widget.personal.nombre}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -508,7 +520,9 @@ class _PersonalDetailScreenState extends ConsumerState<PersonalDetailScreen> {
 
   Future<void> _deletePersonalAction() async {
     try {
-      await ref.read(personalProvider.notifier).deletePersonal(widget.personal.id!);
+      await ref
+          .read(personalProvider.notifier)
+          .deletePersonal(widget.personal.id!);
       if (mounted) {
         Navigator.pop(context);
         OptimizedSnackBar.showSuccess(

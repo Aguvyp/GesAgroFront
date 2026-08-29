@@ -9,7 +9,7 @@ import '../../utils/validators.dart';
 /// Pantalla completa para crear/editar créditos
 class CreditoFormScreen extends ConsumerStatefulWidget {
   final Credito? credito;
-  
+
   const CreditoFormScreen({Key? key, this.credito}) : super(key: key);
 
   @override
@@ -20,14 +20,14 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService();
   final AppLogger _logger = AppLogger.instance;
-  
+
   // Controladores de texto
   late TextEditingController _entidadController;
   late TextEditingController _montoOtorgadoController;
   late TextEditingController _tasaInteresController;
   late TextEditingController _plazoMesesController;
   late TextEditingController _fechaDesembolsoController;
-  
+
   // Estados del formulario
   DateTime? _fechaDesembolso;
   String? _estadoSeleccionado;
@@ -44,21 +44,24 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
   void initState() {
     super.initState();
     final c = widget.credito;
-    
+
     // Inicializar controladores
     _entidadController = TextEditingController(text: c?.entidad ?? '');
-    _montoOtorgadoController = TextEditingController(text: c?.montoOtorgado.toString() ?? '');
-    _tasaInteresController = TextEditingController(text: c?.tasaInteresAnual.toString() ?? '');
-    _plazoMesesController = TextEditingController(text: c?.plazoMeses.toString() ?? '');
+    _montoOtorgadoController =
+        TextEditingController(text: c?.montoOtorgado.toString() ?? '');
+    _tasaInteresController =
+        TextEditingController(text: c?.tasaInteresAnual.toString() ?? '');
+    _plazoMesesController =
+        TextEditingController(text: c?.plazoMeses.toString() ?? '');
     _fechaDesembolsoController = TextEditingController();
-    
+
     // Inicializar estados
     _fechaDesembolso = c?.fechaDesembolso ?? DateTime.now();
     _estadoSeleccionado = c?.estado ?? _estados.first;
-    
+
     // Actualizar controladores de fecha
     _updateFechaDesembolsoController();
-    
+
     // Inicializar el servicio API
     _initializeApiService();
   }
@@ -95,29 +98,30 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
   /// Actualiza el controlador de fecha de desembolso
   void _updateFechaDesembolsoController() {
     if (_fechaDesembolso != null) {
-      _fechaDesembolsoController.text = '${_fechaDesembolso!.day}/${_fechaDesembolso!.month}/${_fechaDesembolso!.year}';
+      _fechaDesembolsoController.text =
+          '${_fechaDesembolso!.day}/${_fechaDesembolso!.month}/${_fechaDesembolso!.year}';
     }
   }
 
   /// Selecciona una fecha usando el date picker
-  Future<void> _selectDate(BuildContext context, DateTime? initialDate, Function(DateTime?) onDateSelected) async {
+  Future<void> _selectDate(BuildContext context, DateTime? initialDate,
+      Function(DateTime?) onDateSelected) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365 * 10)), // 10 años
     );
-    
+
     if (picked != null && picked != initialDate) {
       onDateSelected(picked);
-      
+
       // Actualizar el controlador correspondiente
       if (initialDate == _fechaDesembolso) {
         _updateFechaDesembolsoController();
       }
     }
   }
-
 
   /// Guarda el crédito
   Future<void> _saveCredito() async {
@@ -140,7 +144,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
         await _apiService.initialize();
       }
 
-      _logger.info('💳 ${widget.credito == null ? 'Creando' : 'Actualizando'} crédito...');
+      _logger.info(
+          '💳 ${widget.credito == null ? 'Creando' : 'Actualizando'} crédito...');
 
       // Preparar datos del crédito
       final creditoData = {
@@ -156,7 +161,7 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
         // Crear nuevo crédito
         await _apiService.createCredito(creditoData);
         _logger.info('✅ Crédito creado exitosamente');
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -170,7 +175,7 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
         // Actualizar crédito existente
         await _apiService.updateCredito(widget.credito!.id, creditoData);
         _logger.info('✅ Crédito actualizado exitosamente');
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -182,12 +187,14 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
         }
       }
     } catch (e) {
-      _logger.error('❌ Error ${widget.credito == null ? 'creando' : 'actualizando'} crédito: $e');
-      
+      _logger.error(
+          '❌ Error ${widget.credito == null ? 'creando' : 'actualizando'} crédito: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error ${widget.credito == null ? 'creando' : 'actualizando'} crédito: $e'),
+            content: Text(
+                'Error ${widget.credito == null ? 'creando' : 'actualizando'} crédito: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -203,7 +210,7 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.credito != null;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Créditos'),
@@ -232,8 +239,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                     Text(
                       'Información Básica',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -241,7 +248,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                       label: 'Entidad Financiera',
                       hint: 'Ingrese el nombre de la entidad',
                       prefixIcon: const Icon(Icons.account_balance),
-                      validator: (value) => Validators.validateRequired(value, 'Entidad financiera'),
+                      validator: (value) => Validators.validateRequired(
+                          value, 'Entidad financiera'),
                     ),
                     const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
@@ -262,14 +270,15 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                           _estadoSeleccionado = newValue;
                         });
                       },
-                      validator: (value) => Validators.validateRequired(value, 'Estado'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Estado'),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Montos y términos
               OptimizedCard(
                 padding: const EdgeInsets.all(20),
@@ -279,8 +288,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                     Text(
                       'Montos y Términos',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -289,7 +298,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                       hint: 'Ingrese el monto del crédito',
                       prefixIcon: const Icon(Icons.attach_money),
                       keyboardType: TextInputType.number,
-                      validator: (value) => Validators.validateRequired(value, 'Monto otorgado'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Monto otorgado'),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -298,7 +308,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                       hint: 'Ingrese la tasa de interés',
                       prefixIcon: const Icon(Icons.percent),
                       keyboardType: TextInputType.number,
-                      validator: (value) => Validators.validateRequired(value, 'Tasa de interés'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Tasa de interés'),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -307,14 +318,15 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                       hint: 'Ingrese el plazo en meses',
                       prefixIcon: const Icon(Icons.schedule),
                       keyboardType: TextInputType.number,
-                      validator: (value) => Validators.validateRequired(value, 'Plazo en meses'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Plazo en meses'),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Fechas
               OptimizedCard(
                 padding: const EdgeInsets.all(20),
@@ -324,8 +336,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                     Text(
                       'Fechas',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     Column(
@@ -333,9 +345,10 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                       children: [
                         Text(
                           'Fecha de Desembolso',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -350,19 +363,21 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                             fillColor: Theme.of(context).cardColor,
                           ),
                           readOnly: true,
-                          onTap: () => _selectDate(context, _fechaDesembolso, (date) {
+                          onTap: () =>
+                              _selectDate(context, _fechaDesembolso, (date) {
                             setState(() => _fechaDesembolso = date);
                           }),
-                          validator: (value) => Validators.validateRequired(value, 'Fecha de desembolso'),
+                          validator: (value) => Validators.validateRequired(
+                              value, 'Fecha de desembolso'),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Botón de guardar
               SizedBox(
                 width: double.infinity,
@@ -385,7 +400,8 @@ class _CreditoFormScreenState extends ConsumerState<CreditoFormScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
                             SizedBox(width: 12),

@@ -1,7 +1,10 @@
 class AppConstants {
   // API Configuration
 
-  static const String apiBaseUrl = 'http://192.168.1.54:8000';
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.1.54:8000',
+  );
 
   static const int apiTimeoutSeconds = 30;
   static const Map<String, String> headers = {

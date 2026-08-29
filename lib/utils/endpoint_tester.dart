@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import '../core/config/app_config.dart';
-import '../core/config/auth_config.dart';
 import '../core/logger/app_logger.dart';
 import '../services/optimized_auth_service.dart';
 
@@ -43,8 +42,10 @@ class EndpointTestResult {
       'success': success,
       'error': error,
       'requestData': requestData,
-      'responseData': responseData != null ? _truncateResponse(responseData!) : null,
-      'requestHeaders': requestHeaders != null ? _sanitizeHeaders(requestHeaders!) : null,
+      'responseData':
+          responseData != null ? _truncateResponse(responseData!) : null,
+      'requestHeaders':
+          requestHeaders != null ? _sanitizeHeaders(requestHeaders!) : null,
       'fullUrl': fullUrl,
       'queryParams': queryParams,
     };
@@ -62,9 +63,8 @@ class EndpointTestResult {
     final sanitized = <String, String>{};
     headers.forEach((key, value) {
       if (key.toLowerCase() == 'authorization') {
-        sanitized[key] = value.length > 20 
-            ? '${value.substring(0, 20)}...' 
-            : value;
+        sanitized[key] =
+            value.length > 20 ? '${value.substring(0, 20)}...' : value;
       } else {
         sanitized[key] = value;
       }
@@ -97,7 +97,7 @@ class EndpointTester {
   final Dio _dio = Dio();
   final AppLogger _logger = AppLogger.instance;
   final List<EndpointTestResult> _results = [];
-  
+
   // #region agent log
   void _logToFile(Map<String, dynamic> data) {
     // Solo loggear a consola ya que el sistema de archivos es de solo lectura
@@ -113,7 +113,7 @@ class EndpointTester {
         'runId': 'run1',
         'hypothesisId': 'A',
       };
-      
+
       // Log a consola en formato JSON para fácil parsing
       print('🔵 [ENDPOINT_TEST] ${jsonEncode(logEntry)}');
       _logger.debug('📝 Log: ${data['message']}');
@@ -132,18 +132,17 @@ class EndpointTester {
       'timestamp': DateTime.now().toIso8601String(),
     });
     // #endregion
-    
+
     // Solo inicializar AppConfig si no está inicializado
     if (!AppConfig.instance.isInitialized) {
       await AppConfig.instance.initialize();
     }
-    await AuthConfig.initializeToken();
-    
+
     final baseUrl = AppConfig.instance.apiBaseUrl.trim();
-    final normalizedBaseUrl = baseUrl.endsWith('/') 
-        ? baseUrl.substring(0, baseUrl.length - 1) 
+    final normalizedBaseUrl = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
         : baseUrl;
-    
+
     _dio.options = BaseOptions(
       baseUrl: normalizedBaseUrl,
       connectTimeout: const Duration(seconds: 60),
@@ -162,14 +161,15 @@ class EndpointTester {
       'baseUrl': normalizedBaseUrl,
     });
     // #endregion
-    
-    _logger.info('✅ EndpointTester inicializado con baseUrl: $normalizedBaseUrl');
+
+    _logger
+        .info('✅ EndpointTester inicializado con baseUrl: $normalizedBaseUrl');
   }
 
   /// Probar un endpoint individual
   Future<EndpointTestResult> testEndpoint(EndpointDefinition definition) async {
     final stopwatch = Stopwatch()..start();
-    
+
     // #region agent log
     _logToFile({
       'message': 'Testing endpoint',
@@ -191,43 +191,37 @@ class EndpointTester {
         // Intentar obtener el access_token del login primero (como hace OptimizedHttpClient)
         String? token;
         String tokenSource = 'none';
-        
+
         try {
           final authService = AuthService();
           await authService.initialize();
           token = await authService.getToken();
           if (token != null && token.isNotEmpty) {
             tokenSource = 'login';
-            _logger.info('🔐 Usando access_token del login para: ${definition.endpoint}');
+            _logger.info(
+                '🔐 Usando access_token del login para: ${definition.endpoint}');
           }
         } catch (e) {
           _logger.debug('No se pudo obtener token del login: $e');
         }
-        
-        // Si no hay token del login, usar el token fijo de AuthConfig como fallback
-        if (token == null || token.isEmpty) {
-          token = await AuthConfig.getToken();
-          if (token != null && token.isNotEmpty) {
-            tokenSource = 'fixed';
-            _logger.info('🔐 Usando token fijo de AuthConfig para: ${definition.endpoint}');
-          }
-        }
-        
+
         if (token != null && token.isNotEmpty) {
           headers['Authorization'] = 'Bearer $token';
-          
+
           // #region agent log
           _logToFile({
             'message': 'Authorization token added',
             'endpoint': definition.endpoint,
             'tokenLength': token.length,
-            'tokenPrefix': token.substring(0, token.length > 20 ? 20 : token.length),
+            'tokenPrefix':
+                token.substring(0, token.length > 20 ? 20 : token.length),
             'tokenSource': tokenSource,
             'hasToken': true,
           });
           // #endregion
-          
-          _logger.info('🔐 Token agregado para ${definition.endpoint} (longitud: ${token.length}, fuente: $tokenSource)');
+
+          _logger.info(
+              '🔐 Token agregado para ${definition.endpoint} (longitud: ${token.length}, fuente: $tokenSource)');
         } else {
           // #region agent log
           _logToFile({
@@ -237,8 +231,9 @@ class EndpointTester {
             'hasToken': false,
           });
           // #endregion
-          
-          _logger.warning('⚠️ Endpoint requiere auth pero no hay token disponible: ${definition.endpoint}');
+
+          _logger.warning(
+              '⚠️ Endpoint requiere auth pero no hay token disponible: ${definition.endpoint}');
         }
       } else {
         // #region agent log
@@ -330,10 +325,11 @@ class EndpointTester {
       // Construir URL completa
       final baseUrl = _dio.options.baseUrl;
       String fullUrl = '$baseUrl$normalizedEndpoint';
-      if (definition.queryParams != null && definition.queryParams!.isNotEmpty) {
-        final queryString = definition.queryParams!
-            .entries
-            .map((e) => '${Uri.encodeComponent(e.key.toString())}=${Uri.encodeComponent(e.value.toString())}')
+      if (definition.queryParams != null &&
+          definition.queryParams!.isNotEmpty) {
+        final queryString = definition.queryParams!.entries
+            .map((e) =>
+                '${Uri.encodeComponent(e.key.toString())}=${Uri.encodeComponent(e.value.toString())}')
             .join('&');
         fullUrl = '$fullUrl?$queryString';
       }
@@ -345,7 +341,7 @@ class EndpointTester {
         duration: duration,
         success: response?.statusCode == definition.expectedStatusCode,
         requestData: definition.data,
-        responseData: response?.data is Map 
+        responseData: response?.data is Map
             ? response!.data as Map<String, dynamic>
             : response?.data is List
                 ? {'list_length': (response!.data as List).length}
@@ -378,10 +374,11 @@ class EndpointTester {
       // Construir URL completa para el error
       final baseUrl = _dio.options.baseUrl;
       String fullUrl = '$baseUrl${definition.endpoint}';
-      if (definition.queryParams != null && definition.queryParams!.isNotEmpty) {
-        final queryString = definition.queryParams!
-            .entries
-            .map((e) => '${Uri.encodeComponent(e.key.toString())}=${Uri.encodeComponent(e.value.toString())}')
+      if (definition.queryParams != null &&
+          definition.queryParams!.isNotEmpty) {
+        final queryString = definition.queryParams!.entries
+            .map((e) =>
+                '${Uri.encodeComponent(e.key.toString())}=${Uri.encodeComponent(e.value.toString())}')
             .join('&');
         fullUrl = '$fullUrl?$queryString';
       }
@@ -420,33 +417,43 @@ class EndpointTester {
       ),
 
       // Usuarios
-      EndpointDefinition(endpoint: '/api/usuarios/', method: 'GET', queryParams: {'skip': 0, 'limit': 10}),
-      
+      EndpointDefinition(
+          endpoint: '/api/usuarios/',
+          method: 'GET',
+          queryParams: {'skip': 0, 'limit': 10}),
+
       // Campos
-      EndpointDefinition(endpoint: '/api/campos/', method: 'GET', queryParams: {'skip': 0, 'limit': 10}),
+      EndpointDefinition(
+          endpoint: '/api/campos/',
+          method: 'GET',
+          queryParams: {'skip': 0, 'limit': 10}),
       EndpointDefinition(endpoint: '/api/flutter/campos/lista', method: 'GET'),
-      
+
       // Máquinas
       EndpointDefinition(endpoint: '/api/maquinas/', method: 'GET'),
-      EndpointDefinition(endpoint: '/api/flutter/maquinas/lista', method: 'GET'),
-      
+      EndpointDefinition(
+          endpoint: '/api/flutter/maquinas/lista', method: 'GET'),
+
       // Personal
       EndpointDefinition(endpoint: '/api/personal', method: 'GET'),
-      EndpointDefinition(endpoint: '/api/flutter/personal/lista', method: 'GET'),
-      
+      EndpointDefinition(
+          endpoint: '/api/flutter/personal/lista', method: 'GET'),
+
       // Clientes
       EndpointDefinition(endpoint: '/api/clientes/', method: 'GET'),
-      EndpointDefinition(endpoint: '/api/flutter/clientes/lista', method: 'GET'),
-      
+      EndpointDefinition(
+          endpoint: '/api/flutter/clientes/lista', method: 'GET'),
+
       // Costos
       EndpointDefinition(endpoint: '/api/costos/pagados', method: 'GET'),
       EndpointDefinition(endpoint: '/api/costos/pendientes', method: 'GET'),
       EndpointDefinition(endpoint: '/api/flutter/costos/lista', method: 'GET'),
-      
+
       // Facturas
       EndpointDefinition(endpoint: '/api/facturas/', method: 'GET'),
-      EndpointDefinition(endpoint: '/api/flutter/facturas/lista', method: 'GET'),
-      
+      EndpointDefinition(
+          endpoint: '/api/flutter/facturas/lista', method: 'GET'),
+
       // Trabajos
       EndpointDefinition(endpoint: '/api/trabajos/', method: 'GET'),
       EndpointDefinition(
@@ -454,37 +461,39 @@ class EndpointTester {
         method: 'GET',
         queryParams: {'skip': 0, 'limit': 10},
       ),
-      
+
       // Insumos
       EndpointDefinition(endpoint: '/api/insumos/', method: 'GET'),
-      
+
       // Mantenimientos
       EndpointDefinition(endpoint: '/api/mantenimientos/', method: 'GET'),
-      
+
       // Créditos
       EndpointDefinition(endpoint: '/api/creditos/', method: 'GET'),
-      
+
       // Movimientos
       EndpointDefinition(endpoint: '/api/movimientos/', method: 'GET'),
-      
+
       // Tipos de trabajo
       EndpointDefinition(endpoint: '/api/tipo-trabajo/', method: 'GET'),
-      
+
       // Pagos
       EndpointDefinition(endpoint: '/api/pagos/', method: 'GET'),
-      
+
       // Cuotas de crédito
       EndpointDefinition(endpoint: '/api/cuotas-credito/', method: 'GET'),
-      
+
       // Dashboard
       EndpointDefinition(endpoint: '/api/dashboard/resumen', method: 'GET'),
-      EndpointDefinition(endpoint: '/api/dashboard/estadisticas', method: 'GET'),
-      EndpointDefinition(endpoint: '/api/flutter/dashboard/resumen', method: 'GET'),
-      
+      EndpointDefinition(
+          endpoint: '/api/dashboard/estadisticas', method: 'GET'),
+      EndpointDefinition(
+          endpoint: '/api/flutter/dashboard/resumen', method: 'GET'),
+
       // Reportes
       EndpointDefinition(endpoint: '/api/reportes/trabajos', method: 'GET'),
       EndpointDefinition(endpoint: '/api/reportes/financiero', method: 'GET'),
-      
+
       // Móvil
       EndpointDefinition(endpoint: '/api/mobile/sync', method: 'GET'),
     ];
@@ -493,7 +502,7 @@ class EndpointTester {
   /// Ejecutar todas las pruebas
   Future<Map<String, dynamic>> runAllTests() async {
     _logger.info('🚀 Iniciando pruebas de endpoints...');
-    
+
     // #region agent log
     _logToFile({
       'message': 'Starting all endpoint tests',
@@ -501,7 +510,7 @@ class EndpointTester {
       'timestamp': DateTime.now().toIso8601String(),
     });
     // #endregion
-    
+
     try {
       await initialize();
     } catch (e) {
@@ -520,29 +529,29 @@ class EndpointTester {
     var completed = 0;
     var successful = 0;
     var failed = 0;
-    
+
     final startTime = DateTime.now();
-    
+
     for (final endpoint in endpoints) {
       completed++;
       final result = await testEndpoint(endpoint);
-      
+
       if (result.success) {
         successful++;
       } else {
         failed++;
       }
-      
+
       _logger.info(
         '[$completed/$total] ${result.method} ${result.endpoint} - '
         '${result.success ? "✅" : "❌"} ${result.statusCode ?? "N/A"} '
         '(${result.duration.inMilliseconds}ms)',
       );
-      
+
       // Pequeña pausa entre requests para no saturar
       await Future.delayed(const Duration(milliseconds: 100));
     }
-    
+
     final endTime = DateTime.now();
     final totalDuration = endTime.difference(startTime);
 
@@ -559,15 +568,14 @@ class EndpointTester {
     // Calcular estadísticas
     final durations = _results.map((r) => r.duration.inMilliseconds).toList();
     durations.sort();
-    
-    final avgDuration = durations.isEmpty 
-        ? 0 
+
+    final avgDuration = durations.isEmpty
+        ? 0
         : durations.reduce((a, b) => a + b) / durations.length;
     final minDuration = durations.isEmpty ? 0 : durations.first;
     final maxDuration = durations.isEmpty ? 0 : durations.last;
-    final medianDuration = durations.isEmpty 
-        ? 0 
-        : durations[durations.length ~/ 2];
+    final medianDuration =
+        durations.isEmpty ? 0 : durations[durations.length ~/ 2];
 
     // Endpoints lentos (> 2 segundos)
     final slowEndpoints = _results
@@ -596,7 +604,8 @@ class EndpointTester {
         'total': total,
         'successful': successful,
         'failed': failed,
-        'successRate': total > 0 ? (successful / total * 100).toStringAsFixed(2) : '0.00',
+        'successRate':
+            total > 0 ? (successful / total * 100).toStringAsFixed(2) : '0.00',
         'totalDurationMs': totalDuration.inMilliseconds,
         'avgDurationMs': avgDuration.toStringAsFixed(2),
         'minDurationMs': minDuration,
@@ -611,7 +620,8 @@ class EndpointTester {
     // Guardar reporte de endpoints fallidos en .txt ANTES del return
     if (failed > 0) {
       try {
-        final reportFileName = await saveFailedEndpointsReport(resultsForReport);
+        final reportFileName =
+            await saveFailedEndpointsReport(resultsForReport);
         _logger.info('📄 Reporte guardado: $reportFileName');
         print('📄 Reporte de endpoints fallidos guardado en: $reportFileName');
       } catch (e) {
@@ -627,10 +637,12 @@ class EndpointTester {
   String generateReport(Map<String, dynamic> results) {
     final buffer = StringBuffer();
     final summary = results['summary'] as Map<String, dynamic>;
-    
-    buffer.writeln('═══════════════════════════════════════════════════════════');
+
+    buffer
+        .writeln('═══════════════════════════════════════════════════════════');
     buffer.writeln('📊 REPORTE DE PRUEBAS DE ENDPOINTS');
-    buffer.writeln('═══════════════════════════════════════════════════════════');
+    buffer
+        .writeln('═══════════════════════════════════════════════════════════');
     buffer.writeln('');
     buffer.writeln('📈 RESUMEN:');
     buffer.writeln('   Total de endpoints probados: ${summary['total']}');
@@ -673,8 +685,9 @@ class EndpointTester {
       buffer.writeln('');
     }
 
-    buffer.writeln('═══════════════════════════════════════════════════════════');
-    
+    buffer
+        .writeln('═══════════════════════════════════════════════════════════');
+
     return buffer.toString();
   }
 
@@ -683,26 +696,28 @@ class EndpointTester {
     final buffer = StringBuffer();
     final summary = results['summary'] as Map<String, dynamic>;
     final failedResults = _results.where((r) => !r.success).toList();
-    
+
     buffer.writeln('# ❌ Endpoints Fallidos - Reporte para Backend\n');
-    buffer.writeln('**Fecha de Prueba:** ${DateTime.now().toIso8601String()}\n');
+    buffer
+        .writeln('**Fecha de Prueba:** ${DateTime.now().toIso8601String()}\n');
     buffer.writeln('**Resumen:**');
     buffer.writeln('- Total de endpoints probados: ${summary['total']}');
     buffer.writeln('- Endpoints exitosos: ${summary['successful']}');
     buffer.writeln('- **Endpoints fallidos: ${summary['failed']}**\n');
     buffer.writeln('---\n');
-    
+
     if (failedResults.isEmpty) {
-      buffer.writeln('✅ **¡Excelente! Todos los endpoints funcionaron correctamente.**\n');
+      buffer.writeln(
+          '✅ **¡Excelente! Todos los endpoints funcionaron correctamente.**\n');
       return buffer.toString();
     }
-    
+
     buffer.writeln('## 📋 Detalle de Endpoints Fallidos\n');
-    
+
     for (int i = 0; i < failedResults.length; i++) {
       final result = failedResults[i];
       buffer.writeln('### ${i + 1}. ${result.method} ${result.endpoint}\n');
-      
+
       // URL completa
       if (result.fullUrl != null) {
         buffer.writeln('**URL Completa:**');
@@ -710,10 +725,10 @@ class EndpointTester {
         buffer.writeln(result.fullUrl);
         buffer.writeln('```\n');
       }
-      
+
       // Método HTTP
       buffer.writeln('**Método HTTP:** `${result.method}`\n');
-      
+
       // Headers
       if (result.requestHeaders != null && result.requestHeaders!.isNotEmpty) {
         buffer.writeln('**Headers Enviados:**');
@@ -721,7 +736,7 @@ class EndpointTester {
         final headersJson = <String, String>{};
         bool hasAuthHeader = false;
         String? tokenValue;
-        
+
         result.requestHeaders!.forEach((key, value) {
           if (key.toLowerCase() == 'authorization') {
             hasAuthHeader = true;
@@ -730,14 +745,14 @@ class EndpointTester {
               final extractedToken = value.substring(7);
               tokenValue = extractedToken;
               if (extractedToken.isNotEmpty) {
-                headersJson[key] = 'Bearer ${extractedToken.length > 20 ? extractedToken.substring(0, 20) + "..." : extractedToken}';
+                headersJson[key] =
+                    'Bearer ${extractedToken.length > 20 ? extractedToken.substring(0, 20) + "..." : extractedToken}';
               } else {
                 headersJson[key] = value;
               }
             } else {
-              headersJson[key] = value.length > 30 
-                  ? '${value.substring(0, 30)}...'
-                  : value;
+              headersJson[key] =
+                  value.length > 30 ? '${value.substring(0, 30)}...' : value;
             }
           } else {
             headersJson[key] = value;
@@ -745,44 +760,52 @@ class EndpointTester {
         });
         buffer.writeln(const JsonEncoder.withIndent('  ').convert(headersJson));
         buffer.writeln('```\n');
-        
+
         // Información adicional sobre el token
         final finalTokenValue = tokenValue;
-        if (hasAuthHeader && finalTokenValue != null && finalTokenValue.isNotEmpty) {
+        if (hasAuthHeader &&
+            finalTokenValue != null &&
+            finalTokenValue.isNotEmpty) {
           buffer.writeln('**Información del Token de Autorización:**');
           buffer.writeln('- ✅ Header Authorization: **ENVIADO**');
           buffer.writeln('- Formato: Bearer token');
-          buffer.writeln('- Longitud del token: ${finalTokenValue.length} caracteres');
-          buffer.writeln('- Token (primeros 20 caracteres): `${finalTokenValue.length > 20 ? finalTokenValue.substring(0, 20) : finalTokenValue}`');
+          buffer.writeln(
+              '- Longitud del token: ${finalTokenValue.length} caracteres');
+          buffer.writeln(
+              '- Token (primeros 20 caracteres): `${finalTokenValue.length > 20 ? finalTokenValue.substring(0, 20) : finalTokenValue}`');
           buffer.writeln('');
         } else if (!hasAuthHeader) {
-          buffer.writeln('⚠️ **ADVERTENCIA:** No se envió el header Authorization en este request.\n');
+          buffer.writeln(
+              '⚠️ **ADVERTENCIA:** No se envió el header Authorization en este request.\n');
         }
       } else {
-        buffer.writeln('⚠️ **ADVERTENCIA:** No se enviaron headers en el request.\n');
+        buffer.writeln(
+            '⚠️ **ADVERTENCIA:** No se enviaron headers en el request.\n');
       }
-      
+
       // Query Parameters
       if (result.queryParams != null && result.queryParams!.isNotEmpty) {
         buffer.writeln('**Query Parameters:**');
         buffer.writeln('```json');
-        buffer.writeln(const JsonEncoder.withIndent('  ').convert(result.queryParams));
+        buffer.writeln(
+            const JsonEncoder.withIndent('  ').convert(result.queryParams));
         buffer.writeln('```\n');
       }
-      
+
       // Body (si existe)
       if (result.requestData != null && result.requestData!.isNotEmpty) {
         buffer.writeln('**Body Enviado:**');
         buffer.writeln('```json');
-        buffer.writeln(const JsonEncoder.withIndent('  ').convert(result.requestData));
+        buffer.writeln(
+            const JsonEncoder.withIndent('  ').convert(result.requestData));
         buffer.writeln('```\n');
       }
-      
+
       // Status Code recibido
       if (result.statusCode != null) {
         buffer.writeln('**Status Code Recibido:** `${result.statusCode}`\n');
       }
-      
+
       // Error
       if (result.error != null) {
         buffer.writeln('**Error:**');
@@ -790,31 +813,36 @@ class EndpointTester {
         buffer.writeln(result.error);
         buffer.writeln('```\n');
       }
-      
+
       // Response Data (si existe)
       if (result.responseData != null) {
         buffer.writeln('**Respuesta del Servidor:**');
         buffer.writeln('```json');
         try {
-          buffer.writeln(const JsonEncoder.withIndent('  ').convert(result.responseData));
+          buffer.writeln(
+              const JsonEncoder.withIndent('  ').convert(result.responseData));
         } catch (e) {
           buffer.writeln(result.responseData.toString());
         }
         buffer.writeln('```\n');
       }
-      
+
       // Tiempo de respuesta
-      buffer.writeln('**Tiempo de Respuesta:** ${result.duration.inMilliseconds}ms\n');
-      
+      buffer.writeln(
+          '**Tiempo de Respuesta:** ${result.duration.inMilliseconds}ms\n');
+
       buffer.writeln('---\n');
     }
-    
+
     buffer.writeln('## 📝 Notas\n');
-    buffer.writeln('- Este reporte contiene todos los endpoints que fallaron durante las pruebas.');
+    buffer.writeln(
+        '- Este reporte contiene todos los endpoints que fallaron durante las pruebas.');
     buffer.writeln('- Cada endpoint incluye el request completo que se envió.');
-    buffer.writeln('- Los tokens de autenticación están parcialmente ocultos por seguridad.');
-    buffer.writeln('- Por favor, revisar cada endpoint y verificar por qué falló.\n');
-    
+    buffer.writeln(
+        '- Los tokens de autenticación están parcialmente ocultos por seguridad.');
+    buffer.writeln(
+        '- Por favor, revisar cada endpoint y verificar por qué falló.\n');
+
     return buffer.toString();
   }
 
@@ -822,22 +850,23 @@ class EndpointTester {
   Future<String> saveFailedEndpointsReport(Map<String, dynamic> results) async {
     try {
       final report = generateFailedEndpointsMarkdown(results);
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
-      
+      final timestamp =
+          DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+
       // Intentar múltiples ubicaciones para guardar el archivo
       final possiblePaths = [
         'endpoints_fallidos_$timestamp.txt', // Directorio actual
         r'c:\Users\usuario\Repos\GesAgroFront\endpoints_fallidos_$timestamp.txt', // Ruta absoluta
       ];
-      
+
       String? savedPath;
       Exception? lastError;
-      
+
       for (final path in possiblePaths) {
         try {
           final fileName = path.replaceAll('\$timestamp', timestamp);
           final file = File(fileName);
-          
+
           // #region agent log
           _logToFile({
             'message': 'Attempting to save report',
@@ -845,13 +874,14 @@ class EndpointTester {
             'reportLength': report.length,
           });
           // #endregion
-          
+
           await file.writeAsString(report, encoding: utf8);
-          
+
           // Verificar que el archivo se creó
           if (await file.exists()) {
             savedPath = fileName;
-            _logger.info('📄 Reporte de endpoints fallidos guardado en: $fileName');
+            _logger.info(
+                '📄 Reporte de endpoints fallidos guardado en: $fileName');
             print('📄 Reporte de endpoints fallidos guardado en: $fileName');
             print('📄 Ruta completa: ${file.absolute.path}');
             break;
@@ -866,18 +896,19 @@ class EndpointTester {
           continue;
         }
       }
-      
+
       if (savedPath != null) {
         return savedPath;
       } else {
-        throw lastError ?? Exception('No se pudo guardar el archivo en ninguna ubicación');
+        throw lastError ??
+            Exception('No se pudo guardar el archivo en ninguna ubicación');
       }
     } catch (e, stackTrace) {
       _logger.error('❌ Error guardando reporte: $e');
       _logger.error('Stack trace: $stackTrace');
       print('❌ Error guardando reporte: $e');
       print('Stack trace: $stackTrace');
-      
+
       // #region agent log
       _logToFile({
         'message': 'Failed to save report',
@@ -885,7 +916,7 @@ class EndpointTester {
         'stackTrace': stackTrace.toString(),
       });
       // #endregion
-      
+
       // Si falla, al menos devolver el contenido para mostrarlo
       return 'ERROR: No se pudo guardar. Contenido: ${generateFailedEndpointsMarkdown(results).substring(0, 100)}...';
     }

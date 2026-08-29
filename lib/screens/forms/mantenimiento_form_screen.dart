@@ -11,38 +11,45 @@ import '../../utils/constants.dart';
 class MantenimientoFormScreen extends ConsumerStatefulWidget {
   final Mantenimiento? mantenimiento;
   final DateTime? fechaInicial;
-  
-  const MantenimientoFormScreen({Key? key, this.mantenimiento, this.fechaInicial}) : super(key: key);
+
+  const MantenimientoFormScreen(
+      {Key? key, this.mantenimiento, this.fechaInicial})
+      : super(key: key);
 
   @override
-  ConsumerState<MantenimientoFormScreen> createState() => _MantenimientoFormScreenState();
+  ConsumerState<MantenimientoFormScreen> createState() =>
+      _MantenimientoFormScreenState();
 }
 
-class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScreen> {
+class _MantenimientoFormScreenState
+    extends ConsumerState<MantenimientoFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _descripcionController;
   late TextEditingController _costoTotalController;
   DateTime? _fechaSeleccionada;
-  
+
   // Estados del formulario
   Maquina? _maquinaSeleccionada;
   String? _estadoSeleccionado;
-  
+
   // Listas para los selectores
   List<Maquina> _maquinas = [];
-  
+
   bool _isLoadingData = false;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _descripcionController = TextEditingController(text: widget.mantenimiento?.descripcion ?? '');
-    _costoTotalController = TextEditingController(text: widget.mantenimiento?.costoTotal?.toString() ?? '');
-    _fechaSeleccionada = widget.fechaInicial ?? widget.mantenimiento?.fecha ?? DateTime.now();
+    _descripcionController =
+        TextEditingController(text: widget.mantenimiento?.descripcion ?? '');
+    _costoTotalController = TextEditingController(
+        text: widget.mantenimiento?.costoTotal?.toString() ?? '');
+    _fechaSeleccionada =
+        widget.fechaInicial ?? widget.mantenimiento?.fecha ?? DateTime.now();
     _estadoSeleccionado = widget.mantenimiento?.estado ?? 'Pendiente';
-    
+
     // Cargar datos necesarios para los selectores
     Future.microtask(() => _loadDataForSelectors());
   }
@@ -76,7 +83,9 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
       if (widget.mantenimiento != null) {
         _maquinaSeleccionada = _maquinas.firstWhere(
           (maquina) => maquina.id == widget.mantenimiento!.idMaquina,
-          orElse: () => _maquinas.isNotEmpty ? _maquinas.first : Maquina(id: 0, nombre: '', modelo: '', marca: '', ano: 0),
+          orElse: () => _maquinas.isNotEmpty
+              ? _maquinas.first
+              : Maquina(id: 0, nombre: '', modelo: '', marca: '', ano: 0),
         );
       }
 
@@ -98,7 +107,7 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    
+
     if (picked != null && picked != _fechaSeleccionada) {
       setState(() {
         _fechaSeleccionada = picked;
@@ -114,28 +123,36 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
 
       try {
         final data = {
-          'id_maquina': _maquinaSeleccionada?.id ?? 0,
-          'fecha': _fechaSeleccionada?.toIso8601String().split('T')[0], // Formato YYYY-MM-DD
+          'maquina': _maquinaSeleccionada?.id ?? 0,
+          'fecha': _fechaSeleccionada
+              ?.toIso8601String()
+              .split('T')[0], // Formato YYYY-MM-DD
           'descripcion': _descripcionController.text,
-          'costo_total': _costoTotalController.text.isNotEmpty 
-              ? double.tryParse(_costoTotalController.text) 
+          'costo_total': _costoTotalController.text.isNotEmpty
+              ? double.tryParse(_costoTotalController.text)
               : null,
           'estado': _estadoSeleccionado ?? 'Pendiente',
         };
 
         if (widget.mantenimiento == null) {
           // Crear nuevo mantenimiento
-          await ref.read(mantenimientosProvider.notifier).createMantenimiento(data);
+          await ref
+              .read(mantenimientosProvider.notifier)
+              .createMantenimiento(data);
         } else {
           // Actualizar mantenimiento existente
-          await ref.read(mantenimientosProvider.notifier).updateMantenimiento(widget.mantenimiento!.id!, data);
+          await ref
+              .read(mantenimientosProvider.notifier)
+              .updateMantenimiento(widget.mantenimiento!.id!, data);
         }
 
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.mantenimiento == null ? 'Mantenimiento creado exitosamente' : 'Mantenimiento actualizado exitosamente'),
+              content: Text(widget.mantenimiento == null
+                  ? 'Mantenimiento creado exitosamente'
+                  : 'Mantenimiento actualizado exitosamente'),
             ),
           );
         }
@@ -170,7 +187,9 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text(
-          widget.mantenimiento == null ? 'Nuevo Mantenimiento' : 'Editar Mantenimiento',
+          widget.mantenimiento == null
+              ? 'Nuevo Mantenimiento'
+              : 'Editar Mantenimiento',
           style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -192,18 +211,18 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text(
-                  'Guardar',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text(
+                    'Guardar',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
           ),
         ],
       ),
@@ -238,10 +257,12 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                               prefixIcon: Icon(Icons.build),
                             ),
                             value: _maquinaSeleccionada,
-                            items: _deduplicateMaquinas(_maquinas).map((Maquina maquina) {
+                            items: _deduplicateMaquinas(_maquinas)
+                                .map((Maquina maquina) {
                               return DropdownMenuItem<Maquina>(
                                 value: maquina,
-                                child: Text('${maquina.nombre} - ${maquina.modelo}'),
+                                child: Text(
+                                    '${maquina.nombre} - ${maquina.modelo}'),
                               );
                             }).toList(),
                             onChanged: (Maquina? newValue) {
@@ -262,9 +283,12 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                             children: [
                               Text(
                                 'Fecha',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                               ),
                               const SizedBox(height: 8),
                               TextFormField(
@@ -313,7 +337,8 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                             hint: 'Descripción del mantenimiento',
                             prefixIcon: const Icon(Icons.description),
                             maxLines: 3,
-                            validator: (value) => Validators.validateRequired(value, 'Descripción'),
+                            validator: (value) => Validators.validateRequired(
+                                value, 'Descripción'),
                           ),
                           const SizedBox(height: 16),
                           OptimizedTextField(
@@ -331,7 +356,8 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                               prefixIcon: Icon(Icons.check_circle),
                             ),
                             value: _estadoSeleccionado,
-                            items: AppConstants.estadosMantenimiento.map((String estado) {
+                            items: AppConstants.estadosMantenimiento
+                                .map((String estado) {
                               return DropdownMenuItem<String>(
                                 value: estado,
                                 child: Text(estado.toUpperCase()),
@@ -369,13 +395,16 @@ class _MantenimientoFormScreenState extends ConsumerState<MantenimientoFormScree
                                   SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                                   ),
                                   SizedBox(width: 12),
                                   Text('Guardando...'),
                                 ],
                               )
-                            : Text(widget.mantenimiento == null ? 'Crear Mantenimiento' : 'Actualizar Mantenimiento'),
+                            : Text(widget.mantenimiento == null
+                                ? 'Crear Mantenimiento'
+                                : 'Actualizar Mantenimiento'),
                       ),
                     ),
                   ],

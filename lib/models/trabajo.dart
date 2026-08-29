@@ -130,22 +130,26 @@ class Trabajo {
           : DateTime.now(),
       fechaFin:
           json['fecha_fin'] != null ? DateTime.parse(json['fecha_fin']) : null,
-      idPersonal: json['id_personal'] != null
-          ? (json['id_personal'] is List
-              ? List<int>.from(json['id_personal'])
+      idPersonal: (json['id_personal'] ?? json['personal']) != null
+          ? ((json['id_personal'] ?? json['personal']) is List
+              ? List<int>.from(json['id_personal'] ?? json['personal'])
               : [
-                  json['id_personal'] is int
-                      ? json['id_personal']
-                      : int.tryParse(json['id_personal'].toString()) ?? 0
+                  (json['id_personal'] ?? json['personal']) is int
+                      ? (json['id_personal'] ?? json['personal'])
+                      : int.tryParse((json['id_personal'] ?? json['personal'])
+                              .toString()) ??
+                          0
                 ])
           : [],
-      idMaquinas: json['id_maquinas'] != null
-          ? (json['id_maquinas'] is List
-              ? List<int>.from(json['id_maquinas'])
+      idMaquinas: (json['id_maquinas'] ?? json['maquinas']) != null
+          ? ((json['id_maquinas'] ?? json['maquinas']) is List
+              ? List<int>.from(json['id_maquinas'] ?? json['maquinas'])
               : [
-                  json['id_maquinas'] is int
-                      ? json['id_maquinas']
-                      : int.tryParse(json['id_maquinas'].toString()) ?? 0
+                  (json['id_maquinas'] ?? json['maquinas']) is int
+                      ? (json['id_maquinas'] ?? json['maquinas'])
+                      : int.tryParse((json['id_maquinas'] ?? json['maquinas'])
+                              .toString()) ??
+                          0
                 ])
           : [],
       idCampo: idCampo,
@@ -219,7 +223,7 @@ class Trabajo {
           fechaFin != null ? DateFormat('yyyy-MM-dd').format(fechaFin!) : null,
       'id_personal': idPersonal,
       'id_maquinas': idMaquinas,
-      'campo_id': idCampo,
+      'campo': idCampo,
       'lote': loteId,
       'campo_nombre': campoNombre,
       'campo_ha': campoHa,

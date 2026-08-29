@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../utils/maps_config.dart';
@@ -32,12 +33,31 @@ class LotePolygonMapScreen extends StatefulWidget {
 }
 
 class _LotePolygonMapScreenState extends State<LotePolygonMapScreen> {
+  static const _closeDistanceMeters = 25.0;
+
   final List<LatLng> _points = [];
+  final Distance _distance = const Distance();
+  final MapController _mapController = MapController();
+  LatLng? _currentLocation;
+  bool _isLocating = false;
+  bool _isClosed = false;
 
   @override
   void initState() {
     super.initState();
     _points.addAll(_parsePolygon(widget.initialPolygon));
+    _isClosed = _points.length >= 3;
+    if (_points.isEmpty &&
+        widget.initialLatitude == null &&
+        widget.initialLongitude == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadCurrentLocation(moveMap: true);
+      });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadCurrentLocation(moveMap: false);
+      });
+    }
   }
 
   @override
@@ -60,13 +80,21 @@ class _LotePolygonMapScreenState extends State<LotePolygonMapScreen> {
       body: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController,
             options: MapOptions(
               initialCenter: center,
-              onTap: (_, point) => setState(() => _points.add(point)),
+              initialZoom: 15,
+              onTap: (_, point) => _handleMapTap(point),
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                userAgentPackageName: 'com.example.ges_agro_front',
+              ),
+              TileLayer(
+                urlTemplate:
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
                 userAgentPackageName: 'com.example.ges_agro_front',
               ),
               if (_points.length >= 3)
@@ -84,14 +112,23 @@ class _LotePolygonMapScreenState extends State<LotePolygonMapScreen> {
                 PolylineLayer(
                   polylines: [
                     Polyline(
-                      points: _points,
+                      points: _polylinePoints,
                       color: const Color(0xFF2E7D32),
                       strokeWidth: 3,
                     ),
                   ],
                 ),
               MarkerLayer(
-                markers: _points.asMap().entries.map(_buildMarker).toList(),
+                markers: [
+                  if (_currentLocation != null)
+                    Marker(
+                      point: _currentLocation!,
+                      width: 28,
+                      height: 28,
+                      child: const _CurrentLocationMarker(),
+                    ),
+                  ..._points.asMap().entries.map(_buildMarker),
+                ],
               ),
             ],
           ),
@@ -99,7 +136,48 @@ class _LotePolygonMapScreenState extends State<LotePolygonMapScreen> {
             top: 12,
             left: 12,
             right: 12,
-            child: _InstructionCard(pointsCount: _points.length),
+            child: _InstructionCard(
+              isClosed: _isClosed,
+              pointsCount: _points.length,
+            ),
+          ),
+          Positioned(
+            right: 12,
+            bottom: 100,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.42),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                child: Text(
+                  'Imágenes: Esri',
+                  style: TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            bottom: 100,
+            child: SafeArea(
+              child: FloatingActionButton.small(
+                heroTag: 'current-location',
+                onPressed: _isLocating
+                    ? null
+                    : () => _loadCurrentLocation(moveMap: true),
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF2E7D32),
+                child: _isLocating
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location_rounded),
+              ),
+            ),
           ),
           Positioned(
             left: 12,
@@ -130,23 +208,132 @@ class _LotePolygonMapScreenState extends State<LotePolygonMapScreen> {
     }
 
     return LatLng(
-      widget.initialLatitude ?? MapsConfig.defaultLatitude,
-      widget.initialLongitude ?? MapsConfig.defaultLongitude,
+      widget.initialLatitude ??
+          _currentLocation?.latitude ??
+          MapsConfig.defaultLatitude,
+      widget.initialLongitude ??
+          _currentLocation?.longitude ??
+          MapsConfig.defaultLongitude,
     );
+  }
+
+  Future<void> _loadCurrentLocation({required bool moveMap}) async {
+    if (_isLocating) {
+      return;
+    }
+
+    setState(() => _isLocating = true);
+
+    try {
+      final hasPermission = await _ensureLocationPermission();
+      if (!hasPermission) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      final location = LatLng(position.latitude, position.longitude);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _currentLocation = location);
+
+      if (moveMap) {
+        _mapController.move(location, 15);
+      }
+    } on Exception catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo obtener la ubicación del teléfono.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
+  }
+
+  Future<bool> _ensureLocationPermission() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Activá la ubicación del teléfono para centrar el mapa.'),
+          ),
+        );
+      }
+      return false;
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permiso de ubicación denegado.'),
+          ),
+        );
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  List<LatLng> get _polylinePoints {
+    if (!_isClosed || _points.length < 3) {
+      return _points;
+    }
+    return [..._points, _points.first];
+  }
+
+  void _handleMapTap(LatLng point) {
+    if (_isClosed) {
+      return;
+    }
+
+    if (_shouldClosePolygon(point)) {
+      setState(() => _isClosed = true);
+      return;
+    }
+
+    setState(() => _points.add(point));
   }
 
   void _undoLastPoint() {
     if (_points.isEmpty) {
       return;
     }
-    setState(_points.removeLast);
+    setState(() {
+      if (_isClosed) {
+        _isClosed = false;
+      } else {
+        _points.removeLast();
+      }
+    });
   }
 
   void _clearPoints() {
     if (_points.isEmpty) {
       return;
     }
-    setState(_points.clear);
+    setState(() {
+      _points.clear();
+      _isClosed = false;
+    });
   }
 
   void _confirmPolygon() {
@@ -160,8 +347,29 @@ class _LotePolygonMapScreenState extends State<LotePolygonMapScreen> {
         point: entry.value,
         width: 34,
         height: 34,
-        child: _VertexMarker(number: entry.key + 1),
+        child: GestureDetector(
+          onTap: entry.key == 0 && _points.length >= 3 && !_isClosed
+              ? () => setState(() => _isClosed = true)
+              : null,
+          child: _VertexMarker(
+            isStart: entry.key == 0,
+            number: entry.key + 1,
+          ),
+        ),
       );
+
+  bool _shouldClosePolygon(LatLng point) {
+    if (_points.length < 3) {
+      return false;
+    }
+
+    final meters = _distance.as(
+      LengthUnit.Meter,
+      _points.first,
+      point,
+    );
+    return meters <= _closeDistanceMeters;
+  }
 
   Map<String, dynamic> _toGeoJson(List<LatLng> points) {
     final coordinates = points
@@ -229,8 +437,12 @@ class _LotePolygonMapScreenState extends State<LotePolygonMapScreen> {
 }
 
 class _InstructionCard extends StatelessWidget {
-  const _InstructionCard({required this.pointsCount});
+  const _InstructionCard({
+    required this.isClosed,
+    required this.pointsCount,
+  });
 
+  final bool isClosed;
   final int pointsCount;
 
   @override
@@ -257,9 +469,11 @@ class _InstructionCard extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                pointsCount < 3
-                    ? 'Tocá el mapa para marcar al menos 3 puntos del contorno.'
-                    : 'Contorno listo. Podés agregar más puntos o guardar.',
+                isClosed
+                    ? 'Contorno cerrado. Guardá o deshacé para ajustar.'
+                    : pointsCount < 3
+                        ? 'Tocá el mapa para marcar al menos 3 puntos del contorno.'
+                        : 'Tocá el primer punto para cerrar el contorno.',
                 style:
                     const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
@@ -350,8 +564,12 @@ class _BottomActions extends StatelessWidget {
 }
 
 class _VertexMarker extends StatelessWidget {
-  const _VertexMarker({required this.number});
+  const _VertexMarker({
+    required this.isStart,
+    required this.number,
+  });
 
+  final bool isStart;
   final int number;
 
   @override
@@ -360,7 +578,7 @@ class _VertexMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF2E7D32),
+        color: isStart ? const Color(0xFFE53935) : const Color(0xFF2E7D32),
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
@@ -378,6 +596,40 @@ class _VertexMarker extends StatelessWidget {
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CurrentLocationMarker extends StatelessWidget {
+  const _CurrentLocationMarker();
+
+  @override
+  // Kept as a block because the UI tree is easier to scan this way.
+  // ignore: prefer_expression_function_bodies
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1976D2).withValues(alpha: 0.18),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1976D2),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
         ),
       ),

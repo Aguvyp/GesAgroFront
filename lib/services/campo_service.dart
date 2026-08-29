@@ -55,10 +55,12 @@ class CampoService {
       await _apiService.initialize();
       // Usar el método getCampos con filtros si está disponible, o implementar búsqueda
       final campos = await _apiService.getCampos();
-      return campos.where((campo) => 
-        campo.nombre.toLowerCase().contains(query.toLowerCase()) ||
-        (campo.detalles?.toLowerCase().contains(query.toLowerCase()) ?? false)
-      ).toList();
+      return campos
+          .where((campo) =>
+              campo.nombre.toLowerCase().contains(query.toLowerCase()) ||
+              (campo.detalles?.toLowerCase().contains(query.toLowerCase()) ??
+                  false))
+          .toList();
     } catch (e) {
       throw Exception('Error al buscar campos: $e');
     }

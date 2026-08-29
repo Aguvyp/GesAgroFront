@@ -69,7 +69,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final isAuthenticated = await authService.checkAuthStatus();
 
       if (isAuthenticated) {
-        final authInfo = await authService.getAuthInfo();
         final token = await authService.getToken() ?? '';
         final role = await authService.getUserRole() ?? '';
         final user = await authService.getCurrentUser() ?? {};

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,8 +15,6 @@ import 'forms/campo_form_screen.dart';
 import 'forms/costo_form_screen.dart';
 import 'mantenimientos/optimized_mantenimientos_screen.dart';
 import 'reportes/optimized_reportes_screen.dart';
-import 'test_connection_screen.dart';
-import 'test_screen.dart';
 import 'personal/personal_list_screen.dart';
 import 'clientes/clientes_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
@@ -64,11 +61,10 @@ class _OptimizedSplashScreenState extends ConsumerState<OptimizedSplashScreen> {
                   color: Colors.white.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.eco_rounded, size: 64, color: Colors.white),
-              )
-                  .animate()
-                  .fadeIn(duration: 500.ms)
-                  .scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1)),
+                child: const Icon(Icons.eco_rounded,
+                    size: 64, color: Colors.white),
+              ).animate().fadeIn(duration: 500.ms).scale(
+                  begin: const Offset(0.5, 0.5), end: const Offset(1, 1)),
               const SizedBox(height: 20),
               Text(
                 'GesAgro',
@@ -159,9 +155,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
           onPageChanged: (index) => setState(() => _currentIndex = index),
           children: _screens,
         ),
-        floatingActionButton: _currentIndex != 4
-            ? _buildPremiumFAB()
-            : null,
+        floatingActionButton: _currentIndex != 4 ? _buildPremiumFAB() : null,
         bottomNavigationBar: _buildPremiumNavBar(),
         resizeToAvoidBottomInset: false,
       ),
@@ -257,11 +251,16 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Inicio'),
-              _buildNavItem(1, Icons.landscape_outlined, Icons.landscape_rounded, 'Campos'),
-              _buildNavItem(2, Icons.work_outline_rounded, Icons.work_rounded, 'Trabajos'),
-              _buildNavItem(3, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded, 'Finanzas'),
-              _buildNavItem(4, Icons.grid_view_rounded, Icons.grid_view_rounded, 'Más'),
+              _buildNavItem(
+                  0, Icons.home_outlined, Icons.home_rounded, 'Inicio'),
+              _buildNavItem(1, Icons.landscape_outlined,
+                  Icons.landscape_rounded, 'Campos'),
+              _buildNavItem(2, Icons.work_outline_rounded, Icons.work_rounded,
+                  'Trabajos'),
+              _buildNavItem(3, Icons.account_balance_wallet_outlined,
+                  Icons.account_balance_wallet_rounded, 'Finanzas'),
+              _buildNavItem(
+                  4, Icons.grid_view_rounded, Icons.grid_view_rounded, 'Más'),
             ],
           ),
         ),
@@ -355,7 +354,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Título
             Row(
               children: [
@@ -365,7 +364,8 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
                     gradient: AppTheme.primaryGradient,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                  child: const Icon(Icons.add_rounded,
+                      color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -394,7 +394,7 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // Grid de acciones
             GridView.count(
               shrinkWrap: true,
@@ -405,38 +405,60 @@ class _OptimizedMainScreenState extends ConsumerState<OptimizedMainScreen>
               childAspectRatio: 0.82,
               children: [
                 _buildActionItem(
-                  context, Icons.work_outline_rounded, 'Trabajo',
-                  const Color(0xFF1976D2), const Color(0xFFE3F2FD),
+                  context,
+                  Icons.work_outline_rounded,
+                  'Trabajo',
+                  const Color(0xFF1976D2),
+                  const Color(0xFFE3F2FD),
                   () => _navigateToForm(context, const TrabajoFormScreen()),
                 ),
                 _buildActionItem(
-                  context, Icons.agriculture_outlined, 'Máquina',
-                  const Color(0xFF388E3C), const Color(0xFFE8F5E9),
+                  context,
+                  Icons.agriculture_outlined,
+                  'Máquina',
+                  const Color(0xFF388E3C),
+                  const Color(0xFFE8F5E9),
                   () => _navigateToForm(context, const MaquinaFormScreen()),
                 ),
                 _buildActionItem(
-                  context, Icons.person_outline_rounded, 'Personal',
-                  const Color(0xFF7B1FA2), const Color(0xFFF3E5F5),
+                  context,
+                  Icons.person_outline_rounded,
+                  'Personal',
+                  const Color(0xFF7B1FA2),
+                  const Color(0xFFF3E5F5),
                   () => _navigateToForm(context, const PersonalFormScreen()),
                 ),
                 _buildActionItem(
-                  context, Icons.build_outlined, 'Manten.',
-                  const Color(0xFFF57C00), const Color(0xFFFFF3E0),
-                  () => _navigateToForm(context, const MantenimientoFormScreen()),
+                  context,
+                  Icons.build_outlined,
+                  'Manten.',
+                  const Color(0xFFF57C00),
+                  const Color(0xFFFFF3E0),
+                  () =>
+                      _navigateToForm(context, const MantenimientoFormScreen()),
                 ),
                 _buildActionItem(
-                  context, Icons.people_outline_rounded, 'Cliente',
-                  const Color(0xFF00838F), const Color(0xFFE0F7FA),
+                  context,
+                  Icons.people_outline_rounded,
+                  'Cliente',
+                  const Color(0xFF00838F),
+                  const Color(0xFFE0F7FA),
                   () => _navigateToForm(context, const ClienteFormScreen()),
                 ),
                 _buildActionItem(
-                  context, Icons.landscape_outlined, 'Campo',
-                  const Color(0xFF558B2F), const Color(0xFFF1F8E9),
+                  context,
+                  Icons.landscape_outlined,
+                  'Campo',
+                  const Color(0xFF558B2F),
+                  const Color(0xFFF1F8E9),
                   () => _navigateToForm(context, const CampoFormScreen()),
                 ),
                 _buildActionItem(
-                  context, Icons.payments_outlined, 'Costo',
-                  const Color(0xFFC62828), const Color(0xFFFFEBEE),
+                  context,
+                  Icons.payments_outlined,
+                  'Costo',
+                  const Color(0xFFC62828),
+                  const Color(0xFFFFEBEE),
                   () => _navigateToForm(context, const CostoFormScreen()),
                 ),
               ],
@@ -618,7 +640,8 @@ class _OptimizedCostosScreenState extends ConsumerState<OptimizedCostosScreen> {
               ),
               title: Text(
                 costo.descripcion ?? 'Sin descripción',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: Text(
                 '\$${costo.monto?.toStringAsFixed(2) ?? '0.00'}',
@@ -757,8 +780,7 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                            const OptimizedMantenimientosScreen()));
+                        builder: (_) => const OptimizedMantenimientosScreen()));
               }),
             ]),
             const SizedBox(height: 24),
@@ -846,8 +868,8 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
     );
   }
 
-  Widget _buildItem(String title, IconData icon, Color iconColor,
-      Color bgColor, VoidCallback onTap) {
+  Widget _buildItem(String title, IconData icon, Color iconColor, Color bgColor,
+      VoidCallback onTap) {
     return InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -983,7 +1005,8 @@ class OptimizedProfileScreen extends ConsumerWidget {
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+                decoration:
+                    const BoxDecoration(gradient: AppTheme.primaryGradient),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

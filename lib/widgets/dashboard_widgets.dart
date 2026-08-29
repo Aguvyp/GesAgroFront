@@ -268,7 +268,8 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget>
                                 ),
                                 const SizedBox(width: 12),
                                 Flexible(
-                                  child: _miniMetricWhite(Icons.water_drop_rounded,
+                                  child: _miniMetricWhite(
+                                      Icons.water_drop_rounded,
                                       '${actual.humedad}%'),
                                 ),
                                 if (forecasts.isNotEmpty) ...[
@@ -707,8 +708,7 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget>
                     ],
                   ),
                   borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: AppTheme.warning.withOpacity(0.25)),
+                  border: Border.all(color: AppTheme.warning.withOpacity(0.25)),
                 ),
                 child: Row(
                   children: [
@@ -799,7 +799,6 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget>
       ),
     );
   }
-
 }
 
 // ════════════════════════════════════════════════
@@ -849,8 +848,7 @@ class PriceTickerWidget extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppTheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(6),

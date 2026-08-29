@@ -9,7 +9,7 @@ import '../../utils/validators.dart';
 /// Pantalla completa para crear/editar facturas
 class FacturaFormScreen extends ConsumerStatefulWidget {
   final Factura? factura;
-  
+
   const FacturaFormScreen({Key? key, this.factura}) : super(key: key);
 
   @override
@@ -20,7 +20,7 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService();
   final AppLogger _logger = AppLogger.instance;
-  
+
   // Controladores de texto
   late TextEditingController _numeroController;
   late TextEditingController _clienteController;
@@ -29,7 +29,7 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
   late TextEditingController _totalController;
   late TextEditingController _fechaEmisionController;
   late TextEditingController _fechaVencimientoController;
-  
+
   // Estados del formulario
   DateTime? _fechaEmision;
   DateTime? _fechaVencimiento;
@@ -47,25 +47,28 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
   void initState() {
     super.initState();
     final f = widget.factura;
-    
+
     // Inicializar controladores
     _numeroController = TextEditingController(text: f?.numero ?? '');
-    _clienteController = TextEditingController(text: f?.clienteId.toString() ?? '');
-    _subtotalController = TextEditingController(text: f?.montoTotal.toString() ?? '');
+    _clienteController =
+        TextEditingController(text: f?.clienteId.toString() ?? '');
+    _subtotalController =
+        TextEditingController(text: f?.montoTotal.toString() ?? '');
     _impuestosController = TextEditingController(text: '0.0');
-    _totalController = TextEditingController(text: f?.montoTotal.toString() ?? '');
+    _totalController =
+        TextEditingController(text: f?.montoTotal.toString() ?? '');
     _fechaEmisionController = TextEditingController();
     _fechaVencimientoController = TextEditingController();
-    
+
     // Inicializar estados
     _fechaEmision = f?.fechaEmision ?? DateTime.now();
     _fechaVencimiento = f?.fechaVencimiento;
     _estadoSeleccionado = f?.estado ?? _estados.first;
-    
+
     // Actualizar controladores de fecha
     _updateFechaEmisionController();
     _updateFechaVencimientoController();
-    
+
     // Inicializar el servicio API
     _initializeApiService();
   }
@@ -104,29 +107,32 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
   /// Actualiza el controlador de fecha de emisión
   void _updateFechaEmisionController() {
     if (_fechaEmision != null) {
-      _fechaEmisionController.text = '${_fechaEmision!.day}/${_fechaEmision!.month}/${_fechaEmision!.year}';
+      _fechaEmisionController.text =
+          '${_fechaEmision!.day}/${_fechaEmision!.month}/${_fechaEmision!.year}';
     }
   }
 
   /// Actualiza el controlador de fecha de vencimiento
   void _updateFechaVencimientoController() {
     if (_fechaVencimiento != null) {
-      _fechaVencimientoController.text = '${_fechaVencimiento!.day}/${_fechaVencimiento!.month}/${_fechaVencimiento!.year}';
+      _fechaVencimientoController.text =
+          '${_fechaVencimiento!.day}/${_fechaVencimiento!.month}/${_fechaVencimiento!.year}';
     }
   }
 
   /// Selecciona una fecha usando el date picker
-  Future<void> _selectDate(BuildContext context, DateTime? initialDate, Function(DateTime?) onDateSelected) async {
+  Future<void> _selectDate(BuildContext context, DateTime? initialDate,
+      Function(DateTime?) onDateSelected) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (picked != null && picked != initialDate) {
       onDateSelected(picked);
-      
+
       // Actualizar el controlador correspondiente
       if (initialDate == _fechaEmision) {
         _updateFechaEmisionController();
@@ -135,7 +141,6 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
       }
     }
   }
-
 
   /// Calcula el total automáticamente
   void _calculateTotal() {
@@ -166,24 +171,26 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
         await _apiService.initialize();
       }
 
-      _logger.info('📄 ${widget.factura == null ? 'Creando' : 'Actualizando'} factura...');
+      _logger.info(
+          '📄 ${widget.factura == null ? 'Creando' : 'Actualizando'} factura...');
 
       // Preparar datos de la factura
       final facturaData = {
         'numero': _numeroController.text.trim(),
-        'cliente_id': int.parse(_clienteController.text.trim()),
+        'cliente': int.parse(_clienteController.text.trim()),
         'monto_total': double.parse(_totalController.text.trim()),
         'fecha_emision': _fechaEmision!.toIso8601String().split('T')[0],
         'estado': _estadoSeleccionado ?? '',
         if (_fechaVencimiento != null)
-          'fecha_vencimiento': _fechaVencimiento!.toIso8601String().split('T')[0],
+          'fecha_vencimiento':
+              _fechaVencimiento!.toIso8601String().split('T')[0],
       };
 
       if (widget.factura == null) {
         // Crear nueva factura
         await _apiService.createFactura(facturaData);
         _logger.info('✅ Factura creada exitosamente');
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -197,7 +204,7 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
         // Actualizar factura existente
         await _apiService.updateFactura(widget.factura!.id, facturaData);
         _logger.info('✅ Factura actualizada exitosamente');
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -209,12 +216,14 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
         }
       }
     } catch (e) {
-      _logger.error('❌ Error ${widget.factura == null ? 'creando' : 'actualizando'} factura: $e');
-      
+      _logger.error(
+          '❌ Error ${widget.factura == null ? 'creando' : 'actualizando'} factura: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error ${widget.factura == null ? 'creando' : 'actualizando'} factura: $e'),
+            content: Text(
+                'Error ${widget.factura == null ? 'creando' : 'actualizando'} factura: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -230,7 +239,7 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.factura != null;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Facturas'),
@@ -259,8 +268,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                     Text(
                       'Información Básica',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -268,7 +277,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                       label: 'Número de Factura',
                       hint: 'Ingrese el número de factura',
                       prefixIcon: const Icon(Icons.receipt_long),
-                      validator: (value) => Validators.validateRequired(value, 'Número de factura'),
+                      validator: (value) => Validators.validateRequired(
+                          value, 'Número de factura'),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -277,7 +287,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                       hint: 'Ingrese el ID del cliente',
                       prefixIcon: const Icon(Icons.person),
                       keyboardType: TextInputType.number,
-                      validator: (value) => Validators.validateRequired(value, 'ID Cliente'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'ID Cliente'),
                     ),
                     const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
@@ -298,14 +309,15 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                           _estadoSeleccionado = newValue;
                         });
                       },
-                      validator: (value) => Validators.validateRequired(value, 'Estado'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Estado'),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Fechas
               OptimizedCard(
                 padding: const EdgeInsets.all(20),
@@ -315,8 +327,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                     Text(
                       'Fechas',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     Column(
@@ -324,9 +336,10 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                       children: [
                         Text(
                           'Fecha de Emisión',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -341,10 +354,12 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                             fillColor: Theme.of(context).cardColor,
                           ),
                           readOnly: true,
-                          onTap: () => _selectDate(context, _fechaEmision, (date) {
+                          onTap: () =>
+                              _selectDate(context, _fechaEmision, (date) {
                             setState(() => _fechaEmision = date);
                           }),
-                          validator: (value) => Validators.validateRequired(value, 'Fecha de emisión'),
+                          validator: (value) => Validators.validateRequired(
+                              value, 'Fecha de emisión'),
                         ),
                       ],
                     ),
@@ -354,9 +369,10 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                       children: [
                         Text(
                           'Fecha de Vencimiento',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -371,7 +387,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                             fillColor: Theme.of(context).cardColor,
                           ),
                           readOnly: true,
-                          onTap: () => _selectDate(context, _fechaVencimiento, (date) {
+                          onTap: () =>
+                              _selectDate(context, _fechaVencimiento, (date) {
                             setState(() => _fechaVencimiento = date);
                           }),
                         ),
@@ -380,9 +397,9 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Montos
               OptimizedCard(
                 padding: const EdgeInsets.all(20),
@@ -392,8 +409,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                     Text(
                       'Montos',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -403,7 +420,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                       prefixIcon: const Icon(Icons.attach_money),
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _calculateTotal(),
-                      validator: (value) => Validators.validateRequired(value, 'Subtotal'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Subtotal'),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -413,7 +431,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                       prefixIcon: const Icon(Icons.calculate),
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _calculateTotal(),
-                      validator: (value) => Validators.validateRequired(value, 'Impuestos'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Impuestos'),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -426,9 +445,9 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Botón de guardar
               SizedBox(
                 width: double.infinity,
@@ -451,7 +470,8 @@ class _FacturaFormScreenState extends ConsumerState<FacturaFormScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
                             SizedBox(width: 12),

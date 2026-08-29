@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'themes/app_theme.dart';
 import 'screens/optimized_main_screen_new.dart';
 import 'screens/optimized_auth_screens.dart';
@@ -57,9 +56,6 @@ Future<void> _initializeApp() async {
 
   logger.info('🚀 Iniciando GesAgro Ultra Optimizado...');
 
-  // Inicializar Hive para almacenamiento local
-  await Hive.initFlutter();
-
   // Inicializar configuración de la aplicación
   await AppConfig.instance.initialize();
 
@@ -84,8 +80,10 @@ class OptimizedGesAgroApp extends ConsumerWidget {
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaleFactor:
-                MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2),
+            textScaler: MediaQuery.textScalerOf(context).clamp(
+              minScaleFactor: 0.8,
+              maxScaleFactor: 1.2,
+            ),
           ),
           child: child!,
         );

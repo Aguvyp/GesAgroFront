@@ -131,6 +131,11 @@ class ApiService {
     return response.data;
   }
 
+  /// Invalida la sesión actual en el backend.
+  Future<void> logout() async {
+    await _httpClient.post('/api/auth/logout/');
+  }
+
   /// Test de conexión
   Future<Map<String, dynamic>> testConnection() async {
     final response = await _httpClient.get('/api/auth/test/');

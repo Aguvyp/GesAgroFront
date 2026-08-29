@@ -3,7 +3,7 @@ import 'optimized_api_service.dart';
 
 class TipoTrabajoService {
   static final ApiService _apiService = ApiService();
-  
+
   static Future<void> _ensureInitialized() async {
     if (!_apiService.isInitialized) {
       await _apiService.initialize();
@@ -28,4 +28,3 @@ class TipoTrabajoService {
     }
   }
 }
-

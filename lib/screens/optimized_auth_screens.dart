@@ -30,7 +30,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
   final LocalAuthentication auth = LocalAuthentication();
   bool _canCheckBiometrics = false;
   bool _isAuthenticating = false;
-  
+
   late AnimationController _bgAnimController;
 
   @override
@@ -68,8 +68,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
       );
     } on PlatformException catch (e) {
       if (mounted) {
-        OptimizedSnackBar.showError(context,
-            message: 'Error: ${e.message}');
+        OptimizedSnackBar.showError(context, message: 'Error: ${e.message}');
       }
       return;
     } finally {
@@ -132,7 +131,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
                 );
               },
             ),
-            
+
             // ─── Patrón decorativo ───
             Positioned(
               top: -80,
@@ -170,7 +169,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
                 ),
               ),
             ),
-            
+
             // ─── Contenido principal ───
             SafeArea(
               child: Center(
@@ -206,10 +205,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
                             size: 52,
                             color: Colors.white,
                           ),
-                        )
-                            .animate()
-                            .fadeIn(duration: 600.ms)
-                            .scale(
+                        ).animate().fadeIn(duration: 600.ms).scale(
                               begin: const Offset(0.5, 0.5),
                               end: const Offset(1.0, 1.0),
                               curve: Curves.easeOutBack,
@@ -240,9 +236,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
                             color: Colors.white.withOpacity(0.7),
                             letterSpacing: 0.3,
                           ),
-                        )
-                            .animate()
-                            .fadeIn(delay: 350.ms, duration: 500.ms),
+                        ).animate().fadeIn(delay: 350.ms, duration: 500.ms),
 
                         const SizedBox(height: 48),
 
@@ -270,8 +264,10 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
                                     icon: Icons.mail_outline_rounded,
                                     keyboardType: TextInputType.emailAddress,
                                     validator: (value) {
-                                      if (value == null || value.isEmpty) return 'Ingresa tu email';
-                                      if (!value.contains('@')) return 'Email no válido';
+                                      if (value == null || value.isEmpty)
+                                        return 'Ingresa tu email';
+                                      if (!value.contains('@'))
+                                        return 'Email no válido';
                                       return null;
                                     },
                                   ),
@@ -291,8 +287,8 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
                                         size: 20,
                                         color: Colors.white.withOpacity(0.5),
                                       ),
-                                      onPressed: () => setState(
-                                          () => _obscurePassword = !_obscurePassword),
+                                      onPressed: () => setState(() =>
+                                          _obscurePassword = !_obscurePassword),
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty)
@@ -412,7 +408,8 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white.withOpacity(0.08),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
@@ -423,7 +420,8 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.4), width: 1.5),
+          borderSide:
+              BorderSide(color: Colors.white.withOpacity(0.4), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -524,8 +522,7 @@ class _OptimizedLoginScreenState extends ConsumerState<OptimizedLoginScreen>
               authState.user['username'] ??
               'Usuario';
         }
-        OptimizedSnackBar.showSuccess(context,
-            message: 'Bienvenido, $nombre');
+        OptimizedSnackBar.showSuccess(context, message: 'Bienvenido, $nombre');
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const OptimizedMainScreen()),
         );
@@ -668,8 +665,8 @@ class _OptimizedRegisterScreenState
                       size: 20,
                       color: AppTheme.textTertiary,
                     ),
-                    onPressed: () => setState(
-                        () => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    onPressed: () => setState(() =>
+                        _obscureConfirmPassword = !_obscureConfirmPassword),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Requerido';

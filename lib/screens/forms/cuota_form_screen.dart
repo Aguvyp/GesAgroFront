@@ -11,9 +11,9 @@ import '../../services/credito_service.dart';
 class CuotaFormScreen extends ConsumerStatefulWidget {
   final CuotaCredito? cuota;
   final Credito credito;
-  
+
   const CuotaFormScreen({
-    Key? key, 
+    Key? key,
     this.cuota,
     required this.credito,
   }) : super(key: key);
@@ -26,7 +26,7 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _numeroController;
   late TextEditingController _montoController;
-  
+
   DateTime? _fechaVencimiento;
   String? _estadoSeleccionado;
   bool _isSaving = false;
@@ -34,10 +34,13 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
   @override
   void initState() {
     super.initState();
-    _numeroController = TextEditingController(text: widget.cuota?.numeroCuota.toString() ?? '');
-    _montoController = TextEditingController(text: widget.cuota?.montoTotal.toString() ?? '');
-    
-    _fechaVencimiento = widget.cuota?.fechaVencimiento ?? DateTime.now().add(const Duration(days: 30));
+    _numeroController =
+        TextEditingController(text: widget.cuota?.numeroCuota.toString() ?? '');
+    _montoController =
+        TextEditingController(text: widget.cuota?.montoTotal.toString() ?? '');
+
+    _fechaVencimiento = widget.cuota?.fechaVencimiento ??
+        DateTime.now().add(const Duration(days: 30));
     _estadoSeleccionado = widget.cuota?.estado ?? 'Pendiente';
   }
 
@@ -51,7 +54,7 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.cuota != null;
-    
+
     return Scaffold(
       appBar: CustomAppBar(
         title: isEditing ? 'Editar Cuota' : 'Nueva Cuota',
@@ -74,20 +77,23 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                     Text(
                       'Información del Crédito',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     _buildInfoRow('Entidad:', widget.credito.entidad),
-                    _buildInfoRow('Monto:', '\$${widget.credito.montoOtorgado.toStringAsFixed(2)}'),
-                    _buildInfoRow('Tasa:', '${widget.credito.tasaInteresAnual.toStringAsFixed(2)}%'),
-                    _buildInfoRow('Plazo:', '${widget.credito.plazoMeses} meses'),
+                    _buildInfoRow('Monto:',
+                        '\$${widget.credito.montoOtorgado.toStringAsFixed(2)}'),
+                    _buildInfoRow('Tasa:',
+                        '${widget.credito.tasaInteresAnual.toStringAsFixed(2)}%'),
+                    _buildInfoRow(
+                        'Plazo:', '${widget.credito.plazoMeses} meses'),
                     _buildInfoRow('Estado:', widget.credito.estado),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Información de la cuota
               OptimizedCard(
                 padding: const EdgeInsets.all(20),
@@ -97,8 +103,8 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                     Text(
                       'Información de la Cuota',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -107,7 +113,8 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                       hint: 'Ingrese el número de cuota',
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.numbers),
-                      validator: (value) => Validators.validateRequired(value, 'Número de cuota'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Número de cuota'),
                     ),
                     const SizedBox(height: 24),
                     OptimizedTextField(
@@ -116,13 +123,14 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                       hint: 'Ingrese el monto de la cuota',
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.attach_money),
-                      validator: (value) => Validators.validateRequired(value, 'Monto'),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Monto'),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Fecha y estado
               OptimizedCard(
                 padding: const EdgeInsets.all(20),
@@ -132,8 +140,8 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                     Text(
                       'Fecha y Estado',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     Column(
@@ -141,9 +149,10 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                       children: [
                         Text(
                           'Fecha de Vencimiento',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -181,10 +190,14 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                       ),
                       value: _estadoSeleccionado,
                       items: const [
-                        DropdownMenuItem(value: 'Pendiente', child: Text('Pendiente')),
-                        DropdownMenuItem(value: 'Pagada', child: Text('Pagada')),
-                        DropdownMenuItem(value: 'Vencida', child: Text('Vencida')),
-                        DropdownMenuItem(value: 'Cancelada', child: Text('Cancelada')),
+                        DropdownMenuItem(
+                            value: 'Pendiente', child: Text('Pendiente')),
+                        DropdownMenuItem(
+                            value: 'Pagada', child: Text('Pagada')),
+                        DropdownMenuItem(
+                            value: 'Vencida', child: Text('Vencida')),
+                        DropdownMenuItem(
+                            value: 'Cancelada', child: Text('Cancelada')),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -202,7 +215,7 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Botones de acción
               Row(
                 children: [
@@ -251,11 +264,12 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
   Future<void> _selectFechaVencimiento() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: _fechaVencimiento ?? DateTime.now().add(const Duration(days: 30)),
+      initialDate:
+          _fechaVencimiento ?? DateTime.now().add(const Duration(days: 30)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (date != null) {
       setState(() {
         _fechaVencimiento = date;
@@ -267,7 +281,6 @@ class _CuotaFormScreenState extends ConsumerState<CuotaFormScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
 
     setState(() {
       _isSaving = true;

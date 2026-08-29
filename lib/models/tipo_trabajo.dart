@@ -35,4 +35,3 @@ class TipoTrabajo {
   @override
   int get hashCode => id.hashCode;
 }
-

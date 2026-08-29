@@ -6,11 +6,13 @@ import '../forms/maquina_form_screen.dart';
 /// Pantalla de detalles de máquina
 class MaquinaDetailScreen extends ConsumerStatefulWidget {
   final Maquina maquina;
-  
-  const MaquinaDetailScreen({Key? key, required this.maquina}) : super(key: key);
+
+  const MaquinaDetailScreen({Key? key, required this.maquina})
+      : super(key: key);
 
   @override
-  ConsumerState<MaquinaDetailScreen> createState() => _MaquinaDetailScreenState();
+  ConsumerState<MaquinaDetailScreen> createState() =>
+      _MaquinaDetailScreenState();
 }
 
 class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
@@ -71,7 +73,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -87,16 +90,22 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
                             children: [
                               Text(
                                 widget.maquina.nombre,
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 '${widget.maquina.marca} ${widget.maquina.modelo}',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
                               ),
                             ],
                           ),
@@ -109,7 +118,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
                     if (widget.maquina.ano > 0)
                       _buildInfoRow('Año', widget.maquina.ano.toString()),
                     if (widget.maquina.anchoTrabajo != null)
-                      _buildInfoRow('Ancho de Trabajo', '${widget.maquina.anchoTrabajo}m'),
+                      _buildInfoRow('Ancho de Trabajo',
+                          '${widget.maquina.anchoTrabajo}m'),
                     if (widget.maquina.estado != null)
                       _buildInfoRow('Estado', widget.maquina.estado!),
                   ],
@@ -119,7 +129,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
             const SizedBox(height: 16),
 
             // Detalles adicionales
-            if (widget.maquina.detalles != null && widget.maquina.detalles!.isNotEmpty)
+            if (widget.maquina.detalles != null &&
+                widget.maquina.detalles!.isNotEmpty)
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -129,8 +140,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
                       Text(
                         'Detalles',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -143,7 +154,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
               ),
 
             // Estadísticas de trabajo
-            if (widget.maquina.superficieTotalHa != null || widget.maquina.horasTrabajadas != null)
+            if (widget.maquina.superficieTotalHa != null ||
+                widget.maquina.horasTrabajadas != null)
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -153,8 +165,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
                       Text(
                         'Estadísticas de Trabajo',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 16),
                       if (widget.maquina.superficieTotalHa != null)
@@ -227,9 +239,9 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
             child: Text(
               '$label:',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[700],
+                  ),
             ),
           ),
           Expanded(
@@ -243,7 +255,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -262,16 +275,16 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: color,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
                 Text(
                   value,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -309,7 +322,8 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Máquina'),
-        content: Text('¿Estás seguro de que quieres eliminar la máquina "${widget.maquina.nombre}"?'),
+        content: Text(
+            '¿Estás seguro de que quieres eliminar la máquina "${widget.maquina.nombre}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -321,10 +335,11 @@ class _MaquinaDetailScreenState extends ConsumerState<MaquinaDetailScreen> {
               try {
                 // Aquí deberías llamar al provider para eliminar la máquina
                 // await ref.read(maquinasProvider.notifier).deleteMaquina(widget.maquina.id!);
-                
+
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Máquina eliminada exitosamente')),
+                    const SnackBar(
+                        content: Text('Máquina eliminada exitosamente')),
                   );
                   Navigator.pop(context); // Volver a la lista
                 }

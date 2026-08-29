@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +13,10 @@ final authServiceProvider = Provider<AuthService>((ref) {
 });
 
 class AuthService {
+  static const String _legacyFixedToken =
+      'aB3xK9mP2qR7sT1vW4yZ6cD8eF0gH5jL3nM9pQ2rS7tU1vX4yA6bC8dE0fG5hI';
+  static String? _memoryToken;
+
   late final FlutterSecureStorage _secureStorage;
   late final SharedPreferences _prefs;
   final AppLogger _logger = AppLogger.instance;
@@ -79,6 +85,15 @@ class AuthService {
     _logger.auth('LOGOUT');
 
     try {
+      try {
+        final apiService = ApiService();
+        await apiService.initialize();
+        await apiService.logout();
+      } catch (error) {
+        // El cierre local debe funcionar aun sin conexión.
+        _logger.warning('No se pudo invalidar la sesión remota: $error');
+      }
+
       // Limpiar datos de autenticación
       await _clearAuthData();
 
@@ -101,29 +116,30 @@ class AuthService {
         return false;
       }
 
-      _logger.info('🔐 Token encontrado, length: ${token.length}');
-      _logger.info('🔐 Token (primeros 50 chars): ${token.length > 50 ? token.substring(0, 50) + "..." : token}');
+      _logger.info('🔐 Sesión almacenada encontrada');
 
       // Verificar si el token es válido haciendo una llamada al servidor
       // Usamos un endpoint que requiere autenticación para validar el token
       final apiService = ApiService();
       await apiService.initialize();
-      
+
       try {
-        // Intentar obtener los datos del usuario actual o un endpoint simple que requiera auth
-        await apiService.getUsuarios(limit: 1);
+        // Validar contra un endpoint protegido. /usuarios/ es público.
+        await apiService.getCampos(limit: 1);
         _logger.info('✅ Token válido - Autenticación exitosa');
         return true;
       } catch (e) {
         // Si falla con 401/403, el token es inválido
         if (e.toString().contains('401') || e.toString().contains('403')) {
-          _logger.warning('⚠️ Token inválido o expirado (401/403), haciendo logout');
+          _logger.warning(
+              '⚠️ Token inválido o expirado (401/403), haciendo logout');
           await logout();
           return false;
         }
         // Si es otro error (conexión, timeout, etc.), NO hacer logout
         // Solo loguear el error pero mantener la sesión
-        _logger.warning('⚠️ Error de conexión al validar token, pero manteniendo sesión: $e');
+        _logger.warning(
+            '⚠️ Error de conexión al validar token, pero manteniendo sesión: $e');
         return true; // Mantener sesión si hay problemas de conexión
       }
     } catch (e) {
@@ -144,7 +160,19 @@ class AuthService {
   /// Obtener token de acceso
   Future<String?> getToken() async {
     try {
-      return await _secureStorage.read(key: 'access_token');
+      if (_memoryToken != null && _memoryToken!.isNotEmpty) {
+        return _memoryToken;
+      }
+
+      final token = await _secureStorage.read(key: 'access_token');
+      if (token == _legacyFixedToken) {
+        await _secureStorage.delete(key: 'access_token');
+        _logger.warning('Token legacy eliminado del almacenamiento seguro');
+        return null;
+      }
+
+      _memoryToken = token;
+      return token;
     } catch (e) {
       _logger.error('Error getting token', e);
       return null;
@@ -153,12 +181,13 @@ class AuthService {
 
   /// Guardar token de acceso
   Future<void> setToken(String token) async {
-    try {
-      await _secureStorage.write(key: 'access_token', value: token);
-      _logger.auth('TOKEN_SAVED');
-    } catch (e) {
-      _logger.error('Error saving token', e);
+    if (token.isEmpty) {
+      throw StateError('El token de acceso recibido está vacío');
     }
+
+    await _secureStorage.write(key: 'access_token', value: token);
+    _memoryToken = token;
+    _logger.auth('TOKEN_SAVED');
   }
 
   /// Obtener tipo de token
@@ -187,7 +216,10 @@ class AuthService {
     try {
       final userJson = await _secureStorage.read(key: 'current_user');
       if (userJson != null) {
-        return Map<String, dynamic>.from(userJson.split(',').asMap());
+        final decoded = jsonDecode(userJson);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
       }
       return null;
     } catch (e) {
@@ -199,9 +231,10 @@ class AuthService {
   /// Guardar datos del usuario actual
   Future<void> setCurrentUser(Map<String, dynamic> user) async {
     try {
-      final userString =
-          user.entries.map((e) => '${e.key}:${e.value}').join(',');
-      await _secureStorage.write(key: 'current_user', value: userString);
+      await _secureStorage.write(
+        key: 'current_user',
+        value: jsonEncode(user),
+      );
       _logger.auth('USER_DATA_SAVED');
     } catch (e) {
       _logger.error('Error saving current user', e);
@@ -244,8 +277,10 @@ class AuthService {
   /// Verificar si la sesión está activa
   Future<bool> isSessionActive() async {
     try {
-      final lastActivity = await _prefs.getInt('last_activity');
-      if (lastActivity == null) return false;
+      final lastActivity = _prefs.getInt('last_activity');
+      if (lastActivity == null) {
+        return false;
+      }
 
       final now = DateTime.now().millisecondsSinceEpoch;
       final sessionTimeout = const Duration(hours: 24).inMilliseconds;
@@ -270,7 +305,7 @@ class AuthService {
   /// Obtener tiempo de última actividad
   Future<DateTime?> getLastActivity() async {
     try {
-      final lastActivity = await _prefs.getInt('last_activity');
+      final lastActivity = _prefs.getInt('last_activity');
       if (lastActivity != null) {
         return DateTime.fromMillisecondsSinceEpoch(lastActivity);
       }
@@ -286,28 +321,36 @@ class AuthService {
   /// Guardar datos de autenticación
   Future<void> _saveAuthData(Map<String, dynamic> response) async {
     try {
-      final accessToken = response['access_token'] ?? '';
-      
-      _logger.info('═══════════════════════════════════════════════════════════');
+      final accessToken = (response['access_token'] ?? '').toString();
+
+      if (accessToken.isEmpty) {
+        throw StateError('El login no devolvió access_token');
+      }
+
+      _logger
+          .info('═══════════════════════════════════════════════════════════');
       _logger.info('🔐 LOGIN EXITOSO - TOKEN RECIBIDO');
-      _logger.info('═══════════════════════════════════════════════════════════');
+      _logger
+          .info('═══════════════════════════════════════════════════════════');
       _logger.info('💾 Token recibido del servidor:');
       if (accessToken.isNotEmpty) {
-        _logger.info('   📝 Token completo: $accessToken');
+        _logger.info('   Token recibido correctamente');
         _logger.info('   📏 Longitud: ${accessToken.length} caracteres');
-        _logger.info('   🔑 Primeros 50 chars: ${accessToken.length > 50 ? accessToken.substring(0, 50) + "..." : accessToken}');
-        _logger.info('   🔑 Últimos 20 chars: ${accessToken.length > 20 ? "..." + accessToken.substring(accessToken.length - 20) : accessToken}');
       } else {
         _logger.warning('   ⚠️ ATENCIÓN: Token recibido está VACÍO');
       }
       _logger.info('💾 Token Type: ${response['token_type'] ?? 'bearer'}');
       _logger.info('💾 Role: ${response['role'] ?? 'N/A'}');
-      _logger.info('💾 User ID: ${response['user_id'] ?? response['usuario_id'] ?? 'N/A'}');
-      _logger.info('💾 Respuesta completa del login:');
-      _logger.info('   $response');
-      _logger.info('═══════════════════════════════════════════════════════════');
-      
+      _logger.info(
+          '💾 User ID: ${response['user_id'] ?? response['usuario_id'] ?? 'N/A'}');
+      _logger
+          .info('═══════════════════════════════════════════════════════════');
+
       await setToken(accessToken);
+      final savedToken = await getToken();
+      if (savedToken != accessToken) {
+        throw StateError('No se pudo persistir el token de sesión');
+      }
       await setTokenType(response['token_type'] ?? 'bearer');
 
       if (response['role'] != null) {
@@ -329,6 +372,7 @@ class AuthService {
       _logger.auth('AUTH_DATA_SAVED');
     } catch (e) {
       _logger.error('Error saving auth data', e);
+      rethrow;
     }
   }
 
@@ -336,6 +380,7 @@ class AuthService {
   Future<void> _clearAuthData() async {
     try {
       await _secureStorage.delete(key: 'access_token');
+      _memoryToken = null;
       await _secureStorage.delete(key: 'token_type');
       await _secureStorage.delete(key: 'user_role');
       await _secureStorage.delete(key: 'current_user');

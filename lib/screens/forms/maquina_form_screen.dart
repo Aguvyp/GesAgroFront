@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/optimized_providers.dart';
 import '../../models/maquina.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/optimized_widgets.dart';
 import '../../utils/validators.dart';
 

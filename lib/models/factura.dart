@@ -26,7 +26,7 @@ class Factura {
   factory Factura.fromJson(Map<String, dynamic> json) {
     return Factura(
       id: json['id'],
-      clienteId: json['cliente_id'],
+      clienteId: json['cliente_id'] ?? json['cliente'],
       numero: json['numero'],
       fechaEmision: DateTime.parse(json['fecha_emision']),
       fechaVencimiento: DateTime.parse(json['fecha_vencimiento']),
@@ -35,15 +35,16 @@ class Factura {
       estado: json['estado'],
       observaciones: json['observaciones'],
       items: (json['items'] as List<dynamic>?)
-          ?.map((item) => FacturaItem.fromJson(item))
-          .toList() ?? [],
+              ?.map((item) => FacturaItem.fromJson(item))
+              .toList() ??
+          [],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'cliente_id': clienteId,
+      'cliente': clienteId,
       'numero': numero,
       'fecha_emision': fechaEmision.toIso8601String(),
       'fecha_vencimiento': fechaVencimiento.toIso8601String(),
@@ -57,7 +58,9 @@ class Factura {
 
   double get montoPendiente => montoTotal - montoPagado;
   bool get estaPagada => estado == 'Pagada';
-  bool get estaVencida => estado == 'Vencida' || (DateTime.now().isAfter(fechaVencimiento) && estado == 'Pendiente');
+  bool get estaVencida =>
+      estado == 'Vencida' ||
+      (DateTime.now().isAfter(fechaVencimiento) && estado == 'Pendiente');
   bool get estaPendiente => estado == 'Pendiente' && !estaVencida;
 
   Factura copyWith({

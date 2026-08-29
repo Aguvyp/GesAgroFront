@@ -25,8 +25,8 @@ class Usuario {
       rol: json['rol'],
       activo: json['activo'] ?? true,
       fechaCreacion: DateTime.parse(json['fecha_creacion']),
-      ultimoAcceso: json['ultimo_acceso'] != null 
-          ? DateTime.parse(json['ultimo_acceso']) 
+      ultimoAcceso: json['ultimo_acceso'] != null
+          ? DateTime.parse(json['ultimo_acceso'])
           : null,
     );
   }
