@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../models/marketplace.dart';
@@ -18,6 +19,7 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
   final _mapController = MapController();
   List<MarketplaceItem> _items = [];
   bool _loading = true;
+  bool _locating = false;
   String _filter = 'todos';
   LatLng? _draftLocation;
 
@@ -132,12 +134,28 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
         ),
         if (_loading) const Center(child: CircularProgressIndicator()),
         Positioned(
+          right: 12,
+          bottom: 82,
+          child: FloatingActionButton.small(
+            heroTag: 'marketplace-current-location',
+            tooltip: 'Usar mi ubicación actual',
+            onPressed: _locating ? null : _useCurrentLocation,
+            child: _locating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.my_location_rounded),
+          ),
+        ),
+        const Positioned(
           left: 12,
           bottom: 18,
           child: Card(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(mainAxisSize: MainAxisSize.min, children: const [
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.circle, color: Color(0xFF2E7D32), size: 12),
                 SizedBox(width: 5),
                 Text('Servicio'),
@@ -179,6 +197,120 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
           ),
         ),
       );
+
+  Future<void> _useCurrentLocation() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (!mounted) return;
+        await _showLocationMessage(
+          'Activá la ubicación del teléfono para poder usar tu posición.',
+          actionLabel: 'Abrir configuración',
+          onAction: Geolocator.openLocationSettings,
+        );
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        if (!mounted) return;
+        final accepted = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                icon: const Icon(Icons.location_on_outlined, size: 42),
+                title: const Text('Usar tu ubicación'),
+                content: const Text(
+                  'GesAgro usará tu ubicación solamente para proponerte un '
+                  'punto en el mapa. Podés moverlo antes de publicar y los '
+                  'demás usuarios verán una ubicación aproximada.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Ahora no'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Continuar'),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+        if (!accepted) return;
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+        await _showLocationMessage(
+          'El permiso de ubicación está bloqueado. Podés habilitarlo desde '
+          'la configuración o elegir el punto manualmente.',
+          actionLabel: 'Abrir configuración',
+          onAction: Geolocator.openAppSettings,
+        );
+        return;
+      }
+      if (permission == LocationPermission.denied) {
+        if (!mounted) return;
+        await _showLocationMessage(
+          'No se otorgó el permiso. Podés mantener presionado el mapa para '
+          'seleccionar la ubicación manualmente.',
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+      if (!mounted) return;
+      final point = LatLng(position.latitude, position.longitude);
+      setState(() => _draftLocation = point);
+      _mapController.move(point, 14);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+          'Ubicación propuesta. Ajustala en el mapa si lo necesitás.',
+        ),
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      await _showLocationMessage(
+        'No pudimos obtener tu ubicación. Podés elegirla manualmente '
+        'manteniendo presionado el mapa.',
+      );
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  Future<void> _showLocationMessage(
+    String message, {
+    String? actionLabel,
+    Future<bool> Function()? onAction,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Ubicación'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cerrar'),
+          ),
+          if (actionLabel != null && onAction != null)
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await onAction();
+              },
+              child: Text(actionLabel),
+            ),
+        ],
+      ),
+    );
+  }
 
   void _showItem(MarketplaceItem item) {
     showModalBottomSheet<void>(
