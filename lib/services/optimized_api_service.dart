@@ -13,6 +13,7 @@ import '../../models/insumo.dart';
 import '../../models/mantenimiento.dart';
 import '../../models/maquina.dart';
 import '../../models/personal.dart';
+import '../models/marketplace.dart';
 import '../../models/trabajo.dart';
 import '../../models/movimiento.dart';
 import '../../models/usuario.dart';
@@ -1046,6 +1047,58 @@ class ApiService {
   }
 
   /// ==================== MÉTODOS HTTP GENÉRICOS ====================
+
+  Future<List<MarketplaceItem>> getMarketplaceMap({String? categoria}) async {
+    final response = await _httpClient.get(
+      '/api/marketplace/mapa/',
+      queryParameters: categoria == null || categoria.isEmpty
+          ? null
+          : {'categoria': categoria},
+    );
+    final data = response.data as Map<String, dynamic>;
+    return [
+      ...(data['servicios'] as List<dynamic>).map((item) =>
+          MarketplaceItem.fromJson('servicio', item as Map<String, dynamic>)),
+      ...(data['pedidos'] as List<dynamic>).map((item) =>
+          MarketplaceItem.fromJson('pedido', item as Map<String, dynamic>)),
+    ];
+  }
+
+  Future<void> saveMarketplaceProfile(Map<String, dynamic> data) async {
+    await _httpClient.put('/api/marketplace/perfil/', data: data);
+  }
+
+  Future<Map<String, dynamic>?> getMarketplaceProfile() async {
+    try {
+      final response = await _httpClient.get('/api/marketplace/perfil/');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  Future<void> createMarketplaceItem(
+      String tipo, Map<String, dynamic> data) async {
+    final endpoint = tipo == 'servicio'
+        ? '/api/marketplace/servicios/'
+        : '/api/marketplace/pedidos/';
+    await _httpClient.post(endpoint, data: data);
+  }
+
+  Future<void> deleteMarketplaceItem(String tipo, int id) async {
+    final endpoint = tipo == 'servicio'
+        ? '/api/marketplace/servicios/$id/'
+        : '/api/marketplace/pedidos/$id/';
+    await _httpClient.delete(endpoint);
+  }
+
+  Future<Map<String, dynamic>> getMarketplaceContact(
+      String tipo, int id) async {
+    final response =
+        await _httpClient.get('/api/marketplace/contacto/$tipo/$id/');
+    return response.data as Map<String, dynamic>;
+  }
 
   /// GET genérico para endpoints personalizados
   Future<dynamic> get(String endpoint,

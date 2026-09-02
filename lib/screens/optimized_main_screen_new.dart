@@ -19,6 +19,7 @@ import 'personal/personal_list_screen.dart';
 import 'clientes/clientes_list_screen.dart';
 import 'maquinas/maquinas_list_screen.dart';
 import 'usuarios/usuarios_screen.dart';
+import 'marketplace/marketplace_map_screen.dart';
 import '../providers/optimized_providers.dart';
 import '../providers/optimized_auth_provider.dart';
 import '../themes/app_theme.dart';
@@ -783,6 +784,19 @@ class _OptimizedMoreScreenState extends ConsumerState<OptimizedMoreScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (_) => const OptimizedMantenimientosScreen()));
+              }),
+            ]),
+            const SizedBox(height: 24),
+
+            _buildSectionLabel('RED AGRO'),
+            _buildGroupCard([
+              _buildItem('Mapa de servicios', Icons.map_outlined,
+                  const Color(0xFF2E7D32), const Color(0xFFE8F5E9), () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const MarketplaceMapScreen()),
+                );
               }),
             ]),
             const SizedBox(height: 24),

@@ -1,0 +1,492 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../../models/marketplace.dart';
+import '../../services/optimized_api_service.dart';
+
+class MarketplaceMapScreen extends StatefulWidget {
+  const MarketplaceMapScreen({super.key});
+
+  @override
+  State<MarketplaceMapScreen> createState() => _MarketplaceMapScreenState();
+}
+
+class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
+  static const _center = LatLng(-33.3, -61.2);
+  final _api = ApiService();
+  final _mapController = MapController();
+  List<MarketplaceItem> _items = [];
+  bool _loading = true;
+  String _filter = 'todos';
+  LatLng? _draftLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      await _api.initialize();
+      final items = await _api.getMarketplaceMap();
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cargar la Red Agro')),
+      );
+    }
+  }
+
+  List<MarketplaceItem> get _visibleItems => _filter == 'todos'
+      ? _items
+      : _items.where((item) => item.tipo == _filter).toList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Red Agro'),
+        actions: [
+          IconButton(
+            tooltip: 'Mi perfil público',
+            onPressed: _editProfile,
+            icon: const Icon(Icons.account_circle_outlined),
+          ),
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openPublishMenu,
+        icon: const Icon(Icons.add_location_alt_outlined),
+        label: const Text('Publicar'),
+      ),
+      body: Stack(children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _center,
+            initialZoom: 6.2,
+            onLongPress: (_, point) {
+              setState(() => _draftLocation = point);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Ubicación seleccionada. Tocá Publicar.'),
+                duration: Duration(seconds: 2),
+              ));
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.gesagro.app',
+            ),
+            MarkerLayer(markers: [
+              ..._visibleItems.map(_markerFor),
+              if (_draftLocation != null)
+                Marker(
+                  point: _draftLocation!,
+                  width: 46,
+                  height: 46,
+                  child: const Icon(Icons.location_on,
+                      size: 44, color: Colors.deepPurple),
+                ),
+            ]),
+          ],
+        ),
+        Positioned(
+          top: 12,
+          left: 12,
+          right: 12,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'todos', label: Text('Todos')),
+                    ButtonSegment(
+                        value: 'servicio',
+                        label: Text('Prestadores'),
+                        icon: Icon(Icons.agriculture, size: 17)),
+                    ButtonSegment(
+                        value: 'pedido',
+                        label: Text('Pedidos'),
+                        icon: Icon(Icons.campaign_outlined, size: 17)),
+                  ],
+                  selected: {_filter},
+                  onSelectionChanged: (value) =>
+                      setState(() => _filter = value.first),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (_loading) const Center(child: CircularProgressIndicator()),
+        Positioned(
+          left: 12,
+          bottom: 18,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                Icon(Icons.circle, color: Color(0xFF2E7D32), size: 12),
+                SizedBox(width: 5),
+                Text('Servicio'),
+                SizedBox(width: 12),
+                Icon(Icons.circle, color: Color(0xFFF57C00), size: 12),
+                SizedBox(width: 5),
+                Text('Pedido'),
+              ]),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Marker _markerFor(MarketplaceItem item) => Marker(
+        point: LatLng(item.latitud, item.longitud),
+        width: 52,
+        height: 52,
+        child: GestureDetector(
+          onTap: () => _showItem(item),
+          child: Container(
+            decoration: BoxDecoration(
+              color: item.tipo == 'servicio'
+                  ? const Color(0xFF2E7D32)
+                  : const Color(0xFFF57C00),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: const [
+                BoxShadow(blurRadius: 5, color: Colors.black38)
+              ],
+            ),
+            child: Icon(
+              item.tipo == 'servicio'
+                  ? Icons.agriculture
+                  : Icons.campaign_outlined,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+
+  void _showItem(MarketplaceItem item) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              backgroundColor: item.tipo == 'servicio'
+                  ? const Color(0xFFE8F5E9)
+                  : const Color(0xFFFFF3E0),
+              child: Icon(item.tipo == 'servicio'
+                  ? Icons.agriculture
+                  : Icons.campaign_outlined),
+            ),
+            title: Text(item.titulo,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('${item.nombrePublico} · ${item.categoria}'),
+          ),
+          if (item.descripcion.isNotEmpty)
+            Align(
+                alignment: Alignment.centerLeft, child: Text(item.descripcion)),
+          if (item.hectareas != null)
+            Align(
+                alignment: Alignment.centerLeft,
+                child: Text('${item.hectareas} hectáreas')),
+          if (item.radioCoberturaKm != null)
+            Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Cobertura: ${item.radioCoberturaKm} km')),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: item.esPropio
+                ? OutlinedButton.icon(
+                    onPressed: () => _deleteItem(item, context),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Eliminar mi publicación'),
+                  )
+                : FilledButton.icon(
+                    onPressed: () => _requestContact(item, context),
+                    icon: const Icon(Icons.lock_outline),
+                    label: const Text('Ver datos de contacto'),
+                  ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _requestContact(
+      MarketplaceItem item, BuildContext sheetContext) async {
+    final response = await _api.getMarketplaceContact(item.tipo, item.id);
+    if (!mounted || !sheetContext.mounted) return;
+    Navigator.pop(sheetContext);
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        icon: const Icon(Icons.workspace_premium_outlined, size: 42),
+        title: const Text('Contacto protegido'),
+        content: Text(response['detail']?.toString() ??
+            'El desbloqueo estará disponible próximamente.'),
+        actions: [
+          FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Entendido')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteItem(
+      MarketplaceItem item, BuildContext sheetContext) async {
+    await _api.deleteMarketplaceItem(item.tipo, item.id);
+    if (!mounted || !sheetContext.mounted) return;
+    Navigator.pop(sheetContext);
+    await _load();
+  }
+
+  void _openPublishMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const ListTile(
+            title: Text('¿Qué querés publicar?',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('Mantené presionado el mapa para elegir la zona.'),
+          ),
+          ListTile(
+            leading: const CircleAvatar(child: Icon(Icons.agriculture)),
+            title: const Text('Ofrezco un servicio'),
+            onTap: () {
+              Navigator.pop(context);
+              _showPublicationForm('servicio');
+            },
+          ),
+          ListTile(
+            leading: const CircleAvatar(child: Icon(Icons.campaign_outlined)),
+            title: const Text('Necesito un servicio'),
+            onTap: () {
+              Navigator.pop(context);
+              _showPublicationForm('pedido');
+            },
+          ),
+          const SizedBox(height: 12),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _showPublicationForm(String tipo) async {
+    if (_draftLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Primero mantené presionado el mapa para elegir la zona.')));
+      return;
+    }
+    final key = GlobalKey<FormState>();
+    final title = TextEditingController();
+    final category = TextEditingController();
+    final description = TextEditingController();
+    final extra = TextEditingController();
+    var saving = false;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (_, setDialogState) => AlertDialog(
+          title:
+              Text(tipo == 'servicio' ? 'Ofrecer servicio' : 'Pedir servicio'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: key,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                TextFormField(
+                  controller: title,
+                  decoration: const InputDecoration(labelText: 'Título'),
+                  validator: _required,
+                ),
+                TextFormField(
+                  controller: category,
+                  decoration: const InputDecoration(
+                      labelText: 'Categoría', hintText: 'Ej. Siembra, cosecha'),
+                  validator: _required,
+                ),
+                TextFormField(
+                  controller: description,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Descripción'),
+                ),
+                TextFormField(
+                  controller: extra,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: tipo == 'servicio'
+                        ? 'Radio de cobertura (km)'
+                        : 'Hectáreas (opcional)',
+                  ),
+                ),
+              ]),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: saving ? null : () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      if (!key.currentState!.validate()) return;
+                      setDialogState(() => saving = true);
+                      final payload = <String, dynamic>{
+                        'titulo': title.text.trim(),
+                        'categoria': category.text.trim(),
+                        'descripcion': description.text.trim(),
+                        'latitud': _draftLocation!.latitude,
+                        'longitud': _draftLocation!.longitude,
+                      };
+                      if (tipo == 'servicio') {
+                        payload['radio_cobertura_km'] =
+                            int.tryParse(extra.text) ?? 50;
+                      } else if (extra.text.isNotEmpty) {
+                        payload['hectareas'] = double.tryParse(extra.text);
+                      }
+                      try {
+                        await _api.createMarketplaceItem(tipo, payload);
+                        if (!mounted || !dialogContext.mounted) return;
+                        Navigator.pop(dialogContext);
+                        setState(() => _draftLocation = null);
+                        await _load();
+                      } catch (_) {
+                        setDialogState(() => saving = false);
+                      }
+                    },
+              child: saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Publicar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    title.dispose();
+    category.dispose();
+    description.dispose();
+    extra.dispose();
+  }
+
+  Future<void> _editProfile() async {
+    final key = GlobalKey<FormState>();
+    final name = TextEditingController();
+    final locality = TextEditingController();
+    final phone = TextEditingController();
+    final description = TextEditingController();
+    var type = 'Ambos';
+    try {
+      final profile = await _api.getMarketplaceProfile();
+      if (profile != null) {
+        name.text = profile['nombre_publico']?.toString() ?? '';
+        locality.text = profile['localidad']?.toString() ?? '';
+        phone.text = profile['telefono_contacto']?.toString() ?? '';
+        description.text = profile['descripcion']?.toString() ?? '';
+        type = profile['tipo']?.toString() ?? type;
+      }
+    } catch (_) {
+      // El formulario sigue disponible aun si no se pudo leer el perfil.
+    }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (_, setDialogState) => AlertDialog(
+          title: const Text('Mi perfil público'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: key,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                TextFormField(
+                    controller: name,
+                    decoration:
+                        const InputDecoration(labelText: 'Nombre público'),
+                    validator: _required),
+                DropdownButtonFormField<String>(
+                  value: type,
+                  decoration: const InputDecoration(labelText: 'Perfil'),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'Productor', child: Text('Productor')),
+                    DropdownMenuItem(
+                        value: 'Prestador', child: Text('Prestador')),
+                    DropdownMenuItem(value: 'Ambos', child: Text('Ambos')),
+                  ],
+                  onChanged: (value) =>
+                      setDialogState(() => type = value ?? type),
+                ),
+                TextFormField(
+                    controller: locality,
+                    decoration: const InputDecoration(labelText: 'Localidad')),
+                TextFormField(
+                    controller: phone,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                        labelText: 'Teléfono privado de contacto')),
+                TextFormField(
+                    controller: description,
+                    maxLines: 2,
+                    decoration:
+                        const InputDecoration(labelText: 'Descripción')),
+              ]),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: () async {
+                if (!key.currentState!.validate()) return;
+                await _api.saveMarketplaceProfile({
+                  'nombre_publico': name.text.trim(),
+                  'tipo': type,
+                  'localidad': locality.text.trim(),
+                  'telefono_contacto': phone.text.trim(),
+                  'descripcion': description.text.trim(),
+                });
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    name.dispose();
+    locality.dispose();
+    phone.dispose();
+    description.dispose();
+  }
+
+  String? _required(String? value) =>
+      value == null || value.trim().isEmpty ? 'Campo obligatorio' : null;
+}
