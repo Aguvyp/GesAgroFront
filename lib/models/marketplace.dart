@@ -43,7 +43,7 @@ class MarketplaceItem {
       longitud: number(json['longitud']) ?? 0,
       esPropio: json['es_propio'] == true,
       hectareas: number(json['hectareas']),
-      radioCoberturaKm: json['radio_cobertura_km'] as int?,
+      radioCoberturaKm: number(json['radio_cobertura_km'])?.round(),
     );
   }
 }

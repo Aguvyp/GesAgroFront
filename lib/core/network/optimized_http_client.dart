@@ -165,18 +165,7 @@ class OptimizedHttpClient {
                 _logger.info('📡 Endpoint: ${options.path}');
                 _logger
                     .info('🌐 URL completa: ${options.baseUrl}${options.path}');
-                _logger.info('🔑 Token completo: $token');
                 _logger.info('📏 Token length: ${token.length} caracteres');
-                _logger.info('🔐 Header Authorization completo: $authHeader');
-                _logger.info('📋 Todos los headers de la petición:');
-                options.headers.forEach((key, value) {
-                  if (key == 'Authorization') {
-                    _logger.info(
-                        '   $key: Bearer ${value.toString().substring(7).length > 20 ? value.toString().substring(7, 27) + "..." : value}');
-                  } else {
-                    _logger.info('   $key: $value');
-                  }
-                });
                 _logger.info(
                     '═══════════════════════════════════════════════════════════');
               } else {
@@ -268,7 +257,7 @@ class OptimizedHttpClient {
     if (!path.endsWith('/') &&
         path != '/' &&
         !path.contains('/api/clima/pronostico')) {
-      path = '${path}/';
+      path = '$path/';
     }
 
     // Log de normalización para debugging
@@ -349,7 +338,7 @@ class OptimizedHttpClient {
     }
     // Agregar barra final si no existe (todos los endpoints terminan con slash)
     if (!path.endsWith('/') && path != '/') {
-      path = '${path}/';
+      path = '$path/';
     }
 
     final fullUrl = '${AppConfig.instance.apiBaseUrl}$path';
@@ -400,7 +389,7 @@ class OptimizedHttpClient {
     }
     // Agregar barra final si no existe (todos los endpoints terminan con slash)
     if (!path.endsWith('/') && path != '/') {
-      path = '${path}/';
+      path = '$path/';
     }
 
     return await _dio.put<T>(
@@ -432,7 +421,7 @@ class OptimizedHttpClient {
     }
     // Agregar barra final si no existe (todos los endpoints terminan con slash)
     if (!path.endsWith('/') && path != '/') {
-      path = '${path}/';
+      path = '$path/';
     }
 
     return await _dio.delete<T>(

@@ -124,8 +124,8 @@ class AuthService {
       await apiService.initialize();
 
       try {
-        // Validar contra un endpoint protegido. /usuarios/ es público.
-        await apiService.getCampos(limit: 1);
+        // Validar contra un endpoint protegido que no oculta errores HTTP.
+        await apiService.validateSession();
         _logger.info('✅ Token válido - Autenticación exitosa');
         return true;
       } catch (e) {

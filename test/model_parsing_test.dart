@@ -3,6 +3,7 @@ import 'package:ges_agro_front/models/campo.dart';
 import 'package:ges_agro_front/models/trabajo.dart';
 import 'package:ges_agro_front/models/factura.dart';
 import 'package:ges_agro_front/models/mantenimiento.dart';
+import 'package:ges_agro_front/models/marketplace.dart';
 
 void main() {
   group('Modelos de dominio', () {
@@ -81,6 +82,22 @@ void main() {
       expect(trabajo.toJson().containsKey('campo_id'), isFalse);
       expect(mantenimiento.toJson()['maquina'], 3);
       expect(factura.toJson()['cliente'], 7);
+    });
+
+    test('Red Agro interpreta el radio aunque Django lo serialice como texto',
+        () {
+      final item = MarketplaceItem.fromJson('pedido', {
+        'id': 4,
+        'titulo': 'Cosecha requerida',
+        'categoria': 'Cosecha',
+        'latitud': '-33.123',
+        'longitud': '-61.456',
+        'radio_cobertura_km': '75',
+      });
+
+      expect(item.radioCoberturaKm, 75);
+      expect(item.latitud, -33.123);
+      expect(item.tipo, 'pedido');
     });
   });
 }

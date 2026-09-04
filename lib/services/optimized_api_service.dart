@@ -104,6 +104,11 @@ class ApiService {
     }
   }
 
+  /// Valida el token almacenado contra un endpoint realmente protegido.
+  Future<void> validateSession() async {
+    await _httpClient.get('/api/auth/session/');
+  }
+
   /// Registro de usuario
   Future<Map<String, dynamic>> register({
     required String nombre,
@@ -482,7 +487,7 @@ class ApiService {
         '🔵 ApiService.createTrabajo - Enviando request a /api/trabajos/create');
     print('🔵 Data a enviar:');
     try {
-      print(JsonEncoder.withIndent('  ').convert(data));
+      print(const JsonEncoder.withIndent('  ').convert(data));
     } catch (e) {
       print('Error al convertir data: $e');
       print('Data raw: $data');

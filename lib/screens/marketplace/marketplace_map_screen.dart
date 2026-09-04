@@ -22,11 +22,19 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
   bool _locating = false;
   String _filter = 'todos';
   LatLng? _draftLocation;
+  int _draftRadiusKm = 50;
+  bool _requestedInitialLocation = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_requestedInitialLocation) {
+        _requestedInitialLocation = true;
+        _useCurrentLocation();
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -77,19 +85,33 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
           options: MapOptions(
             initialCenter: _center,
             initialZoom: 6.2,
-            onLongPress: (_, point) {
+            onTap: (_, point) {
               setState(() => _draftLocation = point);
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Ubicación seleccionada. Tocá Publicar.'),
+                content: Text('Ubicación ajustada. Tocá Publicar.'),
                 duration: Duration(seconds: 2),
               ));
             },
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate:
+                  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+              subdomains: const ['a', 'b', 'c'],
               userAgentPackageName: 'com.gesagro.app',
             ),
+            CircleLayer(circles: [
+              ..._visibleItems.map(_circleFor),
+              if (_draftLocation != null)
+                CircleMarker(
+                  point: _draftLocation!,
+                  radius: _draftRadiusKm * 1000,
+                  useRadiusInMeter: true,
+                  color: Colors.deepPurple.withValues(alpha: 0.10),
+                  borderColor: Colors.deepPurple.withValues(alpha: 0.7),
+                  borderStrokeWidth: 2,
+                ),
+            ]),
             MarkerLayer(markers: [
               ..._visibleItems.map(_markerFor),
               if (_draftLocation != null)
@@ -197,6 +219,20 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
           ),
         ),
       );
+
+  CircleMarker _circleFor(MarketplaceItem item) {
+    final color = item.tipo == 'servicio'
+        ? const Color(0xFF2E7D32)
+        : const Color(0xFFF57C00);
+    return CircleMarker(
+      point: LatLng(item.latitud, item.longitud),
+      radius: (item.radioCoberturaKm ?? 50) * 1000,
+      useRadiusInMeter: true,
+      color: color.withValues(alpha: 0.10),
+      borderColor: color.withValues(alpha: 0.65),
+      borderStrokeWidth: 1.5,
+    );
+  }
 
   Future<void> _useCurrentLocation() async {
     if (_locating) return;
@@ -402,7 +438,8 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
           const ListTile(
             title: Text('¿Qué querés publicar?',
                 style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Mantené presionado el mapa para elegir la zona.'),
+            subtitle:
+                Text('Usamos tu GPS. Tocá el mapa para ajustar el punto.'),
           ),
           ListTile(
             leading: const CircleAvatar(child: Icon(Icons.agriculture)),
@@ -429,15 +466,16 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
   Future<void> _showPublicationForm(String tipo) async {
     if (_draftLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text('Primero mantené presionado el mapa para elegir la zona.')));
+          content: Text(
+              'Esperá la ubicación del GPS o tocá el mapa para elegir la zona.')));
       return;
     }
     final key = GlobalKey<FormState>();
     final title = TextEditingController();
     final category = TextEditingController();
     final description = TextEditingController();
-    final extra = TextEditingController();
+    final radius = TextEditingController(text: '50');
+    final hectares = TextEditingController();
     var saving = false;
     await showDialog<void>(
       context: context,
@@ -467,14 +505,34 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
                   decoration: const InputDecoration(labelText: 'Descripción'),
                 ),
                 TextFormField(
-                  controller: extra,
+                  controller: radius,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: tipo == 'servicio'
-                        ? 'Radio de cobertura (km)'
-                        : 'Hectáreas (opcional)',
+                  decoration: const InputDecoration(
+                    labelText: 'Radio de alcance (km)',
+                    helperText: 'Se mostrará como un círculo en el mapa',
                   ),
+                  validator: (value) {
+                    final parsed = int.tryParse(value ?? '');
+                    if (parsed == null || parsed < 1 || parsed > 500) {
+                      return 'Ingresá un valor entre 1 y 500 km';
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    final parsed = int.tryParse(value);
+                    if (parsed != null && parsed >= 1 && parsed <= 500) {
+                      setState(() => _draftRadiusKm = parsed);
+                    }
+                  },
                 ),
+                if (tipo == 'pedido')
+                  TextFormField(
+                    controller: hectares,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                        labelText: 'Hectáreas (opcional)'),
+                  ),
               ]),
             ),
           ),
@@ -494,12 +552,11 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
                         'descripcion': description.text.trim(),
                         'latitud': _draftLocation!.latitude,
                         'longitud': _draftLocation!.longitude,
+                        'radio_cobertura_km': int.parse(radius.text),
                       };
-                      if (tipo == 'servicio') {
-                        payload['radio_cobertura_km'] =
-                            int.tryParse(extra.text) ?? 50;
-                      } else if (extra.text.isNotEmpty) {
-                        payload['hectareas'] = double.tryParse(extra.text);
+                      if (tipo == 'pedido' && hectares.text.isNotEmpty) {
+                        payload['hectareas'] =
+                            double.tryParse(hectares.text.replaceAll(',', '.'));
                       }
                       try {
                         await _api.createMarketplaceItem(tipo, payload);
@@ -507,8 +564,12 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
                         Navigator.pop(dialogContext);
                         setState(() => _draftLocation = null);
                         await _load();
-                      } catch (_) {
+                      } catch (error) {
                         setDialogState(() => saving = false);
+                        if (!mounted || !dialogContext.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(_publicationError(error)),
+                        ));
                       }
                     },
               child: saving
@@ -525,7 +586,19 @@ class _MarketplaceMapScreenState extends State<MarketplaceMapScreen> {
     title.dispose();
     category.dispose();
     description.dispose();
-    extra.dispose();
+    radius.dispose();
+    hectares.dispose();
+  }
+
+  String _publicationError(Object error) {
+    final message = error.toString();
+    if (message.contains('401')) {
+      return 'Tu sesión venció. Cerrá sesión e ingresá nuevamente.';
+    }
+    if (message.contains('400')) {
+      return 'Revisá los datos de la publicación e intentá nuevamente.';
+    }
+    return 'No se pudo publicar. Verificá tu conexión e intentá nuevamente.';
   }
 
   Future<void> _editProfile() async {
